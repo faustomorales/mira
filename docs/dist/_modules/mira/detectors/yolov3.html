@@ -1,0 +1,898 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mira.detectors.yolov3 &mdash; mira  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> mira
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#browsing-image-data">Browsing image data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#augmentation">Augmentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#basic-object-detection">Basic object detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#transfer-learning">Transfer Learning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/coco2014.html">Training on COCO 2014</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/textdetection.html">Training a text detection model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../core/index.html">Core Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/scenes.html">Scenes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/annotations.html">Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/selections.html">Selections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/images.html">Images</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../datasets/index.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../datasets/existing.html">Load existing datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../datasets/load.html">Load new datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detectors/index.html">Detectors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/yolov3.html">YOLO v3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/retinanet.html">RetinaNet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/east.html">EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mira</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mira.detectors.yolov3</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mira.detectors.yolov3</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">keras</span> <span class="k">import</span> <span class="n">backend</span> <span class="k">as</span> <span class="n">K</span>
+<span class="kn">from</span> <span class="nn">keras</span> <span class="k">import</span> <span class="n">regularizers</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">models</span><span class="p">,</span> <span class="n">optimizers</span>
+
+<span class="kn">from</span> <span class="nn">.detector</span> <span class="k">import</span> <span class="n">Detector</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">compute_overlap</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">core</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">get_file</span><span class="p">,</span> <span class="n">get_datadir_base</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">convert_darknet_weights</span>
+
+<span class="sd">&quot;&quot;&quot;YOLOv3 Detector</span>
+
+<span class="sd">The model architecture here is taken directly from</span>
+<span class="sd">[this previous work](https://github.com/qqwweee/keras-yolo3). I would</span>
+<span class="sd">have simply used the original if it were a pip-installable package. The</span>
+<span class="sd">prediction logic and loss functions are modified to match my stylistic</span>
+<span class="sd">preferences for documentation, and I take responsibility for any</span>
+<span class="sd">implementation errors.</span>
+
+<span class="sd">The following are a few variable definitions for reference:</span>
+
+<span class="sd">- tx, ty, tw, th     : The bounding box outputs from the base model</span>
+<span class="sd">- txs, tys, twe, the : The bounding box outputs from the training model</span>
+<span class="sd">- bx, by, bw, bh     : The bounding box outputs from the prediction model</span>
+<span class="sd">- sx, sy             : The stride of a given box in an output (dependent on the</span>
+<span class="sd">                       model architecture).</span>
+<span class="sd">- cx, cy             : The prior offset of a prediction box</span>
+<span class="sd">- pw, ph             : The prior width and height of a prediction box</span>
+
+<span class="sd">In all cases, x and y refer to the center of a given bounding box.</span>
+
+<span class="sd">The following formulas govern the relationship between the above variables.</span>
+<span class="sd">- txs = (bx - cx) / sx</span>
+<span class="sd">- tys = (by - cy) / sy</span>
+<span class="sd">- twe = bw / pw</span>
+<span class="sd">- the = bh / ph</span>
+<span class="sd">- txs = sigmoid(tx)</span>
+<span class="sd">- tys = sigmoid(ty)</span>
+<span class="sd">- twe = exp(tw)</span>
+<span class="sd">- the = exp(th)</span>
+
+<span class="sd">To clarify, txs and tys are factors of the stride to adjust the bounding box.</span>
+<span class="sd">So txs == 1 corresponds with moving the box center one full stride to the right</span>
+<span class="sd">from its original position.</span>
+
+<span class="sd">Similarly, twe is a factor of the prior width. So twe == 2 corresponds with</span>
+<span class="sd">doubling the width of the original bounding box.</span>
+
+<span class="sd">The main difference between YOLO and Tiny YOLO is that that Tiny YOLO only</span>
+<span class="sd">uses two scales (two anchor groups with three anchors in each) while YOLO uses</span>
+<span class="sd">three scales (three anchor groups with three anchors in each)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">YOLO_ANCHOR_GROUPS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;tiny&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">81</span><span class="p">,</span> <span class="mi">82</span><span class="p">],</span> <span class="p">[</span><span class="mi">135</span><span class="p">,</span> <span class="mi">169</span><span class="p">],</span> <span class="p">[</span><span class="mi">344</span><span class="p">,</span> <span class="mi">319</span><span class="p">]]),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">14</span><span class="p">],</span> <span class="p">[</span><span class="mi">23</span><span class="p">,</span> <span class="mi">27</span><span class="p">],</span> <span class="p">[</span><span class="mi">37</span><span class="p">,</span> <span class="mi">58</span><span class="p">]])</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;full&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">116</span><span class="p">,</span> <span class="mi">90</span><span class="p">],</span> <span class="p">[</span><span class="mi">156</span><span class="p">,</span> <span class="mi">198</span><span class="p">],</span> <span class="p">[</span><span class="mi">373</span><span class="p">,</span> <span class="mi">326</span><span class="p">]]),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">30</span><span class="p">,</span> <span class="mi">61</span><span class="p">],</span> <span class="p">[</span><span class="mi">62</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">59</span><span class="p">,</span> <span class="mi">119</span><span class="p">]]),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">13</span><span class="p">],</span> <span class="p">[</span><span class="mi">16</span><span class="p">,</span> <span class="mi">30</span><span class="p">],</span> <span class="p">[</span><span class="mi">33</span><span class="p">,</span> <span class="mi">23</span><span class="p">]])</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">YOLO_FILE_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;tiny&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;weights_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3-tiny.weights&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;weights_url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://pjreddie.com/media/files/yolov3-tiny.weights&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;weights_hash&#39;</span><span class="p">:</span> <span class="s1">&#39;dccea06f59b781ec1234ddf8d1e94b9519a97f4245748a7d4db75d5b7080a42c&#39;</span><span class="p">,</span>   <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;cfg_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3-tiny.cfg&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cfg_url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;cfg_hash&#39;</span><span class="p">:</span> <span class="s1">&#39;84eb7a675ef87c906019ff5a6e0effe275d175adb75100dcb47f0727917dc2c7&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;converted_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3_tiny.h5&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;converted_notop_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3_tiny_notop.h5&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;full&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;weights_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3.weights&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;weights_url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://pjreddie.com/media/files/yolov3.weights&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;weights_hash&#39;</span><span class="p">:</span> <span class="s1">&#39;523e4e69e1d015393a1b0a441cef1d9c7659e3eb2d7e15f793f060a21b32f297&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;cfg_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3.cfg&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cfg_url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;cfg_hash&#39;</span><span class="p">:</span> <span class="s1">&#39;22489ea38575dfa36c67a90048e8759576416a79d32dc11e15d2217777b9a953&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;converted_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3.h5&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;converted_notop_fname&#39;</span><span class="p">:</span> <span class="s1">&#39;yolov3_notop.h5&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+
+<span class="nd">@wraps</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">DarknetConv2D</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrapper to set Darknet parameters for Convolution2D.</span>
+<span class="sd">    All arguments passed to `layers.Conv2D`&quot;&quot;&quot;</span>
+
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;kernel_regularizer&#39;</span><span class="p">:</span> <span class="n">regularizers</span><span class="o">.</span><span class="n">l2</span><span class="p">(</span><span class="mf">5e-4</span><span class="p">),</span>
+        <span class="s1">&#39;padding&#39;</span><span class="p">:</span> <span class="s1">&#39;valid&#39;</span> <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;strides&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;same&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Darknet Convolution2D followed by BatchNormalization and LeakyReLU.</span>
+<span class="sd">    All arguments passed to DarknetConv2D&quot;&quot;&quot;</span>
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;use_bias&#39;</span><span class="p">:</span> <span class="kc">False</span>
+    <span class="p">}</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">make_layer</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">()(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">LeakyReLU</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+    <span class="k">return</span> <span class="n">make_layer</span>
+
+
+<span class="k">def</span> <span class="nf">resblock_body</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">num_filters</span><span class="p">,</span> <span class="n">num_blocks</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A series of resblocks starting with a downsampling</span>
+<span class="sd">    Convolution2D.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x: Input layer</span>
+<span class="sd">        num_filters: number of filters for DarknetConv2D</span>
+<span class="sd">        num_blocks: Number of blocks to add</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Darknet uses left and top padding instead of &#39;same&#39; mode</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ZeroPadding2D</span><span class="p">(((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span>
+        <span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="p">,</span>
+        <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_c2d_bn_leaky&#39;</span>
+    <span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_blocks</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span>
+            <span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_block</span><span class="si">{0}</span><span class="s1">_1x1_c2d_bn_leaky&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span>
+            <span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_block</span><span class="si">{0}</span><span class="s1">_3x3_c2d_bn_leaky&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="p">)(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_block</span><span class="si">{0}</span><span class="s1">_add&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="k">def</span> <span class="nf">make_input_layer</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">num_filters</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_c2d_bn_leaky1&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_c2d_bn_leaky2&#39;</span><span class="p">)(</span><span class="n">xi</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_c2d_bn_leaky3&#39;</span><span class="p">)(</span><span class="n">xi</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_c2d_bn_leaky4&#39;</span><span class="p">)(</span><span class="n">xi</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_c2d_bn_leaky5&#39;</span><span class="p">)(</span><span class="n">xi</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">num_filters</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39;_c2d_bn_leaky_out&#39;</span><span class="p">)(</span><span class="n">xi</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">xi</span>
+
+
+<span class="k">def</span> <span class="nf">get_backbone</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create YOLO_V3 model CNN body in Keras&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">size</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;tiny&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">],</span> <span class="s1">&#39;Size must be `tiny` or `full`&#39;</span>
+    <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="s1">&#39;tiny&#39;</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x1</span><span class="p">)</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)(</span><span class="n">x1</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x1</span><span class="p">)</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))(</span><span class="n">x1</span><span class="p">)</span>
+
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))(</span><span class="n">x1</span><span class="p">)</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">UpSampling2D</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="n">x2</span><span class="p">)</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Concatenate</span><span class="p">()([</span><span class="n">x2</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x2</span><span class="p">)</span>
+
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))(</span><span class="n">x1</span><span class="p">)</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">conv1</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;conv_bn_leaky1&#39;</span><span class="p">)(</span><span class="n">inputs</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">rb1</span> <span class="o">=</span> <span class="n">resblock_body</span><span class="p">(</span><span class="n">conv1</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resblock1&#39;</span><span class="p">)</span>
+        <span class="n">rb2</span> <span class="o">=</span> <span class="n">resblock_body</span><span class="p">(</span><span class="n">rb1</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resblock2&#39;</span><span class="p">)</span>
+        <span class="n">rb3</span> <span class="o">=</span> <span class="n">resblock_body</span><span class="p">(</span><span class="n">rb2</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resblock3&#39;</span><span class="p">)</span>
+        <span class="n">rb4</span> <span class="o">=</span> <span class="n">resblock_body</span><span class="p">(</span><span class="n">rb3</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resblock4&#39;</span><span class="p">)</span>
+        <span class="n">rb5</span> <span class="o">=</span> <span class="n">resblock_body</span><span class="p">(</span><span class="n">rb4</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resblock5&#39;</span><span class="p">)</span>
+
+        <span class="n">x1</span><span class="p">,</span> <span class="n">x1i</span> <span class="o">=</span> <span class="n">make_input_layer</span><span class="p">(</span><span class="n">rb5</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;x1&#39;</span><span class="p">)</span>
+
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))(</span><span class="n">x1i</span><span class="p">)</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">UpSampling2D</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;upsampling_x2&#39;</span><span class="p">)(</span><span class="n">x2</span><span class="p">)</span>
+
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Concatenate</span><span class="p">()([</span><span class="n">x2</span><span class="p">,</span> <span class="n">rb4</span><span class="p">])</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">x2i</span> <span class="o">=</span> <span class="n">make_input_layer</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;x2&#39;</span><span class="p">)</span>
+
+        <span class="n">x3</span> <span class="o">=</span> <span class="n">DarknetConv2D_BN_Leaky</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))(</span><span class="n">x2i</span><span class="p">)</span>
+        <span class="n">x3</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">UpSampling2D</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;upsampling_x3&#39;</span><span class="p">)(</span><span class="n">x3</span><span class="p">)</span>
+
+        <span class="n">x3</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Concatenate</span><span class="p">()([</span><span class="n">x3</span><span class="p">,</span> <span class="n">rb3</span><span class="p">])</span>
+        <span class="n">x3</span><span class="p">,</span> <span class="n">x3i</span> <span class="o">=</span> <span class="n">make_input_layer</span><span class="p">(</span><span class="n">x3</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;x3&#39;</span><span class="p">)</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_top</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">num_anchors_per_output</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">):</span>
+    <span class="n">filters_per_anchor</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_classes</span><span class="o">+</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">out_filters</span> <span class="o">=</span> <span class="n">num_anchors_per_output</span><span class="o">*</span><span class="n">filters_per_anchor</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">outputs</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">DarknetConv2D</span><span class="p">(</span>
+            <span class="n">filters</span><span class="o">=</span><span class="n">out_filters</span><span class="p">,</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;prediction_group_</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">concatenate</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_anchors_per_output</span><span class="p">):</span>
+            <span class="c1"># Below are txs, tys, twe, the, tys, and class probabilites</span>
+            <span class="n">startIdx</span> <span class="o">=</span> <span class="n">n</span><span class="o">*</span><span class="n">filters_per_anchor</span>
+            <span class="n">txsi</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">0</span>
+            <span class="n">tysi</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">twei</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="n">thei</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">3</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">4</span>
+            <span class="n">csi</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">5</span>
+            <span class="n">csj</span> <span class="o">=</span> <span class="n">csi</span> <span class="o">+</span> <span class="n">num_classes</span>
+
+            <span class="k">def</span> <span class="nf">apply_activation</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">layers</span><span class="o">.</span><span class="n">Concatenate</span><span class="p">()([</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">)(</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">txsi</span><span class="p">:</span><span class="n">txsi</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">)(</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tysi</span><span class="p">:</span><span class="n">tysi</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;exponential&#39;</span><span class="p">)(</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">twei</span><span class="p">:</span><span class="n">twei</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;exponential&#39;</span><span class="p">)(</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">thei</span><span class="p">:</span><span class="n">thei</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">)(</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">si</span><span class="p">:</span><span class="n">si</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="c1"># As per section 2.2 of the paper, we use independent</span>
+                    <span class="c1"># logits for each class, instead of softmax.</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">)(</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">csi</span><span class="p">:</span><span class="n">csj</span><span class="p">])</span>
+                <span class="p">])</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Lambda</span><span class="p">(</span><span class="n">apply_activation</span><span class="p">)(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">concatenate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Concatenate</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;anchor_group_</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)(</span><span class="n">concatenate</span><span class="p">)</span>
+        <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">anchors_for_shape</span><span class="p">(</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">anchor_groups</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the anchors for a given output shape and anchor</span>
+<span class="sd">    groups.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List of anchor coordinates. Each entry in the list is</span>
+<span class="sd">        of shape (steps_y, steps_x, len(seeds), 6). The entries</span>
+<span class="sd">        are the base x, y, width, height, horizontal stride, and</span>
+<span class="sd">        vertical stride, respectively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image_h</span><span class="p">,</span> <span class="n">image_w</span> <span class="o">=</span> <span class="n">input_shape</span>
+    <span class="n">anchors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">stride</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">anchor_groups</span><span class="p">,</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">8</span><span class="p">]):</span>
+        <span class="n">steps_y</span><span class="p">,</span> <span class="n">steps_x</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span> <span class="o">/</span> <span class="n">stride</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">input_shape</span><span class="p">]</span>
+        <span class="n">cx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">steps_x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">steps_x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">image_w</span> <span class="o">/</span> <span class="n">steps_x</span><span class="p">)</span>
+        <span class="n">cy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">steps_y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">steps_y</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">image_h</span> <span class="o">/</span> <span class="n">steps_y</span><span class="p">)</span>
+        <span class="n">xywhs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">steps_y</span><span class="p">,</span> <span class="n">steps_x</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">seeds</span><span class="p">),</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="n">pw</span> <span class="o">=</span> <span class="n">seeds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ph</span> <span class="o">=</span> <span class="n">seeds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">sx</span> <span class="o">=</span> <span class="n">image_w</span> <span class="o">/</span> <span class="n">steps_x</span>
+        <span class="n">sy</span> <span class="o">=</span> <span class="n">image_h</span> <span class="o">/</span> <span class="n">steps_y</span>
+        <span class="n">xywhs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cx</span>
+        <span class="n">xywhs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">cy</span>
+        <span class="n">xywhs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">pw</span>
+        <span class="n">xywhs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">ph</span>
+        <span class="n">xywhs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">sx</span>
+        <span class="n">xywhs</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">5</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">sy</span>
+        <span class="n">anchors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xywhs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">anchors</span>
+
+
+<span class="k">def</span> <span class="nf">make_loss</span><span class="p">(</span><span class="n">num_classes</span><span class="p">):</span>
+    <span class="n">num_features</span> <span class="o">=</span> <span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">num_classes</span>
+
+    <span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Loss function for YOLO. y_true and y_pred</span>
+<span class="sd">        have shape (batchSize, y_steps, x_steps, n_features). This</span>
+<span class="sd">        loss function is used for each output separately.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_anchor_seeds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="n">num_features</span><span class="p">)</span>
+        <span class="n">loss_objectness</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">loss_coords</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">loss_labels</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_anchor_seeds</span><span class="p">):</span>
+            <span class="n">startIdx</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="n">num_features</span>
+            <span class="n">coordsi</span> <span class="o">=</span> <span class="n">startIdx</span>
+            <span class="n">coordsj</span> <span class="o">=</span> <span class="n">coordsi</span> <span class="o">+</span> <span class="mi">4</span>
+            <span class="n">labelsi</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">5</span>
+            <span class="n">labelsj</span> <span class="o">=</span> <span class="n">labelsi</span> <span class="o">+</span> <span class="n">num_classes</span>
+            <span class="n">objectnessi</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="mi">4</span>
+
+            <span class="c1"># For object state, -1 for ignore, 0 for background, 1</span>
+            <span class="c1"># for object</span>
+            <span class="n">coords_true</span> <span class="o">=</span> <span class="n">y_true</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">coordsi</span><span class="p">:</span><span class="n">coordsj</span><span class="p">]</span>
+            <span class="n">labels_true</span> <span class="o">=</span> <span class="n">y_true</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">labelsi</span><span class="p">:</span><span class="n">labelsj</span><span class="p">]</span>
+            <span class="n">object_state_true</span> <span class="o">=</span> <span class="n">y_true</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">objectnessi</span><span class="p">]</span>
+
+            <span class="n">coords_pred</span> <span class="o">=</span> <span class="n">y_pred</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">coordsi</span><span class="p">:</span><span class="n">coordsj</span><span class="p">]</span>
+            <span class="n">labels_pred</span> <span class="o">=</span> <span class="n">y_pred</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">labelsi</span><span class="p">:</span><span class="n">labelsj</span><span class="p">]</span>
+            <span class="n">object_state_pred</span> <span class="o">=</span> <span class="n">y_pred</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">objectnessi</span><span class="p">]</span>
+
+            <span class="c1"># Calculate objectness loss, which applies to</span>
+            <span class="c1"># all non-ignore anchors</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">not_equal</span><span class="p">(</span><span class="n">object_state_true</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">true</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">object_state_true</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">object_state_pred</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">loss_objectness</span> <span class="o">+=</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">true</span> <span class="o">-</span> <span class="n">pred</span><span class="p">))</span>
+
+            <span class="c1"># Calculate coordinate loss which applies only</span>
+            <span class="c1"># to positive anchors</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">object_state_true</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">true</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">coords_true</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">coords_pred</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">loss_coords</span> <span class="o">+=</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">true</span> <span class="o">-</span> <span class="n">pred</span><span class="p">))</span>
+
+            <span class="c1"># Calculate classification loss, which applies</span>
+            <span class="c1"># only to positive anchors. Indices same as above.</span>
+            <span class="n">true</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">labels_true</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="n">K</span><span class="o">.</span><span class="n">tf</span><span class="o">.</span><span class="n">gather_nd</span><span class="p">(</span><span class="n">labels_pred</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">loss_labels</span> <span class="o">+=</span> <span class="n">K</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">true</span> <span class="o">-</span> <span class="n">pred</span><span class="p">))</span>
+
+        <span class="c1"># Calculate total loss</span>
+        <span class="k">return</span> <span class="n">loss_objectness</span> <span class="o">+</span> <span class="n">loss_coords</span> <span class="o">+</span> <span class="n">loss_labels</span>
+
+    <span class="k">return</span> <span class="n">loss</span>
+
+
+<span class="k">def</span> <span class="nf">convert_anchors</span><span class="p">(</span><span class="n">anchors_xywhs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert anchors from xc, yc, w, h to</span>
+<span class="sd">    x1, y1, x2, y2&quot;&quot;&quot;</span>
+    <span class="n">anchors_xyxy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+        <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">anchors_xywhs</span><span class="p">),</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">anchors_xyxy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchors_xywhs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">anchors_xywhs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">anchors_xyxy</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">anchors_xywhs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">anchors_xywhs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">anchors_xyxy</span>
+
+
+<div class="viewcode-block" id="YOLOv3"><a class="viewcode-back" href="../../../detectors/yolov3.html#mira.detectors.YOLOv3">[docs]</a><span class="k">class</span> <span class="nc">YOLOv3</span><span class="p">(</span><span class="n">Detector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A detector wrapping</span>
+<span class="sd">    `YOLOv3 &lt;https://pjreddie.com/media/files/papers/YOLOv3.pdf&gt;`_.</span>
+<span class="sd">    Most of the implementation is borrowed from</span>
+<span class="sd">    `keras-yolov3 &lt;https://github.com/qqwweee/keras-yolo3&gt;`_.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        annotation_config: The annotation configuration to use for detection</span>
+<span class="sd">        input_shape: Tuple of (height, width, n_channels)</span>
+<span class="sd">        size: One of `tiny` or `full`.</span>
+<span class="sd">        pretrained_backbone: Whether to use a pretrained backbone for the model</span>
+<span class="sd">        pretrained_top: Whether to use the pretrained full model (only</span>
+<span class="sd">            supported for where `annotation_config` is</span>
+<span class="sd">            `AnnotationConfiguration.COCO`)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        model: The base Keras model containing the weights for feature</span>
+<span class="sd">            extraction and bounding box regression / classification model.</span>
+<span class="sd">            You should use this model for loading and saving weights.</span>
+<span class="sd">        backbone: The backbone for the model (all layers except for final</span>
+<span class="sd">            classification and regression).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">annotation_config</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">COCO</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">input_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="n">size</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;tiny&#39;</span><span class="p">,</span>
+        <span class="n">pretrained_backbone</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">pretrained_top</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="n">pretrained_top</span> <span class="ow">or</span>
+            <span class="n">annotation_config</span> <span class="o">==</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">COCO</span>
+        <span class="p">),</span> <span class="p">(</span>
+            <span class="s1">&#39;pretrained_top requires annotation configuration &#39;</span>
+            <span class="s1">&#39;to be AnnotationConfiguration.COCO&#39;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">anchor_groups</span> <span class="o">=</span> <span class="n">YOLO_ANCHOR_GROUPS</span><span class="p">[</span><span class="n">size</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">=</span> <span class="n">annotation_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span> <span class="o">=</span> <span class="n">get_backbone</span><span class="p">(</span>
+            <span class="n">inputs</span><span class="o">=</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">input_shape</span><span class="p">),</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">get_top</span><span class="p">(</span>
+            <span class="n">backbone</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">,</span>
+            <span class="n">num_classes</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">),</span>
+            <span class="n">num_anchors_per_output</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">pretrained_backbone</span> <span class="ow">and</span> <span class="n">pretrained_top</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;pretrained_top makes pretrained_backbone &#39;</span>
+                <span class="s1">&#39;redundant. Disabling pretrained_backbone.&#39;</span>
+            <span class="p">)</span>
+            <span class="n">pretrained_backbone</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">pretrained_backbone</span> <span class="ow">or</span> <span class="n">pretrained_top</span><span class="p">:</span>
+            <span class="n">weights_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">get_datadir_base</span><span class="p">(),</span>
+                <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;yolov3&#39;</span><span class="p">,</span>
+                <span class="n">YOLO_FILE_CONFIG</span><span class="p">[</span><span class="n">size</span><span class="p">][</span>
+                    <span class="s1">&#39;converted_notop_fname&#39;</span> <span class="k">if</span> <span class="n">pretrained_backbone</span>
+                    <span class="k">else</span> <span class="s1">&#39;converted_fname&#39;</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">weights_path</span><span class="p">):</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Could not find weights file. Attempting to build. &quot;</span>
+                    <span class="s2">&quot;If error occurs, please execute &quot;</span>
+                    <span class="s2">&quot;YOLOv3.make_pretrained_weight_files(sizes=[&#39;</span><span class="si">{0}</span><span class="s2">&#39;])&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>  <span class="c1"># noqa: E501</span>
+                        <span class="n">size</span>
+                    <span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; separately first.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">YOLOv3</span><span class="o">.</span><span class="n">make_pretrained_weight_files</span><span class="p">(</span><span class="n">sizes</span><span class="o">=</span><span class="p">[</span><span class="n">size</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">pretrained_backbone</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">weights_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pretrained_top</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">weights_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">invert_targets</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">core</span><span class="o">.</span><span class="n">Image</span><span class="p">],</span>
+        <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.5</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">:</span>
+        <span class="n">num_features</span> <span class="o">=</span> <span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">)</span>
+        <span class="n">output_anchors</span> <span class="o">=</span> <span class="n">anchors_for_shape</span><span class="p">(</span>
+            <span class="n">input_shape</span><span class="o">=</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">anchor_groups</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_groups</span>
+        <span class="p">)</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">processed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">output</span><span class="p">,</span> <span class="n">anchors</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">output_anchors</span><span class="p">):</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_features</span><span class="p">))</span>
+            <span class="n">anchors</span> <span class="o">=</span> <span class="n">anchors</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+            <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">pw</span><span class="p">,</span> <span class="n">ph</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="p">[</span><span class="n">anchors</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)]</span>
+            <span class="n">txs</span><span class="p">,</span> <span class="n">tys</span><span class="p">,</span> <span class="n">twe</span><span class="p">,</span> <span class="n">the</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="n">output</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+            <span class="n">cc</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">5</span><span class="p">:]</span>
+            <span class="n">bx</span> <span class="o">=</span> <span class="n">txs</span><span class="o">*</span><span class="n">sx</span> <span class="o">+</span> <span class="n">cx</span>
+            <span class="n">by</span> <span class="o">=</span> <span class="n">tys</span><span class="o">*</span><span class="n">sy</span> <span class="o">+</span> <span class="n">cy</span>
+            <span class="n">bw</span> <span class="o">=</span> <span class="n">pw</span><span class="o">*</span><span class="n">twe</span>
+            <span class="n">bh</span> <span class="o">=</span> <span class="n">ph</span><span class="o">*</span><span class="n">the</span>
+            <span class="n">processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">bx</span><span class="p">,</span> <span class="n">by</span><span class="p">,</span> <span class="n">bw</span><span class="p">,</span> <span class="n">bh</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">cc</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">box_groups</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">processed</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">scenes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">boxes</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">box_groups</span><span class="p">,</span> <span class="n">images</span><span class="p">):</span>
+            <span class="n">boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">]</span>
+            <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">xi</span><span class="p">,</span> <span class="n">yi</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span>
+                <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">:]</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
+                        <span class="n">selection</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">Selection</span><span class="p">(</span>
+                            <span class="n">points</span><span class="o">=</span><span class="p">[</span>
+                                <span class="p">(</span><span class="n">xi</span><span class="o">-</span><span class="n">w</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">yi</span><span class="o">-</span><span class="n">h</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span>
+                                <span class="p">(</span><span class="n">xi</span><span class="o">+</span><span class="n">w</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">yi</span><span class="o">+</span><span class="n">h</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span>
+                            <span class="p">]</span>
+                        <span class="p">),</span>
+                        <span class="n">category</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">c</span><span class="p">],</span>
+                        <span class="n">score</span><span class="o">=</span><span class="n">s</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Scene</span><span class="p">(</span>
+                <span class="n">annotation_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span>
+                <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
+                <span class="n">image</span><span class="o">=</span><span class="n">image</span>
+            <span class="p">))</span>
+        <span class="k">return</span> <span class="n">scenes</span>
+
+    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Each anchor group has four times as many anchors as the prior one</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_groups</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">4</span><span class="o">**</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="o">**</span><span class="n">i</span> <span class="o">/</span> <span class="n">total</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+            <span class="n">loss</span><span class="o">=</span><span class="n">make_loss</span><span class="p">(</span>
+                <span class="n">num_classes</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">loss_weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">compute_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">core</span><span class="o">.</span><span class="n">Image</span><span class="p">]):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">([</span><span class="n">image</span><span class="o">.</span><span class="n">scaled</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">compute_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Preprocess true boxes to training input format</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            collection: The collection of scenes for which to build output</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            y_true: list of array, shape like yolo_outputs, xywh are relative</span>
+<span class="sd">                values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ignore_overlap</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">anchors</span> <span class="o">=</span> <span class="n">anchors_for_shape</span><span class="p">(</span>
+            <span class="n">input_shape</span><span class="o">=</span><span class="n">collection</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">anchor_groups</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_groups</span>
+        <span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">]</span>
+        <span class="n">anchors_xywh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">anchors</span><span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">anchors_xyxy</span> <span class="o">=</span> <span class="n">convert_anchors</span><span class="p">(</span><span class="n">anchors_xywh</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">collection</span><span class="o">.</span><span class="n">scenes</span><span class="p">:</span>
+            <span class="n">annotations</span> <span class="o">=</span> <span class="n">scene</span><span class="o">.</span><span class="n">bboxes</span><span class="p">()</span>
+            <span class="n">y_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">anchors_xyxy</span><span class="p">),</span> <span class="mi">4</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">overlaps</span> <span class="o">=</span> <span class="n">compute_overlap</span><span class="p">(</span>
+                    <span class="n">boxes</span><span class="o">=</span><span class="n">anchors_xyxy</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
+                    <span class="n">query_boxes</span><span class="o">=</span><span class="n">annotations</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Set objectness targets</span>
+                <span class="c1"># The objectness score should be:</span>
+                <span class="c1">#     1, if the bounding box prior overlaps a ground</span>
+                <span class="c1">#        truth object by more than any other bounding box prior</span>
+                <span class="c1">#        and overlaps by more than threshold</span>
+                <span class="c1">#     0, if the bounding box does not overlap any ground truth</span>
+                <span class="c1">#        object by more than threshold</span>
+                <span class="c1">#     ignored (-1), if the bounding box overlaps a ground truth</span>
+                <span class="c1">#        object by more than threshold, but is not the box of</span>
+                <span class="c1">#        maximum overlap</span>
+                <span class="n">ignored_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">overlaps</span> <span class="o">&gt;=</span> <span class="n">ignore_overlap</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">positive_indices</span> <span class="o">=</span> <span class="n">overlaps</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">ignored_index</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">background_index</span> <span class="o">=</span> <span class="o">~</span><span class="n">ignored_index</span>
+                <span class="n">background_index</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">ignored_index</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">ignored_index</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">background_index</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">background_index</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="c1"># Set class targets</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">5</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">5</span><span class="o">+</span><span class="n">annotations</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
+
+                <span class="c1"># Set x, y, w, h targets, or more formally,</span>
+                <span class="c1"># the txs, tys, twe, and the targets (see formulas</span>
+                <span class="c1"># for additional details).</span>
+                <span class="n">bw</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">annotations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">bh</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">annotations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">bx</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">bw</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">by</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">bh</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">cx</span> <span class="o">=</span> <span class="n">anchors_xywh</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">cy</span> <span class="o">=</span> <span class="n">anchors_xywh</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">pw</span> <span class="o">=</span> <span class="n">anchors_xywh</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+                <span class="n">ph</span> <span class="o">=</span> <span class="n">anchors_xywh</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+                <span class="n">sx</span> <span class="o">=</span> <span class="n">anchors_xywh</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+                <span class="n">sy</span> <span class="o">=</span> <span class="n">anchors_xywh</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">bx</span> <span class="o">-</span> <span class="n">cx</span><span class="p">)</span> <span class="o">/</span> <span class="n">sx</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">by</span> <span class="o">-</span> <span class="n">cy</span><span class="p">)</span> <span class="o">/</span> <span class="n">sy</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">bw</span> <span class="o">/</span> <span class="n">pw</span>
+                <span class="n">y_true</span><span class="p">[</span><span class="n">positive_indices</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">bh</span> <span class="o">/</span> <span class="n">ph</span>
+
+            <span class="c1"># The loss function should:</span>
+            <span class="c1"># - Penalize &#39;positive&#39; (1) boxes for coordinate, objectness,</span>
+            <span class="c1">#       and class predictions</span>
+            <span class="c1"># - Penalize &#39;background&#39; (0) boxes for objectness predictions</span>
+            <span class="c1"># - Penalize &#39;ignore&#39; (-1) boxes for nothing</span>
+            <span class="n">anchorIdx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">anchors</span><span class="p">):</span>
+                <span class="n">n_anchors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+                <span class="n">selected</span> <span class="o">=</span> <span class="n">y_true</span><span class="p">[</span><span class="n">anchorIdx</span><span class="p">:</span><span class="n">anchorIdx</span><span class="o">+</span><span class="n">n_anchors</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                    <span class="n">group</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">group</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="p">)</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">selected</span>
+                <span class="p">)</span>
+                <span class="n">anchorIdx</span> <span class="o">+=</span> <span class="n">n_anchors</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">make_pretrained_weight_files</span><span class="p">(</span><span class="n">sizes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;tiny&#39;</span><span class="p">,</span> <span class="s1">&#39;full&#39;</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">YOLO_FILE_CONFIG</span><span class="p">[</span><span class="n">size</span><span class="p">]</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Getting pretrained weights&#39;</span><span class="p">)</span>
+            <span class="n">converted_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">get_datadir_base</span><span class="p">(),</span>
+                <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;yolov3&#39;</span><span class="p">,</span>
+                <span class="n">config</span><span class="p">[</span><span class="s1">&#39;converted_fname&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">converted_path_notop</span> <span class="o">=</span> <span class="n">converted_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                <span class="n">config</span><span class="p">[</span><span class="s1">&#39;converted_fname&#39;</span><span class="p">],</span>
+                <span class="n">config</span><span class="p">[</span><span class="s1">&#39;converted_notop_fname&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">converted_path</span><span class="p">):</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Converting darknet weights to keras.&#39;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Getting darknet model weights file.&#39;</span><span class="p">)</span>
+                <span class="n">weights_fpath</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span>
+                    <span class="n">fname</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;weights_fname&#39;</span><span class="p">],</span>
+                    <span class="n">origin</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;weights_url&#39;</span><span class="p">],</span>
+                    <span class="n">file_hash</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;weights_hash&#39;</span><span class="p">],</span>
+                    <span class="n">cache_subdir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;yolov3&#39;</span><span class="p">),</span>
+                    <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span>
+                <span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Getting model configuration&#39;</span><span class="p">)</span>
+                <span class="n">cfg_path</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span>
+                    <span class="n">fname</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;cfg_fname&#39;</span><span class="p">],</span>
+                    <span class="n">origin</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;cfg_url&#39;</span><span class="p">],</span>
+                    <span class="n">file_hash</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;cfg_hash&#39;</span><span class="p">],</span>
+                    <span class="n">cache_subdir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;yolov3&#39;</span><span class="p">),</span>
+                    <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span>
+                <span class="p">)</span>
+                <span class="n">convert_darknet_weights</span><span class="p">(</span>
+                    <span class="n">config_path</span><span class="o">=</span><span class="n">cfg_path</span><span class="p">,</span>
+                    <span class="n">weights_path</span><span class="o">=</span><span class="n">weights_fpath</span><span class="p">,</span>
+                    <span class="n">output_path</span><span class="o">=</span><span class="n">converted_path</span><span class="p">,</span>
+                    <span class="n">weights_only</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Found existing converted weights.&#39;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Creating notop and complete weight files.&#39;</span><span class="p">)</span>
+            <span class="n">backbone</span> <span class="o">=</span> <span class="n">get_backbone</span><span class="p">(</span>
+                <span class="n">inputs</span><span class="o">=</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">size</span>
+            <span class="p">)</span>
+            <span class="n">base_model</span> <span class="o">=</span> <span class="n">get_top</span><span class="p">(</span>
+                <span class="n">backbone</span><span class="o">=</span><span class="n">backbone</span><span class="p">,</span>
+                <span class="n">num_anchors_per_output</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">YOLO_ANCHOR_GROUPS</span><span class="p">[</span><span class="n">size</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+                <span class="n">num_classes</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">COCO</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">base_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">converted_path</span><span class="p">)</span>
+            <span class="n">backbone</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="n">converted_path_notop</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Fausto Morales
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

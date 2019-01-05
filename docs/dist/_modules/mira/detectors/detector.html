@@ -1,0 +1,438 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mira.detectors.detector &mdash; mira  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> mira
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#browsing-image-data">Browsing image data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#augmentation">Augmentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#basic-object-detection">Basic object detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#transfer-learning">Transfer Learning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/coco2014.html">Training on COCO 2014</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/textdetection.html">Training a text detection model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../core/index.html">Core Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/scenes.html">Scenes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/annotations.html">Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/selections.html">Selections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/images.html">Images</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../datasets/index.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../datasets/existing.html">Load existing datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../datasets/load.html">Load new datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detectors/index.html">Detectors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/yolov3.html">YOLO v3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/retinanet.html">RetinaNet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/east.html">EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mira</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mira.detectors.detector</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mira.detectors.detector</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">imgaug</span> <span class="k">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">metrics</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">SceneCollection</span><span class="p">,</span>
+    <span class="n">Annotation</span><span class="p">,</span>
+    <span class="n">Image</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="Detector"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector">[docs]</a><span class="k">class</span> <span class="nc">Detector</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<div class="viewcode-block" id="Detector.detect"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.detect">[docs]</a>    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.5</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Run detection for a given image.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image: The image to run detection on</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of annotations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+                <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
+                <span class="n">height</span><span class="o">=</span><span class="n">height</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_inputs</span><span class="p">([</span><span class="n">image</span><span class="p">])</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="n">annotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invert_targets</span><span class="p">(</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">images</span><span class="o">=</span><span class="p">[</span><span class="n">image</span><span class="p">],</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">annotations</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Detector.compute_inputs"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.compute_inputs">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">compute_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Image</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Convert images into suitable model inputs. *You</span>
+<span class="sd">        usually should not need this method*. For training,</span>
+<span class="sd">        use `detector.train()`. For detection, use</span>
+<span class="sd">        `detector.detect()`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            images: The images to convert</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The input to the model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Detector.compute_targets"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.compute_targets">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">compute_targets</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Compute the expected outputs for a model. *You</span>
+<span class="sd">        usually should not need this method*. For training,</span>
+<span class="sd">        use `detector.train()`. For detection, use</span>
+<span class="sd">        `detector.detect()`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            collection: The scene collection for which the</span>
+<span class="sd">                outputs should be calculated.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The output(s) as a list of numpy arrays</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Detector.freeze_backbone"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.freeze_backbone">[docs]</a>    <span class="k">def</span> <span class="nf">freeze_backbone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Freeze the body of the model, leaving the final classification and</span>
+<span class="sd">        regression layer as trainable.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="n">l</span><span class="o">.</span><span class="n">trainable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Detector.unfreeze_backbone"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.unfreeze_backbone">[docs]</a>    <span class="k">def</span> <span class="nf">unfreeze_backbone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unfreeze the body of the model, making all layers trainable.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">trainable</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">compute_Xy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_inputs</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">images</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_targets</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">batch_generator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+        <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="n">n</span><span class="o">=</span><span class="n">batch_size</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span>
+                <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+                <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_Xy</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Detector.train"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">training</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+        <span class="n">validation</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run training job. All additional keyword arguments</span>
+<span class="sd">        passed to Keras&#39; `fit_generator`. Note that, at a minimum,</span>
+<span class="sd">        you must provide the `epochs` and `steps_per_epoch` arguments.</span>
+<span class="sd">        If validation data is provided, you will also need to provide a</span>
+<span class="sd">        `validation_steps` argument.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            training: The collection of training images</span>
+<span class="sd">            validation: The collection of validation images</span>
+<span class="sd">            batch_size: The batch size to use for training</span>
+<span class="sd">            augmenter: The augmenter for generating samples</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">training</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span> \
+            <span class="s1">&#39;The training set configuration clashes with detector&#39;</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">validation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">validation</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span>
+        <span class="p">),</span> \
+            <span class="s1">&#39;The validation set configuration clashes with detector&#39;</span>
+        <span class="k">assert</span> <span class="n">training</span><span class="o">.</span><span class="n">consistent</span><span class="p">,</span> \
+            <span class="s1">&#39;The training set has inconsistent annotation configuration&#39;</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">validation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>
+            <span class="n">validation</span><span class="o">.</span><span class="n">consistent</span>
+        <span class="p">),</span> \
+            <span class="s1">&#39;The validation set has inconsistent annotation configuration&#39;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;training_model&#39;</span><span class="p">):</span>
+            <span class="n">training_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_model</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">training_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">if</span> <span class="n">train_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">train_shape</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">s</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">train_shape</span><span class="p">),</span> \
+                <span class="s1">&#39;train_shape must be provided for this model.&#39;</span>
+        <span class="n">training_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_generator</span><span class="p">(</span>
+            <span class="n">collection</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">,</span>
+            <span class="n">train_shape</span><span class="o">=</span><span class="n">train_shape</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">validation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">history</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span>
+                <span class="n">generator</span><span class="o">=</span><span class="n">training_generator</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">validation</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+                <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">history</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span>
+                <span class="n">generator</span><span class="o">=</span><span class="n">training_generator</span><span class="p">,</span>
+                <span class="n">validation_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_Xy</span><span class="p">(</span><span class="n">validation</span><span class="p">),</span>
+                <span class="o">**</span><span class="n">kwargs</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">history</span></div>
+
+<div class="viewcode-block" id="Detector.mAP"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.mAP">[docs]</a>    <span class="k">def</span> <span class="nf">mAP</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the mAP metric for a given collection</span>
+<span class="sd">        of ground truth scenes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            collection: The collection to evaluate</span>
+<span class="sd">            iou_threshold: The IoU threshold required for</span>
+<span class="sd">                a match</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            mAP score</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+            <span class="n">scenes</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                    <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">metrics</span><span class="o">.</span><span class="n">mAP</span><span class="p">(</span>
+            <span class="n">true_collection</span><span class="o">=</span><span class="n">collection</span><span class="p">,</span>
+            <span class="n">pred_collection</span><span class="o">=</span><span class="n">pred</span><span class="p">,</span>
+            <span class="n">iou_threshold</span><span class="o">=</span><span class="n">iou_threshold</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Fausto Morales
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

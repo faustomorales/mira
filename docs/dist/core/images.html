@@ -1,0 +1,454 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Images &mdash; mira  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Datasets" href="../datasets/index.html" />
+    <link rel="prev" title="Selections" href="selections.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> mira
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#browsing-image-data">Browsing image data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#augmentation">Augmentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#basic-object-detection">Basic object detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#transfer-learning">Transfer Learning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/coco2014.html">Training on COCO 2014</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/textdetection.html">Training a text detection model</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Core Functions</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="scenes.html">Scenes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="annotations.html">Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selections.html">Selections</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Images</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets/existing.html">Load existing datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets/load.html">Load new datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../detectors/index.html">Detectors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/yolov3.html">YOLO v3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/retinanet.html">RetinaNet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/east.html">EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics.html">Metrics</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mira</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Core Functions</a> &raquo;</li>
+        
+      <li>Images</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/core/images.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="images">
+<h1>Images<a class="headerlink" href="#images" title="Permalink to this headline">¶</a></h1>
+<p><cite>mira</cite> provides a package-specific <cite>Image</cite> class that provides some simple convenience functions for handling images.</p>
+<dl class="class">
+<dt id="mira.core.Image">
+<em class="property">class </em><code class="descclassname">mira.core.</code><code class="descname">Image</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides convenience functions on top of <cite>np.ndarray</cite>
+for image handling.</p>
+<dl class="method">
+<dt id="mira.core.Image.buffer">
+<code class="descname">buffer</code><span class="sig-paren">(</span><em>extension='.jpg'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.buffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the image to a BytesIO object with encoding
+for the given extension.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>extension</strong> – The extension of the target file format,
+such as ‘.jpg’</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The encoded file</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">BytesIO</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.Image.channels">
+<code class="descname">channels</code><a class="headerlink" href="#mira.core.Image.channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of channels in the image</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Image.color">
+<code class="descname">color</code><span class="sig-paren">(</span><em>channels=3</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert to color image if it is not already.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Image.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>width=None</em>, <em>height=None</em>, <em>cval=255</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a new image, fit to the specified size.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>width</strong> – The new width</li>
+<li><strong>height</strong> – The new height</li>
+<li><strong>cval</strong> – The constant value to use to fill the remaining areas of
+the image</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The new image and the scaling that was applied.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.Image.height">
+<code class="descname">height</code><a class="headerlink" href="#mira.core.Image.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>The height of the image</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="mira.core.Image.new">
+<em class="property">static </em><code class="descname">new</code><span class="sig-paren">(</span><em>width</em>, <em>height</em>, <em>channels</em>, <em>cval=255</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.new"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.new" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a new blank image with given dimensions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>width</strong> – The width of the blank image</li>
+<li><strong>height</strong> – The height of the blank image</li>
+<li><strong>channels</strong> – The number of channels. If 0, the image
+will only have two dimensions (y and x).</li>
+<li><strong>cval</strong> – The value to set all pixels to (does not apply to the
+alpha channel)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The blank image</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Image.rbswap">
+<code class="descname">rbswap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.rbswap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.rbswap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Swap the red and blue channels for reading and writing
+images.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="mira.core.Image.read">
+<em class="property">static </em><code class="descname">read</code><span class="sig-paren">(</span><em>filepath_or_buffer</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a file into an image object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filepath_or_buffer</strong> – The path to the file or any object
+with a <cite>read</cite> method (such as <cite>io.BytesIO</cite>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Image.resize">
+<code class="descname">resize</code><span class="sig-paren">(</span><em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.resize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain resized version of image with a given scale</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scale</strong> – The scale by which to resize the image</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The scaled image</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Image.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>filepath_or_buffer=typing.Union[str, _io.BytesIO], extension='.jpg'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the image</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filepath_or_buffer</strong> – The file or buffer to
+which to save the image. If buffer,
+format must be provided</li>
+<li><strong>esxtension</strong> – The extension for the format to use
+if writing to buffer</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Image.scaled">
+<code class="descname">scaled</code><span class="sig-paren">(</span><em>minimum=-1</em>, <em>maximum=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.scaled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.scaled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a scaled version of the image with values between
+minimum and maximum.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>minimum</strong> – The minimum value</li>
+<li><strong>maximum</strong> – The maximum value</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An array of same shape as image but of dtype <cite>np.float32</cite> with
+values scaled appropriately.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Image.show">
+<code class="descname">show</code><span class="sig-paren">(</span><em>ax=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/image.html#Image.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Image.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show an image</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ax</strong> – Axis on which to show the image</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An axes object</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.Image.width">
+<code class="descname">width</code><a class="headerlink" href="#mira.core.Image.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>The width of the image</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../datasets/index.html" class="btn btn-neutral float-right" title="Datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="selections.html" class="btn btn-neutral" title="Selections" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Fausto Morales
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

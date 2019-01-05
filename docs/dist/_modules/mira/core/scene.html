@@ -1,0 +1,704 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mira.core.scene &mdash; mira  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> mira
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#browsing-image-data">Browsing image data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#augmentation">Augmentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#basic-object-detection">Basic object detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#transfer-learning">Transfer Learning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/coco2014.html">Training on COCO 2014</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/textdetection.html">Training a text detection model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../core/index.html">Core Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/scenes.html">Scenes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/annotations.html">Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/selections.html">Selections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../core/images.html">Images</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../datasets/index.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../datasets/existing.html">Load existing datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../datasets/load.html">Load new datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detectors/index.html">Detectors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/yolov3.html">YOLO v3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/retinanet.html">RetinaNet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/east.html">EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mira</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mira.core.scene</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mira.core.scene</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">io</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
+<span class="kn">from</span> <span class="nn">imgaug</span> <span class="k">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="kn">import</span> <span class="nn">imgaug</span> <span class="k">as</span> <span class="nn">ia</span>
+<span class="kn">import</span> <span class="nn">validators</span>
+
+<span class="kn">from</span> <span class="nn">.annotation</span> <span class="k">import</span> <span class="n">AnnotationConfiguration</span><span class="p">,</span> <span class="n">Annotation</span>
+<span class="kn">from</span> <span class="nn">.image</span> <span class="k">import</span> <span class="n">Image</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Scene"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene">[docs]</a><span class="k">class</span> <span class="nc">Scene</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A single annotated image.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        annotation_config: The configuration for annotations for the</span>
+<span class="sd">            image.</span>
+<span class="sd">        annotations: The list of annotations.</span>
+<span class="sd">        image: The image that was annotated. Can be lazy-loaded by passing</span>
+<span class="sd">            a string filepath.</span>
+<span class="sd">        cache: Defines caching behavior for the image. If `True`, image is</span>
+<span class="sd">            loaded into memory the first time that the image is requested.</span>
+<span class="sd">            If `False`, image is loaded from the file path or URL whenever</span>
+<span class="sd">            the image is requested.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="p">,</span>
+        <span class="n">annotations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">],</span>
+        <span class="n">image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Image</span><span class="p">],</span> \
+            <span class="s1">&#39;Image must be string or Image, not &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_image</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span> <span class="o">=</span> <span class="n">annotations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_annotation_config</span> <span class="o">=</span> <span class="n">annotation_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">cache</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">image</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;The image that is being annotated&quot;&quot;&quot;</span>
+        <span class="c1"># Check to see if we have an actual image</span>
+        <span class="c1"># or just a string</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span>
+
+        <span class="c1"># Check the cache first if image is a URL</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">validators</span><span class="o">.</span><span class="n">url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span> <span class="ow">and</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+
+        <span class="c1"># Load the image</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Reading from &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">)</span>
+
+        <span class="c1"># Check how to handle caching the image</span>
+        <span class="c1"># for future reads</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot handle cache parameter: </span><span class="si">{0}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">image</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">annotation_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The annotation configuration&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation_config</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Get the list of annotations&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span>
+
+<div class="viewcode-block" id="Scene.assign"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.assign">[docs]</a>    <span class="k">def</span> <span class="nf">assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Scene&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get a new scene with only the supplied</span>
+<span class="sd">        keyword arguments changed.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;annotation_config&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="c1"># We need to change all the categories for annotations</span>
+            <span class="c1"># to match the new annotation configuration.</span>
+            <span class="n">annotations</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;annotations&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">)</span>
+            <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;annotation_config&#39;</span><span class="p">]</span>
+            <span class="n">revised</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">ann</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">annotations</span>
+            <span class="p">]</span>
+            <span class="n">revised</span> <span class="o">=</span> <span class="p">[</span><span class="n">ann</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">revised</span> <span class="k">if</span> <span class="n">ann</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">removed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">revised</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s1">&#39;Removed </span><span class="si">{0}</span><span class="s1"> annotations when changing &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">removed</span><span class="p">)</span> <span class="o">+</span>
+                <span class="s1">&#39;annotation configuration.&#39;</span>
+            <span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;annotations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">revised</span>
+        <span class="c1"># We use the _image instead of image to avoid triggering an</span>
+        <span class="c1"># unnecessary read of the actual image.</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;annotation_config&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span>
+            <span class="s1">&#39;annotations&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">,</span>
+            <span class="s1">&#39;image&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image</span><span class="p">,</span>
+            <span class="s1">&#39;cache&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span>
+        <span class="p">}</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">Scene</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scene.show"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.show">[docs]</a>    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">mpl</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Show an annotated version of the image. All arguments</span>
+<span class="sd">        passed to `Image.show()`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scene.scores"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.scores">[docs]</a>    <span class="k">def</span> <span class="nf">scores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtain an array containing the confidence</span>
+<span class="sd">        score for each annotation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scene.bboxes"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.bboxes">[docs]</a>    <span class="k">def</span> <span class="nf">bboxes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtain an array of shape (N, 5) where the columns are</span>
+<span class="sd">        x1, y1, x2, y2, class_index where class_index is determined</span>
+<span class="sd">        from the annotation configuration.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">bbox</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">category</span><span class="p">)]</span>  <span class="c1"># noqa: E501</span>
+                <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scene.fit"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">width</span><span class="p">,</span>
+        <span class="n">height</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtain a new scene fitted to the given width and height.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            width: The new width</span>
+<span class="sd">            height: The new height</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The new scene and the scale</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
+        <span class="n">annotations</span> <span class="o">=</span> <span class="p">[</span><span class="n">ann</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span> <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">),</span> <span class="n">scale</span></div>
+
+<div class="viewcode-block" id="Scene.annotated"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.annotated">[docs]</a>    <span class="k">def</span> <span class="nf">annotated</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dpi</span><span class="o">=</span><span class="mi">72</span><span class="p">,</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="s1">&#39;x-large&#39;</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Show annotations on the image itself.&quot;&quot;&quot;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ioff</span><span class="p">()</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+        <span class="n">img_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img_raw</span>
+        <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">ann</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">labels</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">:</span>
+                <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">ann</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">bbox</span><span class="p">()</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+                    <span class="n">s</span><span class="o">=</span><span class="n">ann</span><span class="o">.</span><span class="n">category</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span>
+                    <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+                    <span class="n">backgroundcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+                <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">img_raw</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">img_raw</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span>
+            <span class="n">raw</span><span class="p">,</span>
+            <span class="n">dpi</span><span class="o">=</span><span class="n">dpi</span><span class="p">,</span>
+            <span class="n">frameon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">pad_inches</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">transparent</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span>
+        <span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ion</span><span class="p">()</span>
+        <span class="n">raw</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">raw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">img</span></div>
+
+<div class="viewcode-block" id="Scene.resize"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.resize">[docs]</a>    <span class="k">def</span> <span class="nf">resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Scene&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Obtain a resized version of the scene.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scale: The scale for the new scene.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+            <span class="n">image</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">scale</span><span class="p">),</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="p">[</span><span class="n">ann</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Scene.augment"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.Scene.augment">[docs]</a>    <span class="k">def</span> <span class="nf">augment</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.25</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Scene&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Obtain an augmented version of the scene using the given augmenter.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The augmented scene</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">augmenter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="n">aug</span> <span class="o">=</span> <span class="n">augmenter</span><span class="o">.</span><span class="n">to_deterministic</span><span class="p">()</span>
+        <span class="n">keypoints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">keypoints_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ann</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">):</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">ann</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">keypoints</span><span class="p">()</span>
+            <span class="n">startIdx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">keypoints</span><span class="p">)</span>
+            <span class="n">endIdx</span> <span class="o">=</span> <span class="n">startIdx</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+            <span class="n">keypoints_map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">startIdx</span><span class="p">,</span> <span class="n">endIdx</span><span class="p">)</span>
+            <span class="n">keypoints</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        <span class="n">keypoints</span> <span class="o">=</span> <span class="n">ia</span><span class="o">.</span><span class="n">KeypointsOnImage</span><span class="p">(</span><span class="n">keypoints</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">aug</span><span class="o">.</span><span class="n">augment_images</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span>
+        <span class="n">keypoints</span> <span class="o">=</span> <span class="n">aug</span><span class="o">.</span><span class="n">augment_keypoints</span><span class="p">([</span><span class="n">keypoints</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keypoints</span>
+        <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ann</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotations</span><span class="p">):</span>
+            <span class="n">startIdx</span><span class="p">,</span> <span class="n">endIdx</span> <span class="o">=</span> <span class="n">keypoints_map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">keypoints</span><span class="p">[</span><span class="n">startIdx</span><span class="p">:</span><span class="n">endIdx</span><span class="p">]</span>
+            <span class="n">selection</span> <span class="o">=</span> <span class="n">ann</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">assign_keypoints</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+            <span class="n">area</span> <span class="o">=</span> <span class="n">selection</span><span class="o">.</span><span class="n">area</span><span class="p">()</span>
+            <span class="n">selection</span> <span class="o">=</span> <span class="n">selection</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span>
+                <span class="n">width</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">height</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">area</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">selection</span><span class="o">.</span><span class="n">area</span><span class="p">()</span> <span class="o">/</span> <span class="n">area</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">ann</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+                    <span class="n">selection</span><span class="o">=</span><span class="n">selection</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+            <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
+            <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="SceneCollection"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.SceneCollection">[docs]</a><span class="k">class</span> <span class="nc">SceneCollection</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A collection of scenes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        annotation_config: The configuration that should be used for all</span>
+<span class="sd">            underlying scenes.</span>
+<span class="sd">        scenes: The list of scenes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">scenes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Scene</span><span class="p">],</span>
+        <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">scenes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> \
+            <span class="s1">&#39;A scene collection must have at least one scene&#39;</span>
+        <span class="k">if</span> <span class="n">annotation_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">scenes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">annotation_config</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scenes</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">!=</span> <span class="n">annotation_config</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Scene </span><span class="si">{0}</span><span class="s1"> of </span><span class="si">{1}</span><span class="s1"> has inconsistent configuration.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">scenes</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_annotation_config</span> <span class="o">=</span> <span class="n">annotation_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scenes</span> <span class="o">=</span> <span class="n">scenes</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scenes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scenes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The list of scenes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scenes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">annotation_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The annotation configuration&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_annotation_config</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Specifies whether all scenes in the collection are</span>
+<span class="sd">        of the same size. Note: This will trigger an image load.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>  <span class="c1"># noqa: E501</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">consistent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Specifies whether all scenes have the same annotation</span>
+<span class="sd">        configuration.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">images</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">image</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">]</span>
+
+<div class="viewcode-block" id="SceneCollection.augment"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.SceneCollection.augment">[docs]</a>    <span class="k">def</span> <span class="nf">augment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtained an augmented version of the given collection.</span>
+<span class="sd">        All arguments passed to `Scene.augment`&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+            <span class="n">scenes</span><span class="o">=</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SceneCollection.train_test_split"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.SceneCollection.train_test_split">[docs]</a>    <span class="k">def</span> <span class="nf">train_test_split</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s1">&#39;SceneCollection&#39;</span><span class="p">,</span> <span class="s1">&#39;SceneCollection&#39;</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Obtain new scene collections, split into train</span>
+<span class="sd">        and test. All arguments passed to</span>
+<span class="sd">        `sklearn.model_selection.train_test_split</span>
+<span class="sd">        &lt;https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html&gt;`_.</span>
+
+<span class="sd">        For example, to get two collections, one</span>
+<span class="sd">        containing 70% of the data and the other containing</span>
+<span class="sd">        30%, ::</span>
+
+<span class="sd">            training, testing = collection.train_test_split(</span>
+<span class="sd">                train_size=0.7, test_size=0.3</span>
+<span class="sd">            )</span>
+
+<span class="sd">        You can also use the `stratify` argument to ensure an even split</span>
+<span class="sd">        between different kinds of scenes. For example, to split</span>
+<span class="sd">        scenes containing at least 3 annotations proportionally, ::</span>
+
+<span class="sd">            training, testing = collection.train_test_split(</span>
+<span class="sd">                train_size=0.7, test_size=0.3,</span>
+<span class="sd">                stratify=[len(s.annotations) &gt;= 3 for s in collection]</span>
+<span class="sd">            )</span>
+
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A train and test scene collection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">train</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="n">train</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="n">test</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SceneCollection.assign"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.SceneCollection.assign">[docs]</a>    <span class="k">def</span> <span class="nf">assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Scene&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Obtain a new scene with the given keyword arguments</span>
+<span class="sd">        changing. If `annotation_config` is provided, the annotations</span>
+<span class="sd">        are converted to the new `annotation_config` first.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A new scene</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;annotation_config&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;annotation_config&#39;</span><span class="p">]</span>
+            <span class="n">scenes</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;scenes&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;scenes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scenes</span>
+            <span class="p">]</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;scenes&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">,</span>
+            <span class="s1">&#39;annotation_config&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span>
+        <span class="p">}</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SceneCollection.sample"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.SceneCollection.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;SceneCollection&#39;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Get a random subsample of this collection&quot;&quot;&quot;</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">),</span> <span class="n">n</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SceneCollection.fit"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.SceneCollection.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtain a new scene collection, fitted to the given width</span>
+<span class="sd">        and height. All arguments passed to `scene.fit()`</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The new scene collection and list of scales.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scales</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">scenes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">:</span>
+            <span class="n">scene</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scene</span><span class="p">)</span>
+            <span class="n">scales</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">),</span> <span class="n">scales</span></div>
+
+<div class="viewcode-block" id="SceneCollection.thumbnails"><a class="viewcode-back" href="../../../core/scenes.html#mira.core.SceneCollection.thumbnails">[docs]</a>    <span class="k">def</span> <span class="nf">thumbnails</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a thumbnail sample of the images in the collection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: The number of images to include</span>
+<span class="sd">            width: The width of each thumbnail</span>
+<span class="sd">            height: The height of each thumbnail</span>
+<span class="sd">            ncols: The number of columsn in which to arrange the</span>
+<span class="sd">                thumbnails.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The thumbnail image with width ncols*width and height</span>
+<span class="sd">            (n / ncols)*height</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;Collection only has </span><span class="si">{0}</span><span class="s1"> scenes but &#39;</span>
+                <span class="s1">&#39;you requested </span><span class="si">{1}</span><span class="s1"> thumbnails. Limiting &#39;</span>
+                <span class="s1">&#39;to </span><span class="si">{0}</span><span class="s1"> thumbnails.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">),</span>
+                    <span class="n">n</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">)</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">n</span> <span class="o">/</span> <span class="n">ncols</span><span class="p">)</span>
+        <span class="n">sample_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">),</span>
+            <span class="n">n</span><span class="p">,</span>
+            <span class="n">replace</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scenes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sample_indices</span>
+        <span class="p">]</span>
+        <span class="n">thumbnails</span> <span class="o">=</span> <span class="p">[</span><span class="n">scene</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span> <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">]</span>
+        <span class="n">thumbnails</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">thumbnails</span><span class="p">]</span>
+        <span class="n">thumbnail</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+            <span class="n">width</span><span class="o">=</span><span class="n">ncols</span><span class="o">*</span><span class="n">width</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="n">nrows</span><span class="o">*</span><span class="n">height</span><span class="p">,</span>
+            <span class="n">channels</span><span class="o">=</span><span class="mi">3</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">rowIdx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nrows</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">colIdx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncols</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">thumbnails</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">thumbnail</span><span class="p">[</span>
+                    <span class="n">rowIdx</span><span class="o">*</span><span class="n">width</span><span class="p">:(</span><span class="n">rowIdx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">width</span><span class="p">,</span>
+                    <span class="n">colIdx</span><span class="o">*</span><span class="n">height</span><span class="p">:(</span><span class="n">colIdx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">height</span>
+                <span class="p">]</span> <span class="o">=</span> <span class="n">thumbnails</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">thumbnail</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Fausto Morales
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

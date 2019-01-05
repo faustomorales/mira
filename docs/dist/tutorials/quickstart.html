@@ -1,0 +1,421 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Quickstart &mdash; mira  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Training on COCO 2014" href="coco2014.html" />
+    <link rel="prev" title="Tutorials" href="index.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> mira
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#browsing-image-data">Browsing image data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#augmentation">Augmentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#basic-object-detection">Basic object detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transfer-learning">Transfer Learning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="coco2014.html">Training on COCO 2014</a></li>
+<li class="toctree-l2"><a class="reference internal" href="textdetection.html">Training a text detection model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../core/index.html">Core Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../core/scenes.html">Scenes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/annotations.html">Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/selections.html">Selections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core/images.html">Images</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets/existing.html">Load existing datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets/load.html">Load new datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../detectors/index.html">Detectors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/yolov3.html">YOLO v3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/retinanet.html">RetinaNet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/east.html">EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics.html">Metrics</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mira</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Tutorials</a> &raquo;</li>
+        
+      <li>Quickstart</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/tutorials/quickstart.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<p>To see logs, use the <code class="docutils literal notranslate"><span class="pre">logging</span></code> API. The logs can be
+useful for keeping track of what is happening behind
+the scenes.</p>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">()</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s1">&#39;INFO&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="browsing-image-data">
+<h2>Browsing image data<a class="headerlink" href="#browsing-image-data" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span>
+<span class="n">coco</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_coco2017</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
+<span class="n">coco</span><span class="p">[</span><span class="mi">26</span><span class="p">]</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="basic image" src="../_images/example_browsing.png" />
+</div>
+<div class="section" id="augmentation">
+<h2>Augmentation<a class="headerlink" href="#augmentation" title="Permalink to this headline">¶</a></h2>
+<p>Augmentation can be kind of a pain for
+object detection sometimes. But <code class="docutils literal notranslate"><span class="pre">imgaug</span></code> makes
+it pretty easy to build augmentation pipelines
+and mira uses them to transform images as well
+as annotations.</p>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span>
+<span class="kn">from</span> <span class="nn">imgaug</span> <span class="kn">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_voc2012</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
+<span class="n">scene</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span>
+<span class="n">augmenter</span> <span class="o">=</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">iaa</span><span class="o">.</span><span class="n">Fliplr</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="c1"># horizontally flip 50% of the images</span>
+    <span class="n">iaa</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)),</span> <span class="c1"># blur images with a sigma of 0 to 3.0</span>
+    <span class="n">iaa</span><span class="o">.</span><span class="n">Affine</span><span class="p">(</span>
+        <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="c1"># scale between 90% and 110% of original</span>
+        <span class="n">translate_percent</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">),</span> <span class="c1"># Translate +/- 10% of image size</span>
+        <span class="n">rotate</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>  <span class="c1"># rotate -5 degrees to 5 degrees</span>
+        <span class="n">cval</span><span class="o">=</span><span class="mi">255</span>
+    <span class="p">)</span>
+<span class="p">])</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_original</span><span class="p">,</span> <span class="n">ax_augmenter</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax_original</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Original&#39;</span><span class="p">)</span>
+<span class="n">ax_augmenter</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Augmented&#39;</span><span class="p">)</span>
+
+<span class="n">scene</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_original</span><span class="p">)</span>
+<span class="n">scene</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span><span class="n">augmenter</span><span class="p">)</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_augmenter</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="augmented image" src="../_images/example_augmentation.png" />
+</div>
+<div class="section" id="basic-object-detection">
+<h2>Basic object detection<a class="headerlink" href="#basic-object-detection" title="Permalink to this headline">¶</a></h2>
+<p>The example below shows how easy it is to
+do object detection using the common API
+for detectors.</p>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">detectors</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<span class="c1"># Load the VOC dataset (use the validation</span>
+<span class="c1"># split to save time)</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_voc2012</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
+
+<span class="c1"># Load YOLO with pretrained layers. It is</span>
+<span class="c1"># set up to use COCO labels.</span>
+<span class="n">detector_yolo</span> <span class="o">=</span> <span class="n">detectors</span><span class="o">.</span><span class="n">YOLOv3</span><span class="p">(</span>
+    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">pretrained_top</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;tiny&#39;</span>
+<span class="p">)</span>
+
+<span class="c1"># Load RetinaNet with pretrained layers.</span>
+<span class="c1"># It also uses COCO labels.</span>
+<span class="n">detector_rn</span> <span class="o">=</span> <span class="n">detectors</span><span class="o">.</span><span class="n">RetinaNet</span><span class="p">(</span>
+    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">pretrained_top</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">backbone_name</span><span class="o">=</span><span class="s1">&#39;resnet50&#39;</span>
+<span class="p">)</span>
+
+<span class="c1"># Pick an example scene</span>
+<span class="n">scene</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+<span class="c1"># Set up side-by-side plots</span>
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_rn</span><span class="p">,</span> <span class="n">ax_yolo</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax_rn</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;RetinaNet&#39;</span><span class="p">)</span>
+<span class="n">ax_yolo</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;YOLOv3&#39;</span><span class="p">)</span>
+
+<span class="c1"># We get predicted scenes from each detector. Detectors return</span>
+<span class="c1"># lists of annotations for a given image. So we can just replace</span>
+<span class="c1"># (assign) those new annotations to the scene to get a new scene</span>
+<span class="c1"># reflecting the detector&#39;s prediction.</span>
+<span class="n">predicted_rn</span> <span class="o">=</span> <span class="n">scene</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+    <span class="n">annotations</span><span class="o">=</span><span class="n">detector_rn</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">image</span><span class="p">),</span>
+    <span class="n">annotation_config</span><span class="o">=</span><span class="n">detector_rn</span><span class="o">.</span><span class="n">annotation_config</span>
+<span class="p">)</span>
+<span class="n">predicted_yolo</span> <span class="o">=</span> <span class="n">scene</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+    <span class="n">annotations</span><span class="o">=</span><span class="n">detector_yolo</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.4</span><span class="p">),</span>
+    <span class="n">annotation_config</span><span class="o">=</span><span class="n">detector_yolo</span><span class="o">.</span><span class="n">annotation_config</span>
+<span class="p">)</span>
+
+<span class="c1"># Plot both predictions. The calls to annotation() get us</span>
+<span class="c1"># an image with the bounding boxes drawn.</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">predicted_rn</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_rn</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">predicted_yolo</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_yolo</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="annotated image" src="../_images/example_simple_od.png" />
+</div>
+<div class="section" id="transfer-learning">
+<h2>Transfer Learning<a class="headerlink" href="#transfer-learning" title="Permalink to this headline">¶</a></h2>
+<p>This example inspired by <a class="reference external" href="https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/running_pets.md">the TensorFlow object detection tutorial</a>.</p>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">detectors</span>
+<span class="kn">from</span> <span class="nn">imgaug</span> <span class="kn">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
+<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">callbacks</span>
+
+<span class="c1"># Load the Oxford pets datasets with a class</span>
+<span class="c1"># for each breed.</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_oxfordiiitpets</span><span class="p">(</span><span class="n">breed</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c1"># Load YOLO with pretrained backbone. We&#39;ll</span>
+<span class="c1"># use the annotation configuration for our</span>
+<span class="c1"># new task.</span>
+<span class="n">detector</span> <span class="o">=</span> <span class="n">detectors</span><span class="o">.</span><span class="n">YOLOv3</span><span class="p">(</span>
+    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">pretrained_top</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">pretrained_backbone</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">annotation_config</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;tiny&#39;</span>
+<span class="p">)</span>
+
+<span class="c1"># Split our dataset into training, validation,</span>
+<span class="c1"># and test.</span>
+<span class="n">trainval</span><span class="p">,</span> <span class="n">testing</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span>
+<span class="p">)</span>
+<span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">trainval</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.66</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.33</span>
+<span class="p">)</span>
+
+<span class="c1"># Create an augmenter</span>
+<span class="n">augmenter</span> <span class="o">=</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">iaa</span><span class="o">.</span><span class="n">Fliplr</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="c1"># horizontally flip 50% of the images</span>
+    <span class="n">iaa</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">))</span> <span class="c1"># blur images with a sigma of 0 to 3.0</span>
+<span class="p">])</span>
+
+<span class="c1"># Make a callback to stop the training job</span>
+<span class="c1"># early if we plateau on the validation set.</span>
+<span class="n">cbs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">callbacks</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
+        <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;val_loss&#39;</span><span class="p">,</span>
+        <span class="n">min_delta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">patience</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span>
+    <span class="p">)</span>
+<span class="p">]</span>
+
+<span class="c1"># Run training job</span>
+<span class="n">detector</span><span class="o">.</span><span class="n">train</span><span class="p">(</span>
+    <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
+    <span class="n">validation</span><span class="o">=</span><span class="n">validation</span><span class="p">,</span>
+    <span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">,</span>
+    <span class="n">callbacks</span><span class="o">=</span><span class="n">cbs</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="coco2014.html" class="btn btn-neutral float-right" title="Training on COCO 2014" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Fausto Morales
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

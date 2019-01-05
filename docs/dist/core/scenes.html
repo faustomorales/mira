@@ -1,0 +1,582 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Scenes &mdash; mira  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Annotations" href="annotations.html" />
+    <link rel="prev" title="Core Functions" href="index.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> mira
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#logging">Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#browsing-image-data">Browsing image data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#augmentation">Augmentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#basic-object-detection">Basic object detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#transfer-learning">Transfer Learning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/coco2014.html">Training on COCO 2014</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/textdetection.html">Training a text detection model</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Core Functions</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Scenes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="annotations.html">Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="selections.html">Selections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="images.html">Images</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets/index.html">Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../datasets/existing.html">Load existing datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../datasets/load.html">Load new datasets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../detectors/index.html">Detectors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/yolov3.html">YOLO v3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/retinanet.html">RetinaNet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/east.html">EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics.html">Metrics</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mira</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Core Functions</a> &raquo;</li>
+        
+      <li>Scenes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/core/scenes.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="scenes">
+<h1>Scenes<a class="headerlink" href="#scenes" title="Permalink to this headline">¶</a></h1>
+<p>Scenes and SceneCollections are the primary data structures in mira.
+Scenes store images and annotations together while SceneCollections
+combine a number of scenes into a single structure.</p>
+<dl class="class">
+<dt id="mira.core.Scene">
+<em class="property">class </em><code class="descclassname">mira.core.</code><code class="descname">Scene</code><span class="sig-paren">(</span><em>annotation_config</em>, <em>annotations</em>, <em>image</em>, <em>cache=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene" title="Permalink to this definition">¶</a></dt>
+<dd><p>A single annotated image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>annotation_config</strong> – The configuration for annotations for the
+image.</li>
+<li><strong>annotations</strong> – The list of annotations.</li>
+<li><strong>image</strong> – The image that was annotated. Can be lazy-loaded by passing
+a string filepath.</li>
+<li><strong>cache</strong> – Defines caching behavior for the image. If <cite>True</cite>, image is
+loaded into memory the first time that the image is requested.
+If <cite>False</cite>, image is loaded from the file path or URL whenever
+the image is requested.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mira.core.Scene.annotated">
+<code class="descname">annotated</code><span class="sig-paren">(</span><em>dpi=72</em>, <em>fontsize='x-large'</em>, <em>labels=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.annotated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.annotated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show annotations on the image itself.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.Scene.annotation_config">
+<code class="descname">annotation_config</code><a class="headerlink" href="#mira.core.Scene.annotation_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The annotation configuration</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.Scene.annotations">
+<code class="descname">annotations</code><a class="headerlink" href="#mira.core.Scene.annotations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the list of annotations</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Annotation</span></code>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Scene.assign">
+<code class="descname">assign</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.assign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.assign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a new scene with only the supplied
+keyword arguments changed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scene</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Scene.augment">
+<code class="descname">augment</code><span class="sig-paren">(</span><em>augmenter=None</em>, <em>threshold=0.25</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.augment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.augment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain an augmented version of the scene using the given augmenter.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The augmented scene</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scene</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Scene.bboxes">
+<code class="descname">bboxes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.bboxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.bboxes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain an array of shape (N, 5) where the columns are
+x1, y1, x2, y2, class_index where class_index is determined
+from the annotation configuration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Scene.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>width</em>, <em>height</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a new scene fitted to the given width and height.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>width</strong> – The new width</li>
+<li><strong>height</strong> – The new height</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The new scene and the scale</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.Scene.image">
+<code class="descname">image</code><a class="headerlink" href="#mira.core.Scene.image" title="Permalink to this definition">¶</a></dt>
+<dd><p>The image that is being annotated</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Scene.resize">
+<code class="descname">resize</code><span class="sig-paren">(</span><em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.resize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a resized version of the scene.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scale</strong> – The scale for the new scene.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scene</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Scene.scores">
+<code class="descname">scores</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.scores"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.scores" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain an array containing the confidence
+score for each annotation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Scene.show">
+<code class="descname">show</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show an annotated version of the image. All arguments
+passed to <cite>Image.show()</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mira.core.SceneCollection">
+<em class="property">class </em><code class="descclassname">mira.core.</code><code class="descname">SceneCollection</code><span class="sig-paren">(</span><em>scenes</em>, <em>annotation_config=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>A collection of scenes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>annotation_config</strong> – The configuration that should be used for all
+underlying scenes.</li>
+<li><strong>scenes</strong> – The list of scenes.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="mira.core.SceneCollection.annotation_config">
+<code class="descname">annotation_config</code><a class="headerlink" href="#mira.core.SceneCollection.annotation_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The annotation configuration</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.assign">
+<code class="descname">assign</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.assign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.assign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a new scene with the given keyword arguments
+changing. If <cite>annotation_config</cite> is provided, the annotations
+are converted to the new <cite>annotation_config</cite> first.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A new scene</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scene</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.augment">
+<code class="descname">augment</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.augment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.augment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtained an augmented version of the given collection.
+All arguments passed to <cite>Scene.augment</cite></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.SceneCollection.consistent">
+<code class="descname">consistent</code><a class="headerlink" href="#mira.core.SceneCollection.consistent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies whether all scenes have the same annotation
+configuration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a new scene collection, fitted to the given width
+and height. All arguments passed to <cite>scene.fit()</cite></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The new scene collection and list of scales.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.sample">
+<code class="descname">sample</code><span class="sig-paren">(</span><em>n</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a random subsample of this collection</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.SceneCollection.scenes">
+<code class="descname">scenes</code><a class="headerlink" href="#mira.core.SceneCollection.scenes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The list of scenes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.thumbnails">
+<code class="descname">thumbnails</code><span class="sig-paren">(</span><em>n=10</em>, <em>width=200</em>, <em>height=200</em>, <em>ncols=2</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.thumbnails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.thumbnails" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a thumbnail sample of the images in the collection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>n</strong> – The number of images to include</li>
+<li><strong>width</strong> – The width of each thumbnail</li>
+<li><strong>height</strong> – The height of each thumbnail</li>
+<li><strong>ncols</strong> – The number of columsn in which to arrange the
+thumbnails.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The thumbnail image with width ncols*width and height
+(n / ncols)*height</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.train_test_split">
+<code class="descname">train_test_split</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.train_test_split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.train_test_split" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain new scene collections, split into train
+and test. All arguments passed to
+<a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html">sklearn.model_selection.train_test_split</a>.</p>
+<p>For example, to get two collections, one
+containing 70% of the data and the other containing
+30%,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">training</span><span class="p">,</span> <span class="n">testing</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also use the <cite>stratify</cite> argument to ensure an even split
+between different kinds of scenes. For example, to split
+scenes containing at least 3 annotations proportionally,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">training</span><span class="p">,</span> <span class="n">testing</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="n">stratify</span><span class="o">=</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">annotations</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A train and test scene collection.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code>]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.core.SceneCollection.uniform">
+<code class="descname">uniform</code><a class="headerlink" href="#mira.core.SceneCollection.uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies whether all scenes in the collection are
+of the same size. Note: This will trigger an image load.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="annotations.html" class="btn btn-neutral float-right" title="Annotations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Core Functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Fausto Morales
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
