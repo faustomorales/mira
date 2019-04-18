@@ -15,7 +15,7 @@ from ..core import (
 class Detector(ABC):
     def detect(
         self,
-        image: Image,
+        image: Union[Image, np.ndarray],
         threshold: float=0.5
     ) -> List[Annotation]:
         """Run detection for a given image.
@@ -26,14 +26,8 @@ class Detector(ABC):
         Returns:
             A list of annotations
         """
-        height, width = self.model.input_shape[1:3]
-        if height is not None and width is not None:
-            image, scale = image.fit(
-                width=width,
-                height=height
-            )
-        else:
-            scale = 1
+        image = image.view(Image)
+        image, scale = self._scale_to_model_size(image)
         X = self.compute_inputs([image])
         y = self.model.predict(X)
         annotations = self.invert_targets(
@@ -42,6 +36,51 @@ class Detector(ABC):
             threshold=threshold
         )[0].annotations
         return [a.resize(1/scale) for a in annotations]
+
+    def detect_batch(
+        self,
+        images: List[Union[Image, np.ndarray]],
+        threshold: float=0.5,
+        batch_size: int=32
+    ) -> List[List[Annotation]]:
+        """
+        Perform object detection on a batch of images.
+
+        Args:
+            images: A list of images
+            threshold: The detection threshold for the images
+            batch_size: The batch size to use with the underlying model
+
+        Returns:
+            A list of lists of annotations.
+        """
+        images = [image.view(Image) for image in images]
+        images, scales = list(
+            zip(*[self._scale_to_model_size(image) for image in images])
+        )
+        X = self.compute_inputs(images)
+        y = self.model.predict(X, batch_size=batch_size)
+        scenes = self.invert_targets(
+            y,
+            images=images,
+            threshold=threshold
+        )
+        return [
+            [
+                a.resize(1/scale) for a in scene.annotations
+            ] for scene, scale in zip(scenes, scales)
+        ]
+
+    def _scale_to_model_size(self, image: Image):
+        height, width = self.model.input_shape[1:3]
+        if height is not None and width is not None:
+            image, scale = image.fit(
+                width=width,
+                height=height
+            )
+        else:
+            scale = 1
+        return image, scale
 
     @abstractmethod
     def compute_inputs(self, images: List[Image]) -> np.ndarray:
@@ -81,7 +120,7 @@ class Detector(ABC):
         """Freeze the body of the model, leaving the final classification and
         regression layer as trainable."""
         for l in self.backbone.layers:
-                l.trainable = False
+            l.trainable = False
         self.compile()
 
     def unfreeze_backbone(self):

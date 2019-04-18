@@ -67,9 +67,9 @@ def load_via(
                 continue
 
             if region_shape['name'] == 'rect':
-                x = region_shape['x'],
-                y = region_shape['y'],
-                width = region_shape['width'],
+                x = region_shape['x']
+                y = region_shape['y']
+                width = region_shape['width']
                 height = region_shape['height']
                 selection = Selection(
                     [
@@ -82,7 +82,6 @@ def load_via(
                     'Only rectangles are supported at this time, '
                     'not %s' % region_shape['name']
                 )
-
             category_name = region_attr[label_key].strip()
             category_set.update([category_name])
             annotations_dict[image_name].append(

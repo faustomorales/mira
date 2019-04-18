@@ -281,13 +281,15 @@
         <span class="n">color</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
             <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
             <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-        <span class="p">]</span>
+        <span class="p">],</span>
+        <span class="n">opaque</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Draw selection onto given image.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            image: The image to draw on.</span>
 <span class="sd">            color: The color to use.</span>
+<span class="sd">            opaque: Whether the box should be filled.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The image with the selection drawn</span>
@@ -296,13 +298,20 @@
         <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)))</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">cv2</span><span class="o">.</span><span class="n">polylines</span><span class="p">(</span>
-            <span class="n">img</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
-            <span class="n">pts</span><span class="o">=</span><span class="p">[</span><span class="n">pts</span><span class="p">],</span>
-            <span class="n">isClosed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">thickness</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-            <span class="n">color</span><span class="o">=</span><span class="n">color</span>
-        <span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">opaque</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cv2</span><span class="o">.</span><span class="n">fillPoly</span><span class="p">(</span>
+                <span class="n">img</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+                <span class="n">pts</span><span class="o">=</span><span class="p">[</span><span class="n">pts</span><span class="p">],</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">color</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cv2</span><span class="o">.</span><span class="n">polylines</span><span class="p">(</span>
+                <span class="n">img</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+                <span class="n">pts</span><span class="o">=</span><span class="p">[</span><span class="n">pts</span><span class="p">],</span>
+                <span class="n">isClosed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">thickness</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">color</span>
+            <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Selection.assign_keypoints"><a class="viewcode-back" href="../../../core/selections.html#mira.core.Selection.assign_keypoints">[docs]</a>    <span class="k">def</span> <span class="nf">assign_keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keypoints</span><span class="p">:</span> <span class="n">ia</span><span class="o">.</span><span class="n">KeypointsOnImage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Selection&#39;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Obtain a revised version of the selection</span>

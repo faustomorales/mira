@@ -212,13 +212,24 @@ the image is requested.</li>
 </table>
 <dl class="method">
 <dt id="mira.core.Scene.annotated">
-<code class="descname">annotated</code><span class="sig-paren">(</span><em>dpi=72</em>, <em>fontsize='x-large'</em>, <em>labels=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.annotated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.annotated" title="Permalink to this definition">¶</a></dt>
+<code class="descname">annotated</code><span class="sig-paren">(</span><em>dpi=72</em>, <em>fontsize='x-large'</em>, <em>labels=True</em>, <em>opaque=False</em>, <em>color=(255</em>, <em>0</em>, <em>0)</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene.annotated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene.annotated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Show annotations on the image itself.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dpi</strong> – The resolution for the image</li>
+<li><strong>fontsize</strong> – How large to show labels</li>
+<li><strong>labels</strong> – Whether or not to show labels</li>
+<li><strong>opaque</strong> – Whether to draw annotations filled
+in.</li>
+<li><strong>color</strong> – The color to use for annotations.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></p>
+</td>
 </tr>
 </tbody>
 </table>

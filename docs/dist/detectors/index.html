@@ -248,6 +248,31 @@ outputs should be calculated.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="mira.detectors.Detector.detect_batch">
+<code class="descname">detect_batch</code><span class="sig-paren">(</span><em>images</em>, <em>threshold=0.5</em>, <em>batch_size=32</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.detect_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.detect_batch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform object detection on a batch of images.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>images</strong> – A list of images</li>
+<li><strong>threshold</strong> – The detection threshold for the images</li>
+<li><strong>batch_size</strong> – The batch size to use with the underlying model</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A list of lists of annotations.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Annotation</span></code>]]</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="mira.detectors.Detector.freeze_backbone">
 <code class="descname">freeze_backbone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.freeze_backbone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.freeze_backbone" title="Permalink to this definition">¶</a></dt>
 <dd><p>Freeze the body of the model, leaving the final classification and

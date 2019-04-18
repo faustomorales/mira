@@ -246,9 +246,9 @@
                 <span class="k">continue</span>
 
             <span class="k">if</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rect&#39;</span><span class="p">:</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span>
-                <span class="n">y</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span>
-                <span class="n">width</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">],</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span>
                 <span class="n">height</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span>
                 <span class="n">selection</span> <span class="o">=</span> <span class="n">Selection</span><span class="p">(</span>
                     <span class="p">[</span>
@@ -261,7 +261,6 @@
                     <span class="s1">&#39;Only rectangles are supported at this time, &#39;</span>
                     <span class="s1">&#39;not </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
                 <span class="p">)</span>
-
             <span class="n">category_name</span> <span class="o">=</span> <span class="n">region_attr</span><span class="p">[</span><span class="n">label_key</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="n">category_set</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">category_name</span><span class="p">])</span>
             <span class="n">annotations_dict</span><span class="p">[</span><span class="n">image_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>

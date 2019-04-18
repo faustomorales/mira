@@ -122,3 +122,6 @@ dmypy.json
 
 # MacOS
 .Trash*
+
+# Temporary notebooks
+/notebooks

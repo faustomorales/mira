@@ -165,7 +165,8 @@ cbs = [
         min_delta=0.1,
         patience=50,
         verbose=1,
-        mode='auto'
+        mode='auto',
+        restore_best_weights=True
     )
 ]
 

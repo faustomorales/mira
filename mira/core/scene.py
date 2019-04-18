@@ -164,9 +164,20 @@ class Scene:
         self,
         dpi=72,
         fontsize='x-large',
-        labels=True
+        labels=True,
+        opaque=False,
+        color=(255, 0, 0)
     ) -> Image:
-        """Show annotations on the image itself."""
+        """Show annotations on the image itself.
+
+        Args:
+            dpi: The resolution for the image
+            fontsize: How large to show labels
+            labels: Whether or not to show labels
+            opaque: Whether to draw annotations filled
+                in.
+            color: The color to use for annotations.
+        """
         plt.ioff()
         fig, ax = plt.subplots()
         ax.set_xlabel('')
@@ -177,7 +188,7 @@ class Scene:
         img_raw = self.image
         img = img_raw
         for ann in self.annotations:
-            img = ann.selection.draw(img, color=(255, 0, 0))
+            img = ann.selection.draw(img, color=color, opaque=opaque)
         img.show(ax=ax)
         if labels:
             for ann in self.annotations:

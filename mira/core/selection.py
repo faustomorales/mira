@@ -102,13 +102,15 @@ class Selection:
         color: Union[
             Tuple[int, int, int],
             Tuple[int, int, int, int]
-        ]
+        ],
+        opaque: bool=False
     ) -> Image:
         """Draw selection onto given image.
 
         Args:
             image: The image to draw on.
             color: The color to use.
+            opaque: Whether the box should be filled.
 
         Returns:
             The image with the selection drawn
@@ -117,13 +119,20 @@ class Selection:
         pts = np.array(
             [tuple(map(int, (x, y))) for x, y in self.points]
         )
-        return cv2.polylines(
-            img=target,
-            pts=[pts],
-            isClosed=True,
-            thickness=5,
-            color=color
-        )
+        if opaque:
+            return cv2.fillPoly(
+                img=target,
+                pts=[pts],
+                color=color
+            )
+        else:
+            return cv2.polylines(
+                img=target,
+                pts=[pts],
+                isClosed=True,
+                thickness=5,
+                color=color
+            )
 
     def assign_keypoints(self, keypoints: ia.KeypointsOnImage) -> 'Selection':
         """Obtain a revised version of the selection
