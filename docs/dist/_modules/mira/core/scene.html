@@ -111,6 +111,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/retinanet.html">RetinaNet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/east.html">EAST Text Detector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/mtcnn.html">MTCNN</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
@@ -215,11 +216,13 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="p">,</span>
         <span class="n">annotations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">],</span>
-        <span class="n">image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
         <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Image</span><span class="p">],</span> \
-            <span class="s1">&#39;Image must be string or Image, not &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> \
+            <span class="s1">&#39;Image must be string or ndarray, not &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_image</span> <span class="o">=</span> <span class="n">image</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span> <span class="o">=</span> <span class="n">annotations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_annotation_config</span> <span class="o">=</span> <span class="n">annotation_config</span>

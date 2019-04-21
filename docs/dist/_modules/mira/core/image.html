@@ -111,6 +111,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/retinanet.html">RetinaNet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/east.html">EAST Text Detector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/mtcnn.html">MTCNN</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
@@ -320,7 +321,7 @@
 <span class="sd">            The new image and the scaling that was applied.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">width</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="ow">and</span> <span class="n">height</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">,</span> <span class="mi">1</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
         <span class="n">fitted</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
             <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
@@ -329,24 +330,25 @@
             <span class="n">cval</span><span class="o">=</span><span class="n">cval</span>
         <span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span>
         <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
-        <span class="n">fitted</span><span class="p">[:</span><span class="n">image</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="p">:</span><span class="n">image</span><span class="o">.</span><span class="n">width</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="n">fitted</span><span class="p">[:</span><span class="n">image</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="p">:</span><span class="n">image</span><span class="o">.</span><span class="n">width</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span><span class="p">[:</span><span class="n">width</span><span class="p">,</span> <span class="p">:</span><span class="n">height</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">fitted</span><span class="p">,</span> <span class="n">scale</span></div>
 
-<div class="viewcode-block" id="Image.resize"><a class="viewcode-back" href="../../../core/images.html#mira.core.Image.resize">[docs]</a>    <span class="k">def</span> <span class="nf">resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<div class="viewcode-block" id="Image.resize"><a class="viewcode-back" href="../../../core/images.html#mira.core.Image.resize">[docs]</a>    <span class="k">def</span> <span class="nf">resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_NEAREST</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Obtain resized version of image with a given scale</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            scale: The scale by which to resize the image</span>
+<span class="sd">            interpolation: The interpolation method to use</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The scaled image</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">scale</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
-        <span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">scale</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">scale</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">))</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">scale</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">))</span>
         <span class="n">resized</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">dsize</span><span class="o">=</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span>
-            <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_NEAREST</span>
+            <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span>
         <span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">resized</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="c1"># This was a grayscale image and we need it to be returned</span>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Overview: module code &mdash; mira  documentation</title>
+  <title>MTCNN &mdash; mira  documentation</title>
   
 
   
@@ -27,7 +27,9 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Metrics" href="../metrics.html" />
+    <link rel="prev" title="Advanced EAST Text Detector" href="advancedeast.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -80,7 +82,7 @@
               
             
             
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../tutorials/quickstart.html">Quickstart</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#logging">Logging</a></li>
@@ -106,12 +108,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../datasets/load.html">Load new datasets</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../detectors/index.html">Detectors</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../detectors/yolov3.html">YOLO v3</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../detectors/retinanet.html">RetinaNet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../detectors/east.html">EAST Text Detector</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../detectors/mtcnn.html">MTCNN</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Detectors</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="yolov3.html">YOLO v3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="retinanet.html">RetinaNet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="east.html">EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advancedeast.html">Advanced EAST Text Detector</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">MTCNN</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../metrics.html">Metrics</a></li>
@@ -160,10 +162,16 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-      <li>Overview: module code</li>
+          <li><a href="index.html">Detectors</a> &raquo;</li>
+        
+      <li>MTCNN</li>
     
     
       <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/detectors/mtcnn.rst.txt" rel="nofollow"> View page source</a>
+          
         
       </li>
     
@@ -175,28 +183,53 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>All modules for which code is available</h1>
-<ul><li><a href="mira/core/annotation.html">mira.core.annotation</a></li>
-<li><a href="mira/core/image.html">mira.core.image</a></li>
-<li><a href="mira/core/scene.html">mira.core.scene</a></li>
-<li><a href="mira/core/selection.html">mira.core.selection</a></li>
-<li><a href="mira/datasets/coco.html">mira.datasets.coco</a></li>
-<li><a href="mira/datasets/preloaded.html">mira.datasets.preloaded</a></li>
-<li><a href="mira/datasets/via.html">mira.datasets.via</a></li>
-<li><a href="mira/datasets/voc.html">mira.datasets.voc</a></li>
-<li><a href="mira/detectors/advancedeast.html">mira.detectors.advancedeast</a></li>
-<li><a href="mira/detectors/detector.html">mira.detectors.detector</a></li>
-<li><a href="mira/detectors/east.html">mira.detectors.east</a></li>
-<li><a href="mira/detectors/mtcnn.html">mira.detectors.mtcnn</a></li>
-<li><a href="mira/detectors/retinanet.html">mira.detectors.retinanet</a></li>
-<li><a href="mira/detectors/yolov3.html">mira.detectors.yolov3</a></li>
-<li><a href="mira/metrics.html">mira.metrics</a></li>
-</ul>
+  <div class="section" id="mtcnn">
+<h1>MTCNN<a class="headerlink" href="#mtcnn" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="mira.detectors.MTCNN">
+<em class="property">class </em><code class="descclassname">mira.detectors.</code><code class="descname">MTCNN</code><a class="reference internal" href="../_modules/mira/detectors/mtcnn.html#MTCNN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.MTCNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>A detector wrapping MTCNN for face detection. Based on the
+implementation found as part of
+<a class="reference external" href="https://github.com/davidsandberg/facenet">facenet</a>. The only
+difference is we’ve implemented it using keras. Training is not
+supported at this time. The model is documented in <a class="reference external" href="https://kpzhang93.github.io/MTCNN_face_detection_alignment/paper/spl.pdf">the original
+paper</a>.</p>
+<dl class="attribute">
+<dt id="mira.detectors.MTCNN.pnet">
+<code class="descname">pnet</code><a class="headerlink" href="#mira.detectors.MTCNN.pnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>The pnet model (stage 1)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.detectors.MTCNN.rnet">
+<code class="descname">rnet</code><a class="headerlink" href="#mira.detectors.MTCNN.rnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>The rnet model (stage 2)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mira.detectors.MTCNN.onet">
+<code class="descname">onet</code><a class="headerlink" href="#mira.detectors.MTCNN.onet" title="Permalink to this definition">¶</a></dt>
+<dd><p>The onet model (stage 3)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
 
            </div>
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../metrics.html" class="btn btn-neutral float-right" title="Metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="advancedeast.html" class="btn btn-neutral" title="Advanced EAST Text Detector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

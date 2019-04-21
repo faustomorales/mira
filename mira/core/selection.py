@@ -134,6 +134,14 @@ class Selection:
                 color=color
             )
 
+    def extract(self, image):
+        """Extract selection from image (i.e., crop the image
+        to the selection).
+        """
+        x1, y1, x2, y2 = self.bbox()
+        cropped = image[max(y1, 0):max(y2, 0), max(x1, 0):max(0, x2)]
+        return cropped
+
     def assign_keypoints(self, keypoints: ia.KeypointsOnImage) -> 'Selection':
         """Obtain a revised version of the selection
         with the given keypoints"""

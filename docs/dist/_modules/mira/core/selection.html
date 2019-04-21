@@ -111,6 +111,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/retinanet.html">RetinaNet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/east.html">EAST Text Detector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../detectors/advancedeast.html">Advanced EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../detectors/mtcnn.html">MTCNN</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics.html">Metrics</a></li>
@@ -312,6 +313,14 @@
                 <span class="n">thickness</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
                 <span class="n">color</span><span class="o">=</span><span class="n">color</span>
             <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Selection.extract"><a class="viewcode-back" href="../../../core/selections.html#mira.core.Selection.extract">[docs]</a>    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Extract selection from image (i.e., crop the image</span>
+<span class="sd">        to the selection).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bbox</span><span class="p">()</span>
+        <span class="n">cropped</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span><span class="nb">max</span><span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">x2</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="n">cropped</span></div>
 
 <div class="viewcode-block" id="Selection.assign_keypoints"><a class="viewcode-back" href="../../../core/selections.html#mira.core.Selection.assign_keypoints">[docs]</a>    <span class="k">def</span> <span class="nf">assign_keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keypoints</span><span class="p">:</span> <span class="n">ia</span><span class="o">.</span><span class="n">KeypointsOnImage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Selection&#39;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Obtain a revised version of the selection</span>

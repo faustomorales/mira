@@ -13,5 +13,5 @@ Check out [the docs](http://faustomorales.github.io/mira).
 ##  Installation
 
 ```
-pip install git+https://github.com/faustomorales/mira.git
+pip install mira
 ```

@@ -113,6 +113,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">RetinaNet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="east.html">EAST Text Detector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="advancedeast.html">Advanced EAST Text Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mtcnn.html">MTCNN</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../metrics.html">Metrics</a></li>
@@ -186,11 +187,9 @@
 <h1>RetinaNet<a class="headerlink" href="#retinanet" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="mira.detectors.RetinaNet">
-<em class="property">class </em><code class="descclassname">mira.detectors.</code><code class="descname">RetinaNet</code><span class="sig-paren">(</span><em>annotation_config=&lt;mira.core.annotation.AnnotationConfiguration object&gt;</em>, <em>input_shape=(None</em>, <em>None</em>, <em>3)</em>, <em>pretrained_backbone=True</em>, <em>pretrained_top=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/retinanet.html#RetinaNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.RetinaNet" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">mira.detectors.</code><code class="descname">RetinaNet</code><span class="sig-paren">(</span><em>annotation_config=&lt;mira.core.annotation.AnnotationConfiguration object&gt;</em>, <em>input_shape=(None</em>, <em>None</em>, <em>3)</em>, <em>pretrained_backbone=True</em>, <em>pretrained_top=False</em>, <em>backbone_name='resnet50'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/retinanet.html#RetinaNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.RetinaNet" title="Permalink to this definition">¶</a></dt>
 <dd><p>A detector wrapping RetinaNet. All the heavy lifting is done by the
-<a class="reference external" href="https://github.com/fizyr/keras-retinanet">keras-retinanet</a> package.
-We only support the resnet50 backbone at this time in order to keep the
-API simple.</p>
+<a class="reference external" href="https://github.com/fizyr/keras-retinanet">keras-retinanet</a> package.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -201,6 +200,8 @@ API simple.</p>
 <li><strong>pretrained_backbone</strong> – Whether to use a pretrained backbone for the model</li>
 <li><strong>pretrained_top</strong> – Whether to use the pretrained full model (only
 supported for backbone <cite>resnet50</cite>)</li>
+<li><strong>backbone_name</strong> – The name of the backbone to use. See <cite>keras-retinanet</cite>
+for valid options.</li>
 </ul>
 </td>
 </tr>

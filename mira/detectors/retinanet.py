@@ -27,8 +27,6 @@ pretrained = {
 class RetinaNet(Detector):
     """A detector wrapping RetinaNet. All the heavy lifting is done by the
     `keras-retinanet <https://github.com/fizyr/keras-retinanet>`_ package.
-    We only support the resnet50 backbone at this time in order to keep the
-    API simple.
 
     Args:
         annotation_config: The annotation configuration to use for detection
@@ -36,6 +34,8 @@ class RetinaNet(Detector):
         pretrained_backbone: Whether to use a pretrained backbone for the model
         pretrained_top: Whether to use the pretrained full model (only
             supported for backbone `resnet50`)
+        backbone_name: The name of the backbone to use. See `keras-retinanet`
+            for valid options.
 
     Attributes:
         model: The base Keras model containing the weights for feature
@@ -48,13 +48,20 @@ class RetinaNet(Detector):
         input_shape: Tuple[int, int, int]=(None, None, 3),
         pretrained_backbone: bool=True,
         pretrained_top: bool=False,
+        backbone_name='resnet50'
     ):
         if pretrained_top and pretrained_backbone:
             log.info('Disabling imagenet weights, using pretrained full network instead')  # noqa: E501
             pretrained_backbone = False
+        if pretrained_top:
+            assert backbone_name in pretrained, (
+                'The selected backbone has no fully trained network. '
+                'Acceptable options are: {0}. '  # noqa: E501
+                'To resolve this error, choose set pretrained_top=False.'
+            ).format(','.join(list(pretrained.keys())))
         self.anchor_params = rn_anchors.AnchorParameters.default
         self.annotation_config = annotation_config
-        self.rn_backbone = rn_backbone('resnet50')
+        self.rn_backbone = rn_backbone(backbone_name)
         self.model = self.rn_backbone.retinanet(
             inputs=layers.Input(input_shape),
             num_classes=len(annotation_config),
@@ -70,7 +77,7 @@ class RetinaNet(Detector):
         if pretrained_top:
             assert annotation_config == core.AnnotationConfiguration.COCO, \
                 'To use pretrained_top, annotation config must be core.AnnotationConfiguration.COCO'  # noqa: E501
-            pretrained_params = pretrained['resnet50']
+            pretrained_params = pretrained[backbone_name]
             weights_path = utils.get_file(
                 origin=pretrained_params['url'],
                 file_hash=pretrained_params['hash'],

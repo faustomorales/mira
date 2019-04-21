@@ -141,7 +141,7 @@ class Image(np.ndarray):
             The new image and the scaling that was applied.
         """
         if width == self.width and height == self.height:
-            return self
+            return self, 1
         scale = min(width / self.width, height / self.height)
         fitted = Image.new(
             width=width,
@@ -150,24 +150,25 @@ class Image(np.ndarray):
             cval=cval
         ).view(Image)
         image = self.resize(scale=scale)
-        fitted[:image.height, :image.width] = image
+        fitted[:image.height, :image.width] = image[:width, :height]
         return fitted, scale
 
-    def resize(self, scale: float):
+    def resize(self, scale: float, interpolation=cv2.INTER_NEAREST):
         """Obtain resized version of image with a given scale
 
         Args:
             scale: The scale by which to resize the image
+            interpolation: The interpolation method to use
 
         Returns:
             The scaled image
         """
-        width = int(scale*self.width)
-        height = int(scale*self.height)
+        width = int(np.ceil(scale*self.width))
+        height = int(np.ceil(scale*self.height))
         resized = cv2.resize(
             self,
             dsize=(width, height),
-            interpolation=cv2.INTER_NEAREST
+            interpolation=interpolation
         ).view(Image)
         if len(resized.shape) == 2 and len(self.shape) == 3:
             # This was a grayscale image and we need it to be returned

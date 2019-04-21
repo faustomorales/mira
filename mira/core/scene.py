@@ -36,11 +36,13 @@ class Scene:
         self,
         annotation_config: AnnotationConfiguration,
         annotations: List[Annotation],
-        image: Union[Image, str],
+        image: Union[Image, np.ndarray, str],
         cache: bool=True
     ):
-        assert type(image) in [str, Image], \
-            'Image must be string or Image, not ' + str(type(image))
+        assert isinstance(image, np.ndarray) or isinstance(image, str), \
+            'Image must be string or ndarray, not ' + str(type(image))
+        if isinstance(image, np.ndarray):
+            image = image.view(Image)
         self._image = image
         self._annotations = annotations
         self._annotation_config = annotation_config

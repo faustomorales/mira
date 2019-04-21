@@ -13,3 +13,4 @@ There are currently four implemented architectures.
    retinanet
    east
    advancedeast
+   mtcnn
