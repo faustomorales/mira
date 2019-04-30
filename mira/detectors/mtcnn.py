@@ -173,8 +173,11 @@ def make_onet(input_shape=(48, 48, 3)):
 
 
 def load_weights(network, weights_file):
-    for layer_name, weights in np.load(weights_file,
-                                       encoding="latin1").item().items():
+    for layer_name, weights in np.load(
+        weights_file,
+        encoding="latin1",
+        allow_pickle=True
+    ).item().items():
         layer = network.get_layer(layer_name)
         if layer_name.lower().startswith("conv"):
             coefs = weights["weights"].reshape(
