@@ -4,7 +4,7 @@ import matplotlib.path as mplPath
 import cv2
 import numpy as np
 import imgaug as ia
-from shapely.geometry import MultiPoint
+from shapely import affinity, geometry
 from scipy import spatial
 
 from .image import Image
@@ -34,8 +34,8 @@ class Selection:
         self.bbPath = mplPath.Path(points)
 
     def __add__(self, other):
-        mp1 = MultiPoint(self.points)
-        mp2 = MultiPoint(other.points)
+        mp1 = geometry.MultiPoint(self.points)
+        mp2 = geometry.MultiPoint(other.points)
         x, y = mp1.union(mp2).convex_hull.exterior.xy
         points = np.concatenate([
             np.expand_dims(x, axis=1),
@@ -48,6 +48,26 @@ class Selection:
         return cv2.contourArea(
             np.int32(self.points[:, np.newaxis, :])
         )
+
+    def xywh(self) -> Tuple[int, int, int, int]:
+        """Get the bounding box as x, y, width
+        and height."""
+        x1, y1, x2, y2 = self.bbox()
+        return x1, y1, x2 - x1, y2 - y1
+
+    def shrink(self, scale: float) -> 'Selection':
+        """Obtain a new shrunk version of the selection.
+
+        Args:
+            scale: The amount by which to shrink the
+                selection. Values less than 1 cause
+                shrinking. Values larger than 1 cause
+                expansion.
+        """
+        shrunk = affinity.scale(
+            geometry.Polygon(self.points), xfact=scale, yfact=scale
+        )
+        return Selection(shrunk.exterior.coords)
 
     def contains_point(self, other) -> bool:
         """Determine whether this selection contains a
@@ -192,7 +212,7 @@ class Selection:
             top-right, bottom-right, bottom-left order along
             with the angle of rotation about the bottom left corner.
         """
-        mp = MultiPoint(points=self.points)
+        mp = geometry.MultiPoint(points=self.points)
         pts = np.array(list(zip(*mp.minimum_rotated_rectangle.exterior.xy)))[:-1]  # noqa: E501
 
         # The code below is taken from

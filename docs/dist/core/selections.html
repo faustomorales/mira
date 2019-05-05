@@ -89,11 +89,11 @@
 <li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#browsing-image-data">Browsing image data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#augmentation">Augmentation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#basic-object-detection">Basic object detection</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tutorials/quickstart.html#transfer-learning">Transfer Learning</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../tutorials/coco2014.html">Training on COCO 2014</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tutorials/textdetection.html">Training a text detection model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/transferlearning.html">Transfer Learning</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Core Functions</a><ul class="current">
@@ -378,6 +378,40 @@ uniform scaling.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Selection.shrink">
+<code class="descname">shrink</code><span class="sig-paren">(</span><em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.shrink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.shrink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a new shrunk version of the selection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scale</strong> – The amount by which to shrink the
+selection. Values less than 1 cause
+shrinking. Values larger than 1 cause
+expansion.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.Selection.xywh">
+<code class="descname">xywh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.xywh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.xywh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the bounding box as x, y, width
+and height.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</td>
 </tr>
 </tbody>
 </table>

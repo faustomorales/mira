@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Training on COCO 2014 &mdash; mira  documentation</title>
+  <title>Transfer Learning &mdash; mira  documentation</title>
   
 
   
@@ -28,8 +28,8 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Training a text detection model" href="textdetection.html" />
-    <link rel="prev" title="Quickstart" href="quickstart.html" /> 
+    <link rel="next" title="Core Functions" href="../core/index.html" />
+    <link rel="prev" title="Training a text detection model" href="textdetection.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -91,9 +91,9 @@
 <li class="toctree-l3"><a class="reference internal" href="quickstart.html#basic-object-detection">Basic object detection</a></li>
 </ul>
 </li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Training on COCO 2014</a></li>
+<li class="toctree-l2"><a class="reference internal" href="coco2014.html">Training on COCO 2014</a></li>
 <li class="toctree-l2"><a class="reference internal" href="textdetection.html">Training a text detection model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="transferlearning.html">Transfer Learning</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Transfer Learning</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../core/index.html">Core Functions</a><ul>
@@ -164,13 +164,13 @@
         
           <li><a href="index.html">Tutorials</a> &raquo;</li>
         
-      <li>Training on COCO 2014</li>
+      <li>Transfer Learning</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/tutorials/coco2014.md.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/tutorials/transferlearning.md.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -183,48 +183,65 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="training-on-coco-2014">
-<h1>Training on COCO 2014<a class="headerlink" href="#training-on-coco-2014" title="Permalink to this headline">¶</a></h1>
-<p>Start by downloading all of the COCO images. If you haven’t already, install <code class="docutils literal notranslate"><span class="pre">gsutil</span></code>, which will make downloading the images a snap.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>curl https://sdk.cloud.google.com | bash
-mkdir coco
-cd coco
-mkdir images
-gsutil -m rsync gs://images.cocodataset.org/train2014 images
-gsutil -m rsync gs://images.cocodataset.org/val2014 images
-gsutil -m rsync gs://images.cocodataset.org/test2014 images
-</pre></div>
-</div>
-<p>Now download the annotations. The following will create an <code class="docutils literal notranslate"><span class="pre">annotations</span></code> folder inside of your <code class="docutils literal notranslate"><span class="pre">coco</span></code> folder.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>curl -LO  http://images.cocodataset.org/annotations/annotations_trainval2014.zip -o annotations_trainval2014.zip
-unzip annotations_trainval2014.zip
-</pre></div>
-</div>
-<p>Let’s load the dataset.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span>
+  <div class="section" id="transfer-learning">
+<h1>Transfer Learning<a class="headerlink" href="#transfer-learning" title="Permalink to this headline">¶</a></h1>
+<p>This example inspired by <a class="reference external" href="https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/running_pets.md">the TensorFlow object detection tutorial</a>.</p>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">detectors</span>
+<span class="kn">from</span> <span class="nn">imgaug</span> <span class="kn">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
+<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">callbacks</span>
 
-<span class="n">training</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_coco</span><span class="p">(</span>
-    <span class="n">annotations_file</span><span class="o">=</span><span class="s1">&#39;coco/annotations/instances_train2014.json&#39;</span><span class="p">,</span>
-    <span class="n">image_dir</span><span class="o">=</span><span class="s1">&#39;coco/images&#39;</span>
-<span class="p">)</span>
-<span class="n">validation</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_coco</span><span class="p">(</span>
-    <span class="n">annotations_file</span><span class="o">=</span><span class="s1">&#39;coco/annotations/instances_val2014.json&#39;</span><span class="p">,</span>
-    <span class="n">image_dir</span><span class="o">=</span><span class="s1">&#39;coco/images&#39;</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p>And now we can train a detector.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">detectors</span>
+<span class="c1"># Load the Oxford pets datasets with a class</span>
+<span class="c1"># for each breed.</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_oxfordiiitpets</span><span class="p">(</span><span class="n">breed</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
+<span class="c1"># Load YOLO with pretrained backbone. We&#39;ll</span>
+<span class="c1"># use the annotation configuration for our</span>
+<span class="c1"># new task.</span>
 <span class="n">detector</span> <span class="o">=</span> <span class="n">detectors</span><span class="o">.</span><span class="n">YOLOv3</span><span class="p">(</span>
-    <span class="n">annotation_config</span><span class="o">=</span><span class="n">training</span><span class="o">.</span><span class="n">annotation_config</span>
+    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="n">pretrained_top</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">pretrained_backbone</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">annotation_config</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;tiny&#39;</span>
 <span class="p">)</span>
+
+<span class="c1"># Split our dataset into training, validation,</span>
+<span class="c1"># and test.</span>
+<span class="n">trainval</span><span class="p">,</span> <span class="n">testing</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span>
+<span class="p">)</span>
+<span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">trainval</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
+    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.66</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.33</span>
+<span class="p">)</span>
+
+<span class="c1"># Create an augmenter</span>
+<span class="n">augmenter</span> <span class="o">=</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">iaa</span><span class="o">.</span><span class="n">Fliplr</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="c1"># horizontally flip 50% of the images</span>
+    <span class="n">iaa</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">))</span> <span class="c1"># blur images with a sigma of 0 to 3.0</span>
+<span class="p">])</span>
+
+<span class="c1"># Make a callback to stop the training job</span>
+<span class="c1"># early if we plateau on the validation set.</span>
+<span class="n">cbs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">callbacks</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
+        <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;val_loss&#39;</span><span class="p">,</span>
+        <span class="n">min_delta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+        <span class="n">patience</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
+        <span class="n">restore_best_weights</span><span class="o">=</span><span class="bp">True</span>
+    <span class="p">)</span>
+<span class="p">]</span>
+
+<span class="c1"># Run training job</span>
 <span class="n">detector</span><span class="o">.</span><span class="n">train</span><span class="p">(</span>
     <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
     <span class="n">validation</span><span class="o">=</span><span class="n">validation</span><span class="p">,</span>
+    <span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
     <span class="n">epochs</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-    <span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">50</span>
-    <span class="n">train_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">,</span>
+    <span class="n">callbacks</span><span class="o">=</span><span class="n">cbs</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -238,10 +255,10 @@ unzip annotations_trainval2014.zip
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="textdetection.html" class="btn btn-neutral float-right" title="Training a text detection model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../core/index.html" class="btn btn-neutral float-right" title="Core Functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="quickstart.html" class="btn btn-neutral" title="Quickstart" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="textdetection.html" class="btn btn-neutral" title="Training a text detection model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

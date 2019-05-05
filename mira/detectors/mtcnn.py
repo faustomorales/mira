@@ -12,6 +12,46 @@ from .detector import Detector
 
 log = logging.getLogger(__name__)
 
+""" MTCNN
+This intends to replicate the MTCNN architecture that comes with FaceNet. It
+has one small change from the original (see detect function). To compare
+outputs, you can use something like the following.
+
+from mira import core, detectors
+from mtcnn.mtcnn import MTCNN
+import matplotlib.pyplot as plt
+
+url = 'https://www.abc.net.au/news/image/9499864-3x2-700x467.jpg'
+image = core.Image.read(url)
+
+detector1 = detectors.MTCNN()
+detector2 = MTCNN()
+
+faces1 = detector1.detect(image)
+faces2 = detector2.detect_faces(image)
+scene1 = core.Scene(
+    annotations=faces1,
+    image=image,
+    annotation_config=detector1.annotation_config
+)
+scene2 = core.Scene(
+    annotation_config=detector1.annotation_config,
+    annotations=[core.Annotation(
+        category=detector1.annotation_config['face'],
+        selection=core.Selection([
+            [f['box'][0], f['box'][1]],
+            [f['box'][0] + f['box'][2], f['box'][1]+f['box'][3]]
+        ])
+    ) for f in faces2],
+    image=image
+)
+print('Our boxes:', [f.selection.xywh() for f in faces1])
+print('Their boxes:', [f['box'] for f in faces2])
+fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 10))
+scene1.show(ax1)
+scene2.show(ax2)
+"""
+
 WEIGHTS_CONFIG = {
     "pnet": {
         "hash":
@@ -34,7 +74,7 @@ WEIGHTS_CONFIG = {
 }
 
 
-def make_pnet(input_shape=(12, 12, 3)):
+def make_pnet(input_shape=(None, None, 3)):
     x = layers.Input(input_shape)
     conv1 = layers.Conv2D(kernel_size=(3, 3),
                           filters=10,
@@ -44,7 +84,7 @@ def make_pnet(input_shape=(12, 12, 3)):
     relu1 = layers.PReLU(name="PReLU1", shared_axes=[1, 2])(conv1)
     mp1 = layers.MaxPooling2D(pool_size=(2, 2),
                               strides=(2, 2),
-                              padding="valid",
+                              padding="same",
                               name="pool1")(relu1)
     conv2 = layers.Conv2D(kernel_size=(3, 3),
                           filters=16,
@@ -61,12 +101,13 @@ def make_pnet(input_shape=(12, 12, 3)):
     conv4_1 = layers.Conv2D(kernel_size=(1, 1),
                             filters=2,
                             strides=(1, 1),
-                            padding="valid",
+                            padding="same",
                             name="conv4-1")(relu3)
     prob1 = layers.Softmax(axis=3, name="prob1")(conv4_1)
     conv4_2 = layers.Conv2D(kernel_size=(1, 1),
                             filters=4,
                             strides=(1, 1),
+                            padding='same',
                             name="conv4-2")(relu3)
     return models.Model(inputs=x, outputs=[prob1, conv4_2])
 
@@ -116,7 +157,9 @@ def make_rnet(input_shape=(24, 24, 3)):
                             strides=(1, 1),
                             padding="valid",
                             name="conv5-2")(relu4)
-    return models.Model(inputs=x, outputs=[prob1, conv5_2])
+    clf = layers.Reshape((2, ), name='clf')(prob1)
+    reg = layers.Reshape((4, ), name='reg')(conv5_2)
+    return models.Model(inputs=x, outputs=[clf, reg])
 
 
 def make_onet(input_shape=(48, 48, 3)):
@@ -169,7 +212,10 @@ def make_onet(input_shape=(48, 48, 3)):
                             name="conv6-2")(relu5)
     conv6_3 = layers.Conv2D(kernel_size=(1, 1), filters=10,
                             name="conv6-3")(relu5)
-    return models.Model(inputs=x, outputs=[prob1, conv6_2, conv6_3])
+    clf = layers.Reshape((2, ), name='clf')(prob1)
+    reg = layers.Reshape((4, ), name='reg')(conv6_2)
+    feats = layers.Reshape((10, ), name='feats')(conv6_3)
+    return models.Model(inputs=x, outputs=[clf, reg, feats])
 
 
 def load_weights(network, weights_file):
@@ -194,69 +240,67 @@ def load_weights(network, weights_file):
 
 def nms(boxes, threshold, method):
     if boxes.size == 0:
-        return np.empty((0, 3))
+        return np.empty((0, 9))
+
     x1 = boxes[:, 0]
     y1 = boxes[:, 1]
     x2 = boxes[:, 2]
     y2 = boxes[:, 3]
     s = boxes[:, 4]
+
     area = (x2 - x1 + 1) * (y2 - y1 + 1)
-    sortIdx = np.argsort(s)
+    sorted_s = np.argsort(s)
+
     pick = np.zeros_like(s, dtype=np.int16)
     counter = 0
-    while sortIdx.size > 0:
-        i = sortIdx[-1]
+    while sorted_s.size > 0:
+        i = sorted_s[-1]
         pick[counter] = i
         counter += 1
-        idx = sortIdx[0:-1]
+        idx = sorted_s[0:-1]
+
         xx1 = np.maximum(x1[i], x1[idx])
         yy1 = np.maximum(y1[i], y1[idx])
         xx2 = np.minimum(x2[i], x2[idx])
         yy2 = np.minimum(y2[i], y2[idx])
+
         w = np.maximum(0.0, xx2 - xx1 + 1)
         h = np.maximum(0.0, yy2 - yy1 + 1)
+
         inter = w * h
-        if method == "Min":
+
+        if method == 'Min':
             o = inter / np.minimum(area[i], area[idx])
         else:
             o = inter / (area[i] + area[idx] - inter)
-        sortIdx = sortIdx[np.where(o <= threshold)]
+
+        sorted_s = sorted_s[np.where(o <= threshold)]
+
     pick = pick[0:counter]
-    return pick
+
+    return boxes[pick]
 
 
-def calculate_boxes(clf,
-                    reg,
-                    scale,
-                    threshold,
-                    cell_size,
-                    stride=2,
-                    offset=(0, 0)):
-    """Use heatmap to generate bounding boxes"""
-    y, x = np.where(clf[..., 1].transpose() >= threshold)
-    score = clf[x, y, 1:]
-    reg = reg[x, y]
-    bb = np.vstack([y, x]).transpose()
-    x1y1 = np.fix((stride * bb + 1) / scale) + offset
-    x2y2 = np.fix((stride * bb + 1 + cell_size - 1) / scale) + offset
-    x1y1x2y2sd = np.concatenate([x1y1, x2y2, score, reg], axis=1)
-    return x1y1x2y2sd
+def padded(x1y1x2y2s):
+    x1y1x2y2s = x1y1x2y2s.copy()
+    x1y1x2y2s[:, :2] = np.clip(x1y1x2y2s[:, :2], a_min=1, a_max=np.inf) - 1
+    return x1y1x2y2s
 
 
-def pad_and_square(x1y1x2y2s, width, height, pad=0.1):
-    xpad = pad * (x1y1x2y2s[:, 2] - x1y1x2y2s[:, 0])
-    ypad = pad * (x1y1x2y2s[:, 3] - x1y1x2y2s[:, 1])
-    x1y1x2y2s[:, 0] -= xpad
-    x1y1x2y2s[:, 2] += xpad
-    x1y1x2y2s[:, 1] -= ypad
-    x1y1x2y2s[:, 3] += ypad
-    x1y1x2y2s[:, 0:4:2] = x1y1x2y2s[:, 0:4:2].clip(0, width)
-    x1y1x2y2s[:, 1:4:2] = x1y1x2y2s[:, 1:4:2].clip(0, height)
-    length = (x1y1x2y2s[:, 2:4] - x1y1x2y2s[:, :2]).max(axis=1)
-    x1y1x2y2s[:, 2:4] = x1y1x2y2s[:, :2] + length[:, np.newaxis]
+def square(x1y1x2y2s):
+    x1y1x2y2s = x1y1x2y2s.copy()
+    h = x1y1x2y2s[:, 3] - x1y1x2y2s[:, 1]
+    w = x1y1x2y2s[:, 2] - x1y1x2y2s[:, 0]
+    length = np.maximum(w, h)
+    x1y1x2y2s[:, 0] = x1y1x2y2s[:, 0] + w * 0.5 - length * 0.5
+    x1y1x2y2s[:, 1] = x1y1x2y2s[:, 1] + h * 0.5 - length * 0.5
+    x1y1x2y2s[:, 2:4] = x1y1x2y2s[:, 0:2] + length[:, np.newaxis]
+    x1y1x2y2s[:, :4] = np.fix(x1y1x2y2s[:, :4])
+    return x1y1x2y2s
 
 
-def apply_regression(boxes):
+def regress(boxes):
+    boxes = boxes.copy()
     w = boxes[:, 2] - boxes[:, 0]
     h = boxes[:, 3] - boxes[:, 1]
     boxes[:, 0] += boxes[:, 5] * w
@@ -266,30 +310,35 @@ def apply_regression(boxes):
     boxes[:, 5:] = 0
     w = boxes[:, 2] - boxes[:, 0]
     h = boxes[:, 3] - boxes[:, 1]
+    return boxes
 
 
-def run_stage(network, image, x1y1x2y2s, cell_size, threshold):
+def fix_scale(x):
+    return (x.astype('float64') - 127.5) * 0.0078125
+
+
+def run_stage(network, image, x1y1x2y2s, cell_size):
+    # we need to use a padded version of x1y1x2y2s, I guess?
+    if len(x1y1x2y2s) == 0:
+        return np.empty((0, 9))
     crops = [
-        image[y1:y2, x1:x2]
-        for x1, y1, x2, y2 in x1y1x2y2s[:, :4].round(0).astype("int32")
+        image[y1:y2, x1:x2].astype('float64')
+        for x1, y1, x2, y2 in padded(x1y1x2y2s[:, :4]).astype('int32')
     ]
     crops = [
         image for image in crops if image.shape[0] > 0 and image.shape[1] > 0
     ]
-    X, scales = zip(*[image.fit(cell_size, cell_size) for image in crops])
-    X = np.float32([x.transpose(1, 0, 2).scaled(-1, 1) for x in X])
-    y = [v.transpose(0, 2, 1, 3) for v in network.predict(X)]
-    x1y1x2y2s = np.concatenate([
-        calculate_boxes(
-            clf,
-            box,
-            scale=scale,
-            threshold=threshold,
-            offset=(current[0], current[1]),
-            cell_size=cell_size,
-        ) for clf, box, scale, current in zip(*y[:2], scales, x1y1x2y2s)
-    ])
-    apply_regression(x1y1x2y2s)
+    crops = [
+        cv2.resize(image, (cell_size, cell_size), interpolation=cv2.INTER_AREA)
+        for image in crops
+    ]
+    X = np.float64(crops)
+    X = fix_scale(X.transpose(0, 2, 1, 3))
+    clf, reg = [v for v in network.predict(X)[:2]]
+
+    x1y1x2y2s[:, 4] = clf[:, 1]
+    x1y1x2y2s[:, :4] = np.fix(x1y1x2y2s[:, :4])
+    x1y1x2y2s[:, 5:] = reg
     return x1y1x2y2s
 
 
@@ -297,10 +346,29 @@ class MTCNN(Detector):
     """A detector wrapping MTCNN for face detection. Based on the
     implementation found as part of
     `facenet <https://github.com/davidsandberg/facenet>`_. The only
-    difference is we've implemented it using keras. Training is not
-    supported at this time. The model is documented in `the original
-    paper
+    difference is we've implemented it using keras and we make one
+    tweak to when nms is applied for Stage 2. See comments in
+    code for detail. Training is not supported at this time. We also
+    do not support recording the locations of facial landmarks. The model
+    is documented in `the original paper
     <https://kpzhang93.github.io/MTCNN_face_detection_alignment/paper/spl.pdf>`_.
+
+    Example usage:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        from mira import core, detectors
+
+        url = 'https://www.abc.net.au/news/image/9499864-3x2-700x467.jpg'
+        image = core.Image.read(url)
+        detector = detectors.MTCNN()
+        faces = detector.detect(image)
+        scene = core.Scene(
+            annotations=faces,
+            image=image,
+            annotation_config=detector.annotation_config
+        )
 
     Attributes:
         pnet: The pnet model (stage 1)
@@ -308,11 +376,10 @@ class MTCNN(Detector):
         onet: The onet model (stage 3)
     """
     def __init__(self):
-        input_shape = (None, None, 3)
         self.annotation_config = core.AnnotationConfiguration(["face"])
-        self.pnet = make_pnet(input_shape=input_shape)
-        self.rnet = make_rnet(input_shape=input_shape)
-        self.onet = make_onet(input_shape=input_shape)
+        self.pnet = make_pnet()
+        self.rnet = make_rnet()
+        self.onet = make_onet()
 
         load_weights(
             self.pnet,
@@ -356,7 +423,7 @@ class MTCNN(Detector):
         image: Union[core.Image, np.ndarray],
         minsize=20,
         factor=0.709,
-        threshold=0.8
+        thresholds=None
     ) -> List[core.Annotation]:
         """Detects faces in an image, and returns bounding boxes and points for them.
 
@@ -364,61 +431,72 @@ class MTCNN(Detector):
         minsize: Minimum face size
         factor: The factor by which to step down scales in the
          image.
-        threshold: The detection threshold.
+        thresholds: The detection thresholds (one for each of three stages)
         """
+        if thresholds is None:
+            thresholds = [0.6, 0.7, 0.7]
         image = image.view(core.Image)
         height, width = image.shape[:2]
-        m = 12.0 / minsize  # Scale of MTCNN cell to minimum face size
-        minl = min([height, width]) * m  # Image size to have a 12x12 region
-        # correspond to minimum face size
+
+        # Scale of MTCNN cell to minimum face size
+        m = 12.0 / minsize
+
+        # Reequired image size to have a 12x12
+        # region correspond to minimum face
+        # size
+        minl = min([height, width]) * m
         n_scales = math.ceil(math.log(12 / minl, factor))
         scales = [m * np.power(factor, n) for n in range(n_scales)]
 
         # Stage 1
         x1y1x2y2s = []
+        stride = 2
+        cell_size = 12
         for idx, scale in enumerate(scales):
-            X = np.float32([
-                image.resize(scale, interpolation=cv2.INTER_AREA).transpose(
-                    1, 0, 2).scaled(-1, 1)
+            scaled_image = image.resize(scale, interpolation=cv2.INTER_AREA)
+            X = np.float64([
+                fix_scale(scaled_image.transpose(1, 0, 2))
             ])
             y = [v.transpose(0, 2, 1, 3) for v in self.pnet.predict(X)]
-            x1y1x2y2s_current = calculate_boxes(clf=y[0][0],
-                                                reg=y[1][0],
-                                                scale=scale,
-                                                threshold=threshold,
-                                                cell_size=12)
-            if len(x1y1x2y2s_current) == 0:
-                continue
-            x1y1x2y2s.append(x1y1x2y2s_current[nms(x1y1x2y2s_current, 0.5,
-                                                   "Union")])
-        if len(x1y1x2y2s) == 0:
-            return []
+            clf, reg = y[0][0], y[1][0]
+            yc, xc = np.where(clf[..., 1].transpose() >= thresholds[0])
+            score = clf[xc, yc, 1:]
+            reg = reg[xc, yc]
+            bb = np.vstack([yc, xc]).transpose()
+            x1y1 = np.fix((stride * bb + 1) / scale)
+            x2y2 = np.fix((stride * bb + 1 + cell_size - 1) / scale)
+            x1y1x2y2s_current = np.concatenate(
+                [x1y1, x2y2, score, reg], axis=1
+            )
+            x1y1x2y2s.append(nms(x1y1x2y2s_current, 0.5, "Union"))
         x1y1x2y2s = np.concatenate(x1y1x2y2s)
-        apply_regression(x1y1x2y2s)
-
-        x1y1x2y2s = x1y1x2y2s[nms(x1y1x2y2s, 0.7, "Union")]
+        x1y1x2y2s = nms(x1y1x2y2s, 0.7, "Union")
+        x1y1x2y2s = regress(x1y1x2y2s)
+        x1y1x2y2s = square(x1y1x2y2s)
 
         # Stage 2
-        pad_and_square(x1y1x2y2s, width=width, height=height, pad=0.1)
-        x1y1x2y2s = run_stage(self.rnet,
-                              image,
-                              x1y1x2y2s,
-                              threshold=threshold,
-                              cell_size=24)
-        if len(x1y1x2y2s) == 0:
-            return []
-        x1y1x2y2s = x1y1x2y2s[nms(x1y1x2y2s, 0.7, "Union")]
+        x1y1x2y2s = run_stage(self.rnet, image, x1y1x2y2s, 24)
+        x1y1x2y2s = x1y1x2y2s[x1y1x2y2s[:, 4] > thresholds[1]]
+
+        # Note the ordering here of applying regression and nms differs from
+        # the original implementation. In the original, nms is applied first
+        # and regression second on Stage 2. But before regression, the boxes
+        # are the same as they were before, we just have a smaller subset of
+        # them, making the nms call superfluous. I've swapped the order here
+        # to be consistent with Stage 3, where nms is applied after regression
+        # regression. To recover the original behavior, the nms and regression
+        # lines should be swapped back.
+        # https://github.com/davidsandberg/facenet/blob/096ed770f163957c1e56efa7feeb194773920f6e/src/align/detect_face.py#L377
+        x1y1x2y2s = regress(x1y1x2y2s)
+        x1y1x2y2s = nms(x1y1x2y2s, 0.7, 'Union')
+        x1y1x2y2s = square(x1y1x2y2s)
 
         # Stage 3
-        pad_and_square(x1y1x2y2s, width=width, height=height, pad=0.1)
-        x1y1x2y2s = run_stage(self.onet,
-                              image,
-                              x1y1x2y2s,
-                              threshold=threshold,
-                              cell_size=48)
-        if len(x1y1x2y2s) == 0:
-            return []
-        x1y1x2y2s = x1y1x2y2s[nms(x1y1x2y2s, 0.5, "Min")]
+        x1y1x2y2s = run_stage(self.onet, image, x1y1x2y2s, 48)
+        x1y1x2y2s = x1y1x2y2s[x1y1x2y2s[:, 4] > thresholds[2]]
+        x1y1x2y2s = regress(x1y1x2y2s)
+        x1y1x2y2s = nms(x1y1x2y2s, 0.7, 'Min')
+
         return [
             core.Annotation(
                 selection=core.Selection(points=[[x1, y1], [x2, y2]]),

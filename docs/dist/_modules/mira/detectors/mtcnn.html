@@ -87,11 +87,11 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#browsing-image-data">Browsing image data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#augmentation">Augmentation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#basic-object-detection">Basic object detection</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../tutorials/quickstart.html#transfer-learning">Transfer Learning</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/coco2014.html">Training on COCO 2014</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tutorials/textdetection.html">Training a text detection model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials/transferlearning.html">Transfer Learning</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../core/index.html">Core Functions</a><ul>
@@ -192,6 +192,46 @@
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
+<span class="sd">&quot;&quot;&quot; MTCNN</span>
+<span class="sd">This intends to replicate the MTCNN architecture that comes with FaceNet. It</span>
+<span class="sd">has one small change from the original (see detect function). To compare</span>
+<span class="sd">outputs, you can use something like the following.</span>
+
+<span class="sd">from mira import core, detectors</span>
+<span class="sd">from mtcnn.mtcnn import MTCNN</span>
+<span class="sd">import matplotlib.pyplot as plt</span>
+
+<span class="sd">url = &#39;https://www.abc.net.au/news/image/9499864-3x2-700x467.jpg&#39;</span>
+<span class="sd">image = core.Image.read(url)</span>
+
+<span class="sd">detector1 = detectors.MTCNN()</span>
+<span class="sd">detector2 = MTCNN()</span>
+
+<span class="sd">faces1 = detector1.detect(image)</span>
+<span class="sd">faces2 = detector2.detect_faces(image)</span>
+<span class="sd">scene1 = core.Scene(</span>
+<span class="sd">    annotations=faces1,</span>
+<span class="sd">    image=image,</span>
+<span class="sd">    annotation_config=detector1.annotation_config</span>
+<span class="sd">)</span>
+<span class="sd">scene2 = core.Scene(</span>
+<span class="sd">    annotation_config=detector1.annotation_config,</span>
+<span class="sd">    annotations=[core.Annotation(</span>
+<span class="sd">        category=detector1.annotation_config[&#39;face&#39;],</span>
+<span class="sd">        selection=core.Selection([</span>
+<span class="sd">            [f[&#39;box&#39;][0], f[&#39;box&#39;][1]],</span>
+<span class="sd">            [f[&#39;box&#39;][0] + f[&#39;box&#39;][2], f[&#39;box&#39;][1]+f[&#39;box&#39;][3]]</span>
+<span class="sd">        ])</span>
+<span class="sd">    ) for f in faces2],</span>
+<span class="sd">    image=image</span>
+<span class="sd">)</span>
+<span class="sd">print(&#39;Our boxes:&#39;, [f.selection.xywh() for f in faces1])</span>
+<span class="sd">print(&#39;Their boxes:&#39;, [f[&#39;box&#39;] for f in faces2])</span>
+<span class="sd">fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 10))</span>
+<span class="sd">scene1.show(ax1)</span>
+<span class="sd">scene2.show(ax2)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
 <span class="n">WEIGHTS_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;pnet&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">&quot;hash&quot;</span><span class="p">:</span>
@@ -214,7 +254,7 @@
 <span class="p">}</span>
 
 
-<span class="k">def</span> <span class="nf">make_pnet</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">)):</span>
+<span class="k">def</span> <span class="nf">make_pnet</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">3</span><span class="p">)):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
     <span class="n">conv1</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
                           <span class="n">filters</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
@@ -224,7 +264,7 @@
     <span class="n">relu1</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">PReLU</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;PReLU1&quot;</span><span class="p">,</span> <span class="n">shared_axes</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])(</span><span class="n">conv1</span><span class="p">)</span>
     <span class="n">mp1</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
                               <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
-                              <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span>
+                              <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span>
                               <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pool1&quot;</span><span class="p">)(</span><span class="n">relu1</span><span class="p">)</span>
     <span class="n">conv2</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
                           <span class="n">filters</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
@@ -241,12 +281,13 @@
     <span class="n">conv4_1</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                             <span class="n">filters</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
                             <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                            <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span>
+                            <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span>
                             <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv4-1&quot;</span><span class="p">)(</span><span class="n">relu3</span><span class="p">)</span>
     <span class="n">prob1</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;prob1&quot;</span><span class="p">)(</span><span class="n">conv4_1</span><span class="p">)</span>
     <span class="n">conv4_2</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                             <span class="n">filters</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
                             <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">,</span>
                             <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv4-2&quot;</span><span class="p">)(</span><span class="n">relu3</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">prob1</span><span class="p">,</span> <span class="n">conv4_2</span><span class="p">])</span>
 
@@ -296,7 +337,9 @@
                             <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                             <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;valid&quot;</span><span class="p">,</span>
                             <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv5-2&quot;</span><span class="p">)(</span><span class="n">relu4</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">prob1</span><span class="p">,</span> <span class="n">conv5_2</span><span class="p">])</span>
+    <span class="n">clf</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;clf&#39;</span><span class="p">)(</span><span class="n">prob1</span><span class="p">)</span>
+    <span class="n">reg</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;reg&#39;</span><span class="p">)(</span><span class="n">conv5_2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">clf</span><span class="p">,</span> <span class="n">reg</span><span class="p">])</span>
 
 
 <span class="k">def</span> <span class="nf">make_onet</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">3</span><span class="p">)):</span>
@@ -349,12 +392,18 @@
                             <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv6-2&quot;</span><span class="p">)(</span><span class="n">relu5</span><span class="p">)</span>
     <span class="n">conv6_3</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">filters</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
                             <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv6-3&quot;</span><span class="p">)(</span><span class="n">relu5</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">prob1</span><span class="p">,</span> <span class="n">conv6_2</span><span class="p">,</span> <span class="n">conv6_3</span><span class="p">])</span>
+    <span class="n">clf</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;clf&#39;</span><span class="p">)(</span><span class="n">prob1</span><span class="p">)</span>
+    <span class="n">reg</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;reg&#39;</span><span class="p">)(</span><span class="n">conv6_2</span><span class="p">)</span>
+    <span class="n">feats</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="p">),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;feats&#39;</span><span class="p">)(</span><span class="n">conv6_3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">clf</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">feats</span><span class="p">])</span>
 
 
 <span class="k">def</span> <span class="nf">load_weights</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">weights_file</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">weights</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">weights_file</span><span class="p">,</span>
-                                       <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin1&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">weights</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+        <span class="n">weights_file</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin1&quot;</span><span class="p">,</span>
+        <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">layer</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">get_layer</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">layer_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;conv&quot;</span><span class="p">):</span>
             <span class="n">coefs</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
@@ -371,69 +420,67 @@
 
 <span class="k">def</span> <span class="nf">nms</span><span class="p">(</span><span class="n">boxes</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">boxes</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+
     <span class="n">x1</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="n">y1</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="n">x2</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
     <span class="n">y2</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span>
+
     <span class="n">area</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">sortIdx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="n">sorted_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
     <span class="n">pick</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
     <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">while</span> <span class="n">sortIdx</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="n">sortIdx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">while</span> <span class="n">sorted_s</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">sorted_s</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">pick</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
         <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">sortIdx</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">sorted_s</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
         <span class="n">xx1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">x1</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x1</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="n">yy1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">y1</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y1</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="n">xx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x2</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="n">yy2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">y2</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y2</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+
         <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">xx2</span> <span class="o">-</span> <span class="n">xx1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">yy2</span> <span class="o">-</span> <span class="n">yy1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
         <span class="n">inter</span> <span class="o">=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">h</span>
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;Min&quot;</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;Min&#39;</span><span class="p">:</span>
             <span class="n">o</span> <span class="o">=</span> <span class="n">inter</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">area</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">o</span> <span class="o">=</span> <span class="n">inter</span> <span class="o">/</span> <span class="p">(</span><span class="n">area</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">area</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">inter</span><span class="p">)</span>
-        <span class="n">sortIdx</span> <span class="o">=</span> <span class="n">sortIdx</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">o</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">)]</span>
+
+        <span class="n">sorted_s</span> <span class="o">=</span> <span class="n">sorted_s</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">o</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">)]</span>
+
     <span class="n">pick</span> <span class="o">=</span> <span class="n">pick</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">counter</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">pick</span>
+
+    <span class="k">return</span> <span class="n">boxes</span><span class="p">[</span><span class="n">pick</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">calculate_boxes</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span>
-                    <span class="n">reg</span><span class="p">,</span>
-                    <span class="n">scale</span><span class="p">,</span>
-                    <span class="n">threshold</span><span class="p">,</span>
-                    <span class="n">cell_size</span><span class="p">,</span>
-                    <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-                    <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)):</span>
-    <span class="sd">&quot;&quot;&quot;Use heatmap to generate bounding boxes&quot;&quot;&quot;</span>
-    <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">clf</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">)</span>
-    <span class="n">score</span> <span class="o">=</span> <span class="n">clf</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
-    <span class="n">reg</span> <span class="o">=</span> <span class="n">reg</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]</span>
-    <span class="n">bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
-    <span class="n">x1y1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="n">stride</span> <span class="o">*</span> <span class="n">bb</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span>
-    <span class="n">x2y2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="n">stride</span> <span class="o">*</span> <span class="n">bb</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">cell_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span>
-    <span class="n">x1y1x2y2sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x1y1</span><span class="p">,</span> <span class="n">x2y2</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">reg</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">x1y1x2y2sd</span>
+<span class="k">def</span> <span class="nf">padded</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">):</span>
+    <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">x1y1x2y2s</span>
 
 
-<span class="k">def</span> <span class="nf">pad_and_square</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
-    <span class="n">xpad</span> <span class="o">=</span> <span class="n">pad</span> <span class="o">*</span> <span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
-    <span class="n">ypad</span> <span class="o">=</span> <span class="n">pad</span> <span class="o">*</span> <span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
-    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-=</span> <span class="n">xpad</span>
-    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">xpad</span>
-    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ypad</span>
-    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ypad</span>
-    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
-    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
-    <span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">length</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">):</span>
+    <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">w</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">length</span> <span class="o">*</span> <span class="mf">0.5</span>
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">length</span> <span class="o">*</span> <span class="mf">0.5</span>
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">length</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">x1y1x2y2s</span>
 
 
-<span class="k">def</span> <span class="nf">apply_regression</span><span class="p">(</span><span class="n">boxes</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">regress</span><span class="p">(</span><span class="n">boxes</span><span class="p">):</span>
+    <span class="n">boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">*</span> <span class="n">w</span>
@@ -443,30 +490,35 @@
     <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">boxes</span>
 
 
-<span class="k">def</span> <span class="nf">run_stage</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="n">cell_size</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">fix_scale</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mf">127.5</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.0078125</span>
+
+
+<span class="k">def</span> <span class="nf">run_stage</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="n">cell_size</span><span class="p">):</span>
+    <span class="c1"># we need to use a padded version of x1y1x2y2s, I guess?</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
     <span class="n">crops</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">image</span><span class="p">[</span><span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="ow">in</span> <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+        <span class="n">image</span><span class="p">[</span><span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="ow">in</span> <span class="n">padded</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int32&#39;</span><span class="p">)</span>
     <span class="p">]</span>
     <span class="n">crops</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">image</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">crops</span> <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="p">]</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">scales</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">image</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">cell_size</span><span class="p">,</span> <span class="n">cell_size</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">crops</span><span class="p">])</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">scaled</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X</span><span class="p">])</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)]</span>
-    <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
-        <span class="n">calculate_boxes</span><span class="p">(</span>
-            <span class="n">clf</span><span class="p">,</span>
-            <span class="n">box</span><span class="p">,</span>
-            <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span>
-            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
-            <span class="n">offset</span><span class="o">=</span><span class="p">(</span><span class="n">current</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">current</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
-            <span class="n">cell_size</span><span class="o">=</span><span class="n">cell_size</span><span class="p">,</span>
-        <span class="p">)</span> <span class="k">for</span> <span class="n">clf</span><span class="p">,</span> <span class="n">box</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">current</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">y</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">scales</span><span class="p">,</span> <span class="n">x1y1x2y2s</span><span class="p">)</span>
-    <span class="p">])</span>
-    <span class="n">apply_regression</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
+    <span class="n">crops</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">cv2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="n">cell_size</span><span class="p">,</span> <span class="n">cell_size</span><span class="p">),</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_AREA</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">crops</span>
+    <span class="p">]</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">crops</span><span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">fix_scale</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">clf</span><span class="p">,</span> <span class="n">reg</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]]</span>
+
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">clf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+    <span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">:]</span> <span class="o">=</span> <span class="n">reg</span>
     <span class="k">return</span> <span class="n">x1y1x2y2s</span>
 
 
@@ -474,10 +526,29 @@
     <span class="sd">&quot;&quot;&quot;A detector wrapping MTCNN for face detection. Based on the</span>
 <span class="sd">    implementation found as part of</span>
 <span class="sd">    `facenet &lt;https://github.com/davidsandberg/facenet&gt;`_. The only</span>
-<span class="sd">    difference is we&#39;ve implemented it using keras. Training is not</span>
-<span class="sd">    supported at this time. The model is documented in `the original</span>
-<span class="sd">    paper</span>
+<span class="sd">    difference is we&#39;ve implemented it using keras and we make one</span>
+<span class="sd">    tweak to when nms is applied for Stage 2. See comments in</span>
+<span class="sd">    code for detail. Training is not supported at this time. We also</span>
+<span class="sd">    do not support recording the locations of facial landmarks. The model</span>
+<span class="sd">    is documented in `the original paper</span>
 <span class="sd">    &lt;https://kpzhang93.github.io/MTCNN_face_detection_alignment/paper/spl.pdf&gt;`_.</span>
+
+<span class="sd">    Example usage:</span>
+
+<span class="sd">    .. highlight:: python</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        from mira import core, detectors</span>
+
+<span class="sd">        url = &#39;https://www.abc.net.au/news/image/9499864-3x2-700x467.jpg&#39;</span>
+<span class="sd">        image = core.Image.read(url)</span>
+<span class="sd">        detector = detectors.MTCNN()</span>
+<span class="sd">        faces = detector.detect(image)</span>
+<span class="sd">        scene = core.Scene(</span>
+<span class="sd">            annotations=faces,</span>
+<span class="sd">            image=image,</span>
+<span class="sd">            annotation_config=detector.annotation_config</span>
+<span class="sd">        )</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        pnet: The pnet model (stage 1)</span>
@@ -485,11 +556,10 @@
 <span class="sd">        onet: The onet model (stage 3)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="p">([</span><span class="s2">&quot;face&quot;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pnet</span> <span class="o">=</span> <span class="n">make_pnet</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rnet</span> <span class="o">=</span> <span class="n">make_rnet</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">onet</span> <span class="o">=</span> <span class="n">make_onet</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pnet</span> <span class="o">=</span> <span class="n">make_pnet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnet</span> <span class="o">=</span> <span class="n">make_rnet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">onet</span> <span class="o">=</span> <span class="n">make_onet</span><span class="p">()</span>
 
         <span class="n">load_weights</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">pnet</span><span class="p">,</span>
@@ -533,7 +603,7 @@
         <span class="n">image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">core</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
         <span class="n">minsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
         <span class="n">factor</span><span class="o">=</span><span class="mf">0.709</span><span class="p">,</span>
-        <span class="n">threshold</span><span class="o">=</span><span class="mf">0.8</span>
+        <span class="n">thresholds</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">core</span><span class="o">.</span><span class="n">Annotation</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Detects faces in an image, and returns bounding boxes and points for them.</span>
 
@@ -541,61 +611,72 @@
 <span class="sd">        minsize: Minimum face size</span>
 <span class="sd">        factor: The factor by which to step down scales in the</span>
 <span class="sd">         image.</span>
-<span class="sd">        threshold: The detection threshold.</span>
+<span class="sd">        thresholds: The detection thresholds (one for each of three stages)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">thresholds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thresholds</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
         <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">m</span> <span class="o">=</span> <span class="mf">12.0</span> <span class="o">/</span> <span class="n">minsize</span>  <span class="c1"># Scale of MTCNN cell to minimum face size</span>
-        <span class="n">minl</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">])</span> <span class="o">*</span> <span class="n">m</span>  <span class="c1"># Image size to have a 12x12 region</span>
-        <span class="c1"># correspond to minimum face size</span>
+
+        <span class="c1"># Scale of MTCNN cell to minimum face size</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mf">12.0</span> <span class="o">/</span> <span class="n">minsize</span>
+
+        <span class="c1"># Reequired image size to have a 12x12</span>
+        <span class="c1"># region correspond to minimum face</span>
+        <span class="c1"># size</span>
+        <span class="n">minl</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">])</span> <span class="o">*</span> <span class="n">m</span>
         <span class="n">n_scales</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">12</span> <span class="o">/</span> <span class="n">minl</span><span class="p">,</span> <span class="n">factor</span><span class="p">))</span>
         <span class="n">scales</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_scales</span><span class="p">)]</span>
 
         <span class="c1"># Stage 1</span>
         <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">stride</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">cell_size</span> <span class="o">=</span> <span class="mi">12</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scales</span><span class="p">):</span>
-            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">([</span>
-                <span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_AREA</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
-                    <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">scaled</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">scaled_image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">INTER_AREA</span><span class="p">)</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">([</span>
+                <span class="n">fix_scale</span><span class="p">(</span><span class="n">scaled_image</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
             <span class="p">])</span>
             <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pnet</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)]</span>
-            <span class="n">x1y1x2y2s_current</span> <span class="o">=</span> <span class="n">calculate_boxes</span><span class="p">(</span><span class="n">clf</span><span class="o">=</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
-                                                <span class="n">reg</span><span class="o">=</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
-                                                <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span>
-                                                <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
-                                                <span class="n">cell_size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1y1x2y2s_current</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="n">x1y1x2y2s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x1y1x2y2s_current</span><span class="p">[</span><span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s_current</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span>
-                                                   <span class="s2">&quot;Union&quot;</span><span class="p">)])</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[]</span>
+            <span class="n">clf</span><span class="p">,</span> <span class="n">reg</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">yc</span><span class="p">,</span> <span class="n">xc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">clf</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">thresholds</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">clf</span><span class="p">[</span><span class="n">xc</span><span class="p">,</span> <span class="n">yc</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">reg</span><span class="p">[</span><span class="n">xc</span><span class="p">,</span> <span class="n">yc</span><span class="p">]</span>
+            <span class="n">bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">yc</span><span class="p">,</span> <span class="n">xc</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="n">x1y1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="n">stride</span> <span class="o">*</span> <span class="n">bb</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span>
+            <span class="n">x2y2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="n">stride</span> <span class="o">*</span> <span class="n">bb</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">cell_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span>
+            <span class="n">x1y1x2y2s_current</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">x1y1</span><span class="p">,</span> <span class="n">x2y2</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">reg</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+            <span class="p">)</span>
+            <span class="n">x1y1x2y2s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s_current</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;Union&quot;</span><span class="p">))</span>
         <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
-        <span class="n">apply_regression</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
-
-        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[</span><span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;Union&quot;</span><span class="p">)]</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;Union&quot;</span><span class="p">)</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">regress</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">square</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
 
         <span class="c1"># Stage 2</span>
-        <span class="n">pad_and_square</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
-        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">run_stage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rnet</span><span class="p">,</span>
-                              <span class="n">image</span><span class="p">,</span>
-                              <span class="n">x1y1x2y2s</span><span class="p">,</span>
-                              <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
-                              <span class="n">cell_size</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[]</span>
-        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[</span><span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;Union&quot;</span><span class="p">)]</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">run_stage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rnet</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mi">24</span><span class="p">)</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thresholds</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+        <span class="c1"># Note the ordering here of applying regression and nms differs from</span>
+        <span class="c1"># the original implementation. In the original, nms is applied first</span>
+        <span class="c1"># and regression second on Stage 2. But before regression, the boxes</span>
+        <span class="c1"># are the same as they were before, we just have a smaller subset of</span>
+        <span class="c1"># them, making the nms call superfluous. I&#39;ve swapped the order here</span>
+        <span class="c1"># to be consistent with Stage 3, where nms is applied after regression</span>
+        <span class="c1"># regression. To recover the original behavior, the nms and regression</span>
+        <span class="c1"># lines should be swapped back.</span>
+        <span class="c1"># https://github.com/davidsandberg/facenet/blob/096ed770f163957c1e56efa7feeb194773920f6e/src/align/detect_face.py#L377</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">regress</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s1">&#39;Union&#39;</span><span class="p">)</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">square</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
 
         <span class="c1"># Stage 3</span>
-        <span class="n">pad_and_square</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
-        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">run_stage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onet</span><span class="p">,</span>
-                              <span class="n">image</span><span class="p">,</span>
-                              <span class="n">x1y1x2y2s</span><span class="p">,</span>
-                              <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
-                              <span class="n">cell_size</span><span class="o">=</span><span class="mi">48</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[]</span>
-        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[</span><span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;Min&quot;</span><span class="p">)]</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">run_stage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">onet</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mi">48</span><span class="p">)</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">x1y1x2y2s</span><span class="p">[</span><span class="n">x1y1x2y2s</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thresholds</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">regress</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">)</span>
+        <span class="n">x1y1x2y2s</span> <span class="o">=</span> <span class="n">nms</span><span class="p">(</span><span class="n">x1y1x2y2s</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s1">&#39;Min&#39;</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="p">[</span>
             <span class="n">core</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
                 <span class="n">selection</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">Selection</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="p">[[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">],</span> <span class="p">[</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">]]),</span>

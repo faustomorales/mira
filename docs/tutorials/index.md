@@ -4,3 +4,4 @@
    quickstart
    coco2014
    textdetection
+   transferlearning
