@@ -117,9 +117,6 @@ dmypy.json
 # MacOS
 .DS_Store
 
-# VSCode
-.vscode
-
 # MacOS
 .Trash*
 

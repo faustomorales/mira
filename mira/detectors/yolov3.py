@@ -4,8 +4,9 @@ import logging
 import os
 
 import numpy as np
-from keras import backend as K
-from keras import regularizers, layers, models, optimizers
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras import regularizers, layers, models, optimizers
 
 from .detector import Detector
 from ..utils import compute_overlap
@@ -331,22 +332,22 @@ def make_loss(num_classes):
 
             # Calculate objectness loss, which applies to
             # all non-ignore anchors
-            indices = K.tf.where(K.not_equal(object_state_true, -1))
-            true = K.tf.gather_nd(object_state_true, indices)
-            pred = K.tf.gather_nd(object_state_pred, indices)
+            indices = tf.where(K.not_equal(object_state_true, -1))
+            true = tf.gather_nd(object_state_true, indices)
+            pred = tf.gather_nd(object_state_pred, indices)
             loss_objectness += K.sum(K.square(true - pred))
 
             # Calculate coordinate loss which applies only
             # to positive anchors
-            indices = K.tf.where(K.equal(object_state_true, 1))
-            true = K.tf.gather_nd(coords_true, indices)
-            pred = K.tf.gather_nd(coords_pred, indices)
+            indices = tf.where(K.equal(object_state_true, 1))
+            true = tf.gather_nd(coords_true, indices)
+            pred = tf.gather_nd(coords_pred, indices)
             loss_coords += K.sum(K.square(true - pred))
 
             # Calculate classification loss, which applies
             # only to positive anchors. Indices same as above.
-            true = K.tf.gather_nd(labels_true, indices)
-            pred = K.tf.gather_nd(labels_pred, indices)
+            true = tf.gather_nd(labels_true, indices)
+            pred = tf.gather_nd(labels_pred, indices)
             loss_labels += K.sum(K.square(true - pred))
 
         # Calculate total loss

@@ -4,3 +4,7 @@
 .pytest_cache
 .cache
 __pycache__
+.venv
+.Trash-0
+.*cache
+notebooks

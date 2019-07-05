@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:1.13.1-py3
+FROM python:3.7
 RUN apt-get update && apt-get install -y \
 	libsm6 \
 	libxrender1 \
@@ -7,7 +7,10 @@ RUN apt-get update && apt-get install -y \
 	git \
 	libglib2.0-0
 
-# Copy files and install Python dependencies
-COPY . /usr/src/mira
-RUN pip install -e /usr/src/mira[tests,docs]
-RUN pip install jupyterlab
+RUN pip install pipenv
+
+# Install project
+WORKDIR /usr/src
+COPY ./setup* ./
+COPY ./Pipfile* ./
+RUN PIPENV_VENV_IN_PROJECT=true pipenv install --dev --skip-lock

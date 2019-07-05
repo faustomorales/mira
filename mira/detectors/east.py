@@ -1,8 +1,8 @@
 from typing import Tuple, List
 import logging
 
-from keras import layers, regularizers, models, optimizers
-from keras import backend as K
+from tensorflow.keras import layers, regularizers, models, optimizers
+from tensorflow.keras import backend as K
 from nms import nms
 import numpy as np
 import cv2
@@ -33,16 +33,16 @@ class ScaleShift(layers.Layer):
         shape = (int(input_shape[-1]),)
 
         # Tensorflow >= 1.0.0 compatibility
-        self.gamma = K.variable(np.ones(shape), name='{}_gamma'.format(self.name))  # noqa: E501
-        self.beta = K.variable(np.zeros(shape), name='{}_beta'.format(self.name))  # noqa: E501
-        self.trainable_weights = [self.gamma, self.beta]
+        self._gamma = K.variable(np.ones(shape), name='{}_gamma'.format(self.name))  # noqa: E501
+        self._beta = K.variable(np.zeros(shape), name='{}_beta'.format(self.name))  # noqa: E501
+        self._trainable_weights = [self._gamma, self._beta]
 
         if self.initial_weights is not None:
             self.set_weights(self.initial_weights)
             del self.initial_weights
 
     def call(self, x, mask=None):
-        return self.gamma * x + self.beta
+        return self._gamma * x + self._beta
 
 
 def inception(

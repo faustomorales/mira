@@ -5,19 +5,14 @@ from imgaug import augmenters as iaa
 import numpy as np
 
 from .. import metrics
-from ..core import (
-    SceneCollection,
-    Annotation,
-    Image
-)
+from ..core import (SceneCollection, Annotation, Image)
 
 
 class Detector(ABC):
-    def detect(
-        self,
-        image: Union[Image, np.ndarray],
-        threshold: float=0.5
-    ) -> List[Annotation]:
+    model = None
+
+    def detect(self, image: Union[Image, np.ndarray],
+               threshold: float = 0.5) -> List[Annotation]:
         """Run detection for a given image.
 
         Args:
@@ -31,18 +26,13 @@ class Detector(ABC):
         X = self.compute_inputs([image])
         y = self.model.predict(X)
         annotations = self.invert_targets(
-            y,
-            images=[image],
-            threshold=threshold
-        )[0].annotations
-        return [a.resize(1/scale) for a in annotations]
+            y, images=[image], threshold=threshold)[0].annotations
+        return [a.resize(1 / scale) for a in annotations]
 
-    def detect_batch(
-        self,
-        images: List[Union[Image, np.ndarray]],
-        threshold: float=0.5,
-        batch_size: int=32
-    ) -> List[List[Annotation]]:
+    def detect_batch(self,
+                     images: List[Union[Image, np.ndarray]],
+                     threshold: float = 0.5,
+                     batch_size: int = 32) -> List[List[Annotation]]:
         """
         Perform object detection on a batch of images.
 
@@ -56,28 +46,17 @@ class Detector(ABC):
         """
         images = [image.view(Image) for image in images]
         images, scales = list(
-            zip(*[self._scale_to_model_size(image) for image in images])
-        )
+            zip(*[self._scale_to_model_size(image) for image in images]))
         X = self.compute_inputs(images)
         y = self.model.predict(X, batch_size=batch_size)
-        scenes = self.invert_targets(
-            y,
-            images=images,
-            threshold=threshold
-        )
-        return [
-            [
-                a.resize(1/scale) for a in scene.annotations
-            ] for scene, scale in zip(scenes, scales)
-        ]
+        scenes = self.invert_targets(y, images=images, threshold=threshold)
+        return [[a.resize(1 / scale) for a in scene.annotations]
+                for scene, scale in zip(scenes, scales)]
 
     def _scale_to_model_size(self, image: Image):
         height, width = self.model.input_shape[1:3]
         if height is not None and width is not None:
-            image, scale = image.fit(
-                width=width,
-                height=height
-            )
+            image, scale = image.fit(width=width, height=height)
         else:
             scale = 1
         return image, scale
@@ -98,10 +77,8 @@ class Detector(ABC):
         pass
 
     @abstractmethod
-    def compute_targets(
-        self,
-        collection: SceneCollection
-    ) -> Union[List[np.ndarray], np.ndarray]:
+    def compute_targets(self, collection: SceneCollection
+                        ) -> Union[List[np.ndarray], np.ndarray]:
         """Compute the expected outputs for a model. *You
         usually should not need this method*. For training,
         use `detector.train()`. For detection, use
@@ -130,38 +107,27 @@ class Detector(ABC):
         self.compile()
 
     def compute_Xy(self, collection: SceneCollection):
-        return (
-            self.compute_inputs(collection.images),
-            self.compute_targets(collection)
-        )
+        return (self.compute_inputs(collection.images),
+                self.compute_targets(collection))
 
-    def batch_generator(
-        self,
-        collection: SceneCollection,
-        train_shape: Tuple[int, int, int],
-        batch_size: int=1,
-        augmenter: iaa.Augmenter=None
-    ):
+    def batch_generator(self,
+                        collection: SceneCollection,
+                        train_shape: Tuple[int, int, int],
+                        batch_size: int = 1,
+                        augmenter: iaa.Augmenter = None):
         while True:
-            sample = collection.sample(
-                n=batch_size
-            ).augment(
-                augmenter=augmenter
-            ).fit(
-                height=train_shape[0],
-                width=train_shape[1]
-            )[0]
+            sample = collection.sample(n=batch_size).augment(
+                augmenter=augmenter).fit(
+                    height=train_shape[0], width=train_shape[1])[0]
             yield self.compute_Xy(sample)
 
-    def train(
-        self,
-        training: SceneCollection,
-        validation: SceneCollection=None,
-        batch_size: int=1,
-        augmenter: iaa.Augmenter=None,
-        train_shape: Tuple[int, int, int]=None,
-        **kwargs
-    ):
+    def train(self,
+              training: SceneCollection,
+              validation: SceneCollection = None,
+              batch_size: int = 1,
+              augmenter: iaa.Augmenter = None,
+              train_shape: Tuple[int, int, int] = None,
+              **kwargs):
         """Run training job. All additional keyword arguments
         passed to Keras' `fit_generator`. Note that, at a minimum,
         you must provide the `epochs` and `steps_per_epoch` arguments.
@@ -200,23 +166,17 @@ class Detector(ABC):
             collection=training,
             batch_size=batch_size,
             augmenter=augmenter,
-            train_shape=train_shape
-        )
+            train_shape=train_shape)
         if validation is None:
             history = training_model.fit_generator(
-                generator=training_generator,
-                **kwargs
-            )
+                generator=training_generator, **kwargs)
         else:
             validation = validation.fit(
-                height=train_shape[0],
-                width=train_shape[1]
-            )[0]
+                height=train_shape[0], width=train_shape[1])[0]
             history = training_model.fit_generator(
                 generator=training_generator,
                 validation_data=self.compute_Xy(validation),
-                **kwargs
-            )
+                **kwargs)
         return history
 
     def mAP(self, collection: SceneCollection, iou_threshold=0.5):
@@ -231,15 +191,11 @@ class Detector(ABC):
         Returns:
             mAP score
         """
-        pred = collection.assign(
-            scenes=[
-                s.assign(
-                    annotations=self.detect(s.image, threshold=0)
-                ) for s in collection
-            ]
-        )
+        pred = collection.assign(scenes=[
+            s.assign(annotations=self.detect(s.image, threshold=0))
+            for s in collection
+        ])
         return metrics.mAP(
             true_collection=collection,
             pred_collection=pred,
-            iou_threshold=iou_threshold
-        )
+            iou_threshold=iou_threshold)

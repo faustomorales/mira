@@ -13,13 +13,14 @@ from .detector import Detector
 from .. import core
 from .. import utils
 
-
 log = logging.getLogger(__name__)
 
 pretrained = {
     'resnet50': {
-        'hash': '6518ad56a0cca4d1bd8cbba268dd4e299c7633efe7d15902d5acbb0ba180027c',  # noqa: E501
-        'url': 'https://github.com/fizyr/keras-retinanet/releases/download/0.5.0/resnet50_coco_best_v2.1.0.h5'  # noqa: E501
+        'hash':
+        '6518ad56a0cca4d1bd8cbba268dd4e299c7633efe7d15902d5acbb0ba180027c',  # noqa: E501
+        'url':
+        'https://storage.googleapis.com/miradata/weights/retinanet/resnet50_coco_best_v2.1.0.h5'  # noqa: E501
     }
 }
 
@@ -42,16 +43,19 @@ class RetinaNet(Detector):
             extraction and bounding box regression / classification model.
             You should use this model for loading and saving weights.
     """
+
     def __init__(
-        self,
-        annotation_config: core.AnnotationConfiguration=core.AnnotationConfiguration.COCO,  # noqa: E501
-        input_shape: Tuple[int, int, int]=(None, None, 3),
-        pretrained_backbone: bool=True,
-        pretrained_top: bool=False,
-        backbone_name='resnet50'
-    ):
+            self,
+            annotation_config: core.AnnotationConfiguration = core.
+            AnnotationConfiguration.COCO,  # noqa: E501
+            input_shape: Tuple[int, int, int] = (None, None, 3),
+            pretrained_backbone: bool = True,
+            pretrained_top: bool = False,
+            backbone_name='resnet50'):
         if pretrained_top and pretrained_backbone:
-            log.info('Disabling imagenet weights, using pretrained full network instead')  # noqa: E501
+            log.info(
+                'Disabling imagenet weights, using pretrained full network '
+                'instead.')  # noqa: E501
             pretrained_backbone = False
         if pretrained_top:
             assert backbone_name in pretrained, (
@@ -65,44 +69,28 @@ class RetinaNet(Detector):
         self.model = self.rn_backbone.retinanet(
             inputs=layers.Input(input_shape),
             num_classes=len(annotation_config),
-            num_anchors=self.anchor_params.num_anchors()
-        )
+            num_anchors=self.anchor_params.num_anchors())
         if pretrained_backbone:
             weights_path = self.rn_backbone.download_imagenet()
             log.info('Loading weights from ' + weights_path)
-            self.model.load_weights(
-                weights_path,
-                by_name=True
-            )
+            self.model.load_weights(weights_path, by_name=True)
         if pretrained_top:
             assert annotation_config == core.AnnotationConfiguration.COCO, \
                 'To use pretrained_top, annotation config must be core.AnnotationConfiguration.COCO'  # noqa: E501
             pretrained_params = pretrained[backbone_name]
-            weights_path = utils.get_file(
-                origin=pretrained_params['url'],
-                file_hash=pretrained_params['hash'],
-                cache_subdir=path.join('weights', 'retinanet'),
-                hash_algorithm='sha256',
-                extract=False
-            )
-            self.model.load_weights(
-                weights_path,
-                by_name=True
-            )
+            weights_path = utils.get_file(origin=pretrained_params['url'],
+                                          file_hash=pretrained_params['hash'],
+                                          cache_subdir=path.join(
+                                              'weights', 'retinanet'),
+                                          hash_algorithm='sha256',
+                                          extract=False)
+            self.model.load_weights(weights_path, by_name=True)
         self.compile()
 
-    def invert_targets(
-        self,
-        y,
-        images,
-        threshold=0.5,
-        nms_threshold=0.1
-    ):
+    def invert_targets(self, y, images, threshold=0.5, nms_threshold=0.1):
 
-        boxes = rn_anchors.anchors_for_shape(
-            image_shape=images[0].shape,
-            anchor_params=self.anchor_params
-        )
+        boxes = rn_anchors.anchors_for_shape(image_shape=images[0].shape,
+                                             anchor_params=self.anchor_params)
 
         # We filter the third dimension in order to remove the anchor states
         # if `invert_targets` is directly called with the output
@@ -131,9 +119,8 @@ class RetinaNet(Detector):
         yb = boxes[:, 3] + (y0[:, :, 3] * std[3] + mean[3]) * height
         w = xr - xl
         h = yb - yt
-        xywh = np.concatenate(
-            [np.expand_dims(x, -1) for x in [xl, yt, w, h]], axis=2
-        )
+        xywh = np.concatenate([np.expand_dims(x, -1) for x in [xl, yt, w, h]],
+                              axis=2)
 
         scenes = []
         for boxes, labels, image in zip(xywh, y1, images):
@@ -149,88 +136,64 @@ class RetinaNet(Detector):
                     class_positive = labels[:, c] > threshold
                     subboxes = boxes[class_positive]
                     sublabels = labels[class_positive, c]
-                    bestIdxs = cv2.dnn.NMSBoxes(
-                        bboxes=subboxes.tolist(),
-                        scores=sublabels.tolist(),
-                        score_threshold=threshold,
-                        nms_threshold=0.1
-                    )[:, 0]
+                    bestIdxs = cv2.dnn.NMSBoxes(bboxes=subboxes.tolist(),
+                                                scores=sublabels.tolist(),
+                                                score_threshold=threshold,
+                                                nms_threshold=0.1)[:, 0]
                     subboxes = subboxes[bestIdxs]
                     predictions.extend([b.tolist() + [c] for b in subboxes])
                     annotations = [
-                        core.Annotation(
-                            selection=core.Selection([
-                                [x, y],
-                                [x + w, y + h]
-                            ]),
-                            category=self.annotation_config[c]
-                        )
+                        core.Annotation(selection=core.Selection(
+                            [[x, y], [x + w, y + h]]),
+                                        category=self.annotation_config[c])
                         for x, y, w, h, c in predictions
                     ]
             scenes.append(
-                core.Scene(
-                    annotations=annotations,
-                    annotation_config=self.annotation_config,
-                    image=image
-                )
-            )
+                core.Scene(annotations=annotations,
+                           annotation_config=self.annotation_config,
+                           image=image))
         return scenes
 
-    def compute_targets(
-        self,
-        collection: core.SceneCollection
-    ):
+    def compute_targets(self, collection: core.SceneCollection):
         # Targets are two outputs with shapes
         # (B, N, 5) (four anchor regression targets + anchor state)
         # (B, N, M + 1) (M classification targets + anchor state)
         assert collection.annotation_config == self.annotation_config, \
             'Found incompatible annotation configuration.'
-        annotations_group = [
-            {'bboxes': b[:, :4], 'labels': b[:, 4]}
-            for b in [
-                s.bboxes() for s in collection
-            ]
-        ]
+        annotations_group = [{
+            'bboxes': b[:, :4],
+            'labels': b[:, 4]
+        } for b in [s.bboxes() for s in collection]]
         images = collection.images
         anchors = rn_anchors.anchors_for_shape(
-            image_shape=images[0].shape,
-            anchor_params=self.anchor_params
-        )
-        return list(rn_anchors.anchor_targets_bbox(
-            anchors=anchors,
-            image_group=images,
-            annotations_group=annotations_group,
-            num_classes=len(self.annotation_config),
-            negative_overlap=0.4,
-            positive_overlap=0.5
-        ))
+            image_shape=images[0].shape, anchor_params=self.anchor_params)
+        return list(
+            rn_anchors.anchor_targets_bbox(anchors=anchors,
+                                           image_group=images,
+                                           annotations_group=annotations_group,
+                                           num_classes=len(
+                                               self.annotation_config),
+                                           negative_overlap=0.4,
+                                           positive_overlap=0.5))
 
     def compute_inputs(self, images: List[core.Image]):
-        return np.float32([
-            self.rn_backbone.preprocess_image(image)
-            for image in images
-        ])
+        return np.float32(
+            [self.rn_backbone.preprocess_image(image) for image in images])
 
     def compile(self):
-        self.model.compile(
-            loss={
-                'regression': rn_losses.smooth_l1(),
-                'classification': rn_losses.focal()
-            },
-            optimizer=optimizers.adam(lr=1e-5, clipnorm=0.001)
-        )
+        self.model.compile(loss={
+            'regression': rn_losses.smooth_l1(),
+            'classification': rn_losses.focal()
+        },
+                           optimizer=optimizers.adam(lr=1e-5, clipnorm=0.001))
 
     def freeze_backbone(self):
         output_names = [
-            'regression_submodel',
-            'classification_submodel',
-            'P3', 'P4', 'P5', 'P6', 'P7'
+            'regression_submodel', 'classification_submodel', 'P3', 'P4', 'P5',
+            'P6', 'P7'
         ]
         for l in self.model.layers:
-            if (
-                l.name in output_names or
-                l.name in self.model.output_names
-            ):
+            if (l.name in output_names or l.name in self.model.output_names):
                 log.info('Not freezing ' + l.name)
             else:
                 log.info('Freezing ' + l.name)
