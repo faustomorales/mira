@@ -190,17 +190,17 @@
 <p>To see logs, use the <code class="docutils literal notranslate"><span class="pre">logging</span></code> API. The logs can be
 useful for keeping track of what is happening behind
 the scenes.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
-<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">()</span>
-<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s1">&#39;INFO&#39;</span><span class="p">)</span>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="n">import</span> <span class="n">logging</span>
+<span class="n">logging</span><span class="p">.</span><span class="n">basicConfig</span><span class="p">()</span>
+<span class="n">logging</span><span class="p">.</span><span class="n">getLogger</span><span class="p">().</span><span class="n">setLevel</span><span class="p">(</span><span class="s1">&#39;INFO&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="browsing-image-data">
 <h2>Browsing image data<a class="headerlink" href="#browsing-image-data" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span>
-<span class="n">coco</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_coco2017</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
-<span class="n">coco</span><span class="p">[</span><span class="mi">26</span><span class="p">]</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="k">from</span> <span class="n">mira</span> <span class="n">import</span> <span class="n">datasets</span>
+<span class="n">coco</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">.</span><span class="n">load_coco2017</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
+<span class="n">coco</span><span class="p">[</span><span class="mi">26</span><span class="p">].</span><span class="n">annotated</span><span class="p">().</span><span class="k">show</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="basic image" src="../_images/example_browsing.png" />
@@ -212,28 +212,28 @@ object detection sometimes. But <code class="docutils literal notranslate"><span
 it pretty easy to build augmentation pipelines
 and mira uses them to transform images as well
 as annotations.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span>
-<span class="kn">from</span> <span class="nn">imgaug</span> <span class="kn">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="k">from</span> <span class="n">mira</span> <span class="n">import</span> <span class="n">datasets</span>
+<span class="k">from</span> <span class="n">imgaug</span> <span class="n">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
 
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_voc2012</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">.</span><span class="n">load_voc2012</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
 <span class="n">scene</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span>
-<span class="n">augmenter</span> <span class="o">=</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
-    <span class="n">iaa</span><span class="o">.</span><span class="n">Fliplr</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="c1"># horizontally flip 50% of the images</span>
-    <span class="n">iaa</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)),</span> <span class="c1"># blur images with a sigma of 0 to 3.0</span>
-    <span class="n">iaa</span><span class="o">.</span><span class="n">Affine</span><span class="p">(</span>
-        <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">),</span> <span class="c1"># scale between 90% and 110% of original</span>
-        <span class="n">translate_percent</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">),</span> <span class="c1"># Translate +/- 10% of image size</span>
-        <span class="n">rotate</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>  <span class="c1"># rotate -5 degrees to 5 degrees</span>
+<span class="n">augmenter</span> <span class="o">=</span> <span class="n">iaa</span><span class="p">.</span><span class="n">Sequential</span><span class="p">([</span>
+    <span class="n">iaa</span><span class="p">.</span><span class="n">Fliplr</span><span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">5</span><span class="p">),</span> <span class="o">#</span> <span class="n">horizontally</span> <span class="n">flip</span> <span class="mi">50</span><span class="o">%</span> <span class="k">of</span> <span class="n">the</span> <span class="n">images</span>
+    <span class="n">iaa</span><span class="p">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">.</span><span class="mi">0</span><span class="p">)),</span> <span class="o">#</span> <span class="n">blur</span> <span class="n">images</span> <span class="k">with</span> <span class="n">a</span> <span class="n">sigma</span> <span class="k">of</span> <span class="mi">0</span> <span class="k">to</span> <span class="mi">3</span><span class="p">.</span><span class="mi">0</span>
+    <span class="n">iaa</span><span class="p">.</span><span class="n">Affine</span><span class="p">(</span>
+        <span class="k">scale</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">9</span><span class="p">,</span> <span class="mi">1</span><span class="p">.</span><span class="mi">1</span><span class="p">),</span> <span class="o">#</span> <span class="k">scale</span> <span class="k">between</span> <span class="mi">90</span><span class="o">%</span> <span class="k">and</span> <span class="mi">110</span><span class="o">%</span> <span class="k">of</span> <span class="n">original</span>
+        <span class="n">translate_percent</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">),</span> <span class="o">#</span> <span class="k">Translate</span> <span class="o">+/-</span> <span class="mi">10</span><span class="o">%</span> <span class="k">of</span> <span class="n">image</span> <span class="k">size</span>
+        <span class="n">rotate</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>  <span class="o">#</span> <span class="n">rotate</span> <span class="o">-</span><span class="mi">5</span> <span class="n">degrees</span> <span class="k">to</span> <span class="mi">5</span> <span class="n">degrees</span>
         <span class="n">cval</span><span class="o">=</span><span class="mi">255</span>
     <span class="p">)</span>
 <span class="p">])</span>
 
-<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_original</span><span class="p">,</span> <span class="n">ax_augmenter</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-<span class="n">ax_original</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Original&#39;</span><span class="p">)</span>
-<span class="n">ax_augmenter</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Augmented&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_original</span><span class="p">,</span> <span class="n">ax_augmenter</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax_original</span><span class="p">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Original&#39;</span><span class="p">)</span>
+<span class="n">ax_augmenter</span><span class="p">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Augmented&#39;</span><span class="p">)</span>
 
-<span class="n">scene</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_original</span><span class="p">)</span>
-<span class="n">scene</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span><span class="n">augmenter</span><span class="p">)</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_augmenter</span><span class="p">)</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">annotated</span><span class="p">().</span><span class="k">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_original</span><span class="p">)</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">augment</span><span class="p">(</span><span class="n">augmenter</span><span class="p">).</span><span class="n">annotated</span><span class="p">().</span><span class="k">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_augmenter</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="augmented image" src="../_images/example_augmentation.png" />
@@ -243,58 +243,58 @@ as annotations.</p>
 <p>The example below shows how easy it is to
 do object detection using the common API
 for detectors.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">detectors</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>from mira import datasets, detectors
+import matplotlib.pyplot as plt
 
-<span class="c1"># Load the VOC dataset (use the validation</span>
-<span class="c1"># split to save time)</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_voc2012</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;val&#39;</span><span class="p">)</span>
+# Load the VOC dataset (use the validation
+# split to save time)
+dataset = datasets.load_voc2012(subset=&#39;val&#39;)
 
-<span class="c1"># Load YOLO with pretrained layers. It is</span>
-<span class="c1"># set up to use COCO labels.</span>
-<span class="n">detector_yolo</span> <span class="o">=</span> <span class="n">detectors</span><span class="o">.</span><span class="n">YOLOv3</span><span class="p">(</span>
-    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
-    <span class="n">pretrained_top</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;tiny&#39;</span>
-<span class="p">)</span>
+# Load YOLO with pretrained layers. It is
+# set up to use COCO labels.
+detector_yolo = detectors.YOLOv3(
+    input_shape=(256, 256, 3),
+    pretrained_top=True,
+    size=&#39;tiny&#39;
+)
 
-<span class="c1"># Load RetinaNet with pretrained layers.</span>
-<span class="c1"># It also uses COCO labels.</span>
-<span class="n">detector_rn</span> <span class="o">=</span> <span class="n">detectors</span><span class="o">.</span><span class="n">RetinaNet</span><span class="p">(</span>
-    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
-    <span class="n">pretrained_top</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-    <span class="n">backbone_name</span><span class="o">=</span><span class="s1">&#39;resnet50&#39;</span>
-<span class="p">)</span>
+# Load RetinaNet with pretrained layers.
+# It also uses COCO labels.
+detector_rn = detectors.RetinaNet(
+    input_shape=(256, 256, 3),
+    pretrained_top=True,
+    backbone_name=&#39;resnet50&#39;
+)
 
-<span class="c1"># Pick an example scene</span>
-<span class="n">scene</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+# Pick an example scene
+scene = dataset[5]
 
-<span class="c1"># Set up side-by-side plots</span>
-<span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax_rn</span><span class="p">,</span> <span class="n">ax_yolo</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
-<span class="n">ax_rn</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;RetinaNet&#39;</span><span class="p">)</span>
-<span class="n">ax_yolo</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;YOLOv3&#39;</span><span class="p">)</span>
+# Set up side-by-side plots
+fig, (ax_rn, ax_yolo) = plt.subplots(ncols=2, figsize=(10, 5))
+ax_rn.set_title(&#39;RetinaNet&#39;)
+ax_yolo.set_title(&#39;YOLOv3&#39;)
 
-<span class="c1"># We get predicted scenes from each detector. Detectors return</span>
-<span class="c1"># lists of annotations for a given image. So we can just replace</span>
-<span class="c1"># (assign) those new annotations to the scene to get a new scene</span>
-<span class="c1"># reflecting the detector&#39;s prediction.</span>
-<span class="n">predicted_rn</span> <span class="o">=</span> <span class="n">scene</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
-    <span class="n">annotations</span><span class="o">=</span><span class="n">detector_rn</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">image</span><span class="p">),</span>
-    <span class="n">annotation_config</span><span class="o">=</span><span class="n">detector_rn</span><span class="o">.</span><span class="n">annotation_config</span>
-<span class="p">)</span>
-<span class="n">predicted_yolo</span> <span class="o">=</span> <span class="n">scene</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
-    <span class="n">annotations</span><span class="o">=</span><span class="n">detector_yolo</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.4</span><span class="p">),</span>
-    <span class="n">annotation_config</span><span class="o">=</span><span class="n">detector_yolo</span><span class="o">.</span><span class="n">annotation_config</span>
-<span class="p">)</span>
+# We get predicted scenes from each detector. Detectors return
+# lists of annotations for a given image. So we can just replace
+# (assign) those new annotations to the scene to get a new scene
+# reflecting the detector&#39;s prediction.
+predicted_rn = scene.assign(
+    annotations=detector_rn.detect(scene.image),
+    annotation_config=detector_rn.annotation_config
+)
+predicted_yolo = scene.assign(
+    annotations=detector_yolo.detect(scene.image, threshold=0.4),
+    annotation_config=detector_yolo.annotation_config
+)
 
-<span class="c1"># Plot both predictions. The calls to annotation() get us</span>
-<span class="c1"># an image with the bounding boxes drawn.</span>
-<span class="n">_</span> <span class="o">=</span> <span class="n">predicted_rn</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_rn</span><span class="p">)</span>
-<span class="n">_</span> <span class="o">=</span> <span class="n">predicted_yolo</span><span class="o">.</span><span class="n">annotated</span><span class="p">()</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax_yolo</span><span class="p">)</span>
+# Plot both predictions. The calls to annotation() get us
+# an image with the bounding boxes drawn.
+_ = predicted_rn.annotated().show(ax=ax_rn)
+_ = predicted_yolo.annotated().show(ax=ax_yolo)
 </pre></div>
 </div>
 <img alt="../_images/example_simple_od.png" src="../_images/example_simple_od.png" />
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>:alt: annotated image
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="p">:</span><span class="n">alt</span><span class="p">:</span> <span class="n">annotated</span> <span class="n">image</span>
 </pre></div>
 </div>
 </div>

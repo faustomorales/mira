@@ -185,56 +185,48 @@
 <p>We provide a few common metrics for object detection</p>
 <span class="target" id="module-mira.metrics"></span><dl class="function">
 <dt id="mira.metrics.mAP">
-<code class="descclassname">mira.metrics.</code><code class="descname">mAP</code><span class="sig-paren">(</span><em>true_collection</em>, <em>pred_collection</em>, <em>iou_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mira/metrics.html#mAP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.metrics.mAP" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mira.metrics.</code><code class="sig-name descname">mAP</code><span class="sig-paren">(</span><em class="sig-param">true_collection</em>, <em class="sig-param">pred_collection</em>, <em class="sig-param">iou_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mira/metrics.html#mAP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.metrics.mAP" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute mAP (mean average precision) for
 a pair of scene collections.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>true_collection</strong> – The true scene collection</li>
-<li><strong>pred_collection</strong> – The predicted scene collection</li>
-<li><strong>iou_threshold</strong> – The threshold for detection</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true_collection</strong> – The true scene collection</p></li>
+<li><p><strong>pred_collection</strong> – The predicted scene collection</p></li>
+<li><p><strong>iou_threshold</strong> – The threshold for detection</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">mAP score</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>mAP score</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mira.metrics.precision_recall_curve">
-<code class="descclassname">mira.metrics.</code><code class="descname">precision_recall_curve</code><span class="sig-paren">(</span><em>true_collection</em>, <em>pred_collection</em>, <em>iou_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mira/metrics.html#precision_recall_curve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.metrics.precision_recall_curve" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mira.metrics.</code><code class="sig-name descname">precision_recall_curve</code><span class="sig-paren">(</span><em class="sig-param">true_collection</em>, <em class="sig-param">pred_collection</em>, <em class="sig-param">iou_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mira/metrics.html#precision_recall_curve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.metrics.precision_recall_curve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the precision-recall curve for each of the
 classes.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>true_collection</strong> – The true scene collection</li>
-<li><strong>pred_collection</strong> – The predicted scene collection</li>
-<li><strong>iou_threshold</strong> – The threshold for detection</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true_collection</strong> – The true scene collection</p></li>
+<li><p><strong>pred_collection</strong> – The predicted scene collection</p></li>
+<li><p><strong>iou_threshold</strong> – The threshold for detection</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A list of 3-tuples, one for each class. The tuple
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of 3-tuples, one for each class. The tuple
 consists of the precision, recall, and score
 thresholds, respectively.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]]</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]]</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>

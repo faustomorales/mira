@@ -178,39 +178,32 @@
            <div itemprop="articleBody">
             
   <h1>Source code for mira.datasets.via</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">csv</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tools for loading and saving VGG Image Annotator datasets.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">import</span> <span class="nn">typing</span>
 
-<span class="kn">import</span> <span class="nn">validators</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">Annotation</span><span class="p">,</span>
-    <span class="n">Scene</span><span class="p">,</span>
-    <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">Selection</span><span class="p">,</span>
-    <span class="n">AnnotationConfiguration</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">core</span>
 
 
-<div class="viewcode-block" id="load_via"><a class="viewcode-back" href="../../../datasets/load.html#mira.datasets.load_via">[docs]</a><span class="k">def</span> <span class="nf">load_via</span><span class="p">(</span>
-    <span class="n">annotations_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">label_key</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;class&#39;</span><span class="p">,</span>
-    <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">cache</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
+<div class="viewcode-block" id="load_via"><a class="viewcode-back" href="../../../datasets/load.html#mira.datasets.load_via">[docs]</a><span class="k">def</span> <span class="nf">load_via</span><span class="p">(</span><span class="n">project_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+             <span class="n">label_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;class&#39;</span><span class="p">,</span>
+             <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">cache</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Load annotations created by the `VGG Image Annotation Tool</span>
 <span class="sd">    &lt;http://www.robots.ox.ac.uk/~vgg/software/via/&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        annotations_file: The file containing the</span>
-<span class="sd">            annotations. For now, only the CSV</span>
+<span class="sd">        project_file: The file containing the</span>
+<span class="sd">            annotations. Only the JSON</span>
 <span class="sd">            format is supported.</span>
 <span class="sd">        label_key: The attribute name to use for class labels</span>
-<span class="sd">        annotation_config: The annotation configuration to use.</span>
-<span class="sd">            If None, it is inferred from the annotations file.</span>
 <span class="sd">        image_dir: The directory in which to look</span>
 <span class="sd">            for images. If None, defaults the</span>
 <span class="sd">            folder in which the annotations_file</span>
@@ -219,82 +212,148 @@
 <span class="sd">            if the annotations file references URLs (i.e.,</span>
 <span class="sd">            specify a directory in which to save images).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">annotations_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.csv&#39;</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s1">&#39;Only the VIA CSV format is supported at &#39;</span>
-            <span class="s1">&#39;this time.&#39;</span>
-        <span class="p">)</span>
     <span class="k">if</span> <span class="n">image_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">image_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">annotations_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">annotations_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">category_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">annotations_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
-        <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">quotechar</span><span class="o">=</span><span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">reader</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="n">image_name</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">image_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">annotations_dict</span><span class="p">:</span>
-                <span class="n">annotations_dict</span><span class="p">[</span><span class="n">image_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">image_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">project_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">project_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.json&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Only the VIA JSON format is supported.&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">project_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  <span class="c1"># pylint: disable=invalid-name</span>
+        <span class="n">project_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="n">img_metadata</span> <span class="o">=</span> <span class="n">project_data</span><span class="p">[</span><span class="s1">&#39;_via_img_metadata&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="n">project_attrs</span> <span class="o">=</span> <span class="n">project_data</span><span class="p">[</span><span class="s1">&#39;_via_attributes&#39;</span><span class="p">]</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">img_metadata</span><span class="p">]</span>
+    <span class="n">regions_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">json_normalize</span><span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;regions&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+            <span class="n">filename</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span>
+        <span class="p">)</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">img_metadata</span>
+    <span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-            <span class="n">region_shape</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
-            <span class="n">region_attr</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
-
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">region_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="c1"># If there is no region information,</span>
-                <span class="c1"># it means there is no annotation in this</span>
-                <span class="c1"># image.</span>
-                <span class="k">continue</span>
-
-            <span class="k">if</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rect&#39;</span><span class="p">:</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span>
-                <span class="n">y</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
-                <span class="n">width</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">]</span>
-                <span class="n">height</span> <span class="o">=</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span>
-                <span class="n">selection</span> <span class="o">=</span> <span class="n">Selection</span><span class="p">(</span>
-                    <span class="p">[</span>
-                        <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
-                        <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">width</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">height</span><span class="p">]</span>
-                    <span class="p">]</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                    <span class="s1">&#39;Only rectangles are supported at this time, &#39;</span>
-                    <span class="s1">&#39;not </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">region_shape</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
-                <span class="p">)</span>
-            <span class="n">category_name</span> <span class="o">=</span> <span class="n">region_attr</span><span class="p">[</span><span class="n">label_key</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="n">category_set</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">category_name</span><span class="p">])</span>
-            <span class="n">annotations_dict</span><span class="p">[</span><span class="n">image_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">category_name</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
-            <span class="p">)</span>
-    <span class="k">if</span> <span class="n">annotation_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">annotation_config</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">category_set</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">annotation_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span>
-            <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">category_set</span><span class="p">))</span>
-        <span class="p">)</span>
-    <span class="n">scenes</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">image</span><span class="p">,</span> <span class="n">annotations</span> <span class="ow">in</span> <span class="n">annotations_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">validators</span><span class="o">.</span><span class="n">url</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
-            <span class="n">image</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
-        <span class="n">annotations</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">Annotation</span><span class="p">(</span>
-                <span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span>
-                <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">category_name</span><span class="p">]</span>
-            <span class="p">)</span> <span class="k">for</span> <span class="n">category_name</span><span class="p">,</span> <span class="n">selection</span> <span class="ow">in</span> <span class="n">annotations</span>
-        <span class="p">]</span>
-        <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">Scene</span><span class="p">(</span>
-                <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
-                <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
+    <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="p">(</span>
+        <span class="n">project_attrs</span><span class="p">[</span><span class="s1">&#39;region&#39;</span><span class="p">][</span><span class="n">label_key</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="p">(</span><span class="n">regions_df</span><span class="p">[</span><span class="s1">&#39;shape_attributes.name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rect&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> \
+        <span class="s1">&#39;Only axis aligned rectangular selections are supported.&#39;</span>
+    <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">(</span>
+        <span class="n">scenes</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">core</span><span class="o">.</span><span class="n">Scene</span><span class="p">(</span>
+                <span class="n">image</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span>
                 <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">,</span>
-                <span class="n">cache</span><span class="o">=</span><span class="n">cache</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span>
-        <span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span>
+                <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+                <span class="n">annotations</span><span class="o">=</span><span class="p">[</span>
+                    <span class="n">core</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
+                        <span class="n">selection</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">Selection</span><span class="p">(</span>
+                            <span class="n">points</span><span class="o">=</span><span class="p">[</span>
+                                <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;shape_attributes.x&#39;</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;shape_attributes.y&#39;</span><span class="p">]],</span>
+                                <span class="p">[</span>
+                                    <span class="n">r</span><span class="p">[</span><span class="s1">&#39;shape_attributes.x&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;shape_attributes.width&#39;</span><span class="p">],</span>
+                                    <span class="n">r</span><span class="p">[</span><span class="s1">&#39;shape_attributes.y&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;shape_attributes.height&#39;</span><span class="p">]</span>
+                                <span class="p">]</span>
+                            <span class="p">]</span>
+                        <span class="p">),</span>
+                        <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="n">f</span><span class="s1">&#39;region_attributes.</span><span class="si">{label_key}</span><span class="s1">&#39;</span><span class="p">]]</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">regions_df</span><span class="p">[</span><span class="n">regions_df</span><span class="o">.</span><span class="n">filename</span> <span class="o">==</span> <span class="n">filename</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span>
+                <span class="p">]</span>
+            <span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span>
+        <span class="p">],</span>
         <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
     <span class="p">)</span></div>
+
+<span class="k">def</span> <span class="nf">save_via</span><span class="p">(</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">,</span>
+        <span class="n">export_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">label_key</span><span class="o">=</span><span class="s1">&#39;class&#39;</span><span class="p">,</span>
+        <span class="n">project_name</span><span class="o">=</span><span class="s1">&#39;mira_export&#39;</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Save a scene collection in VIA format.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        collection: The scene collection to save.</span>
+<span class="sd">        export_dir: The directory where the via.json file along with all images</span>
+<span class="sd">            will be saved.</span>
+<span class="sd">        label_key: The region attribute in which to store the labels</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Make sure the directory does not exist.</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">export_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{export_dir}</span><span class="s1"> already exists.&#39;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[(</span><span class="n">f</span><span class="s1">&#39;{uuid.uuid4()}.jpg&#39;</span><span class="p">,</span> <span class="n">scene</span><span class="p">)</span> <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">scene</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">scene</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">data</span>
+    <span class="p">]</span>
+    <span class="n">sc_bboxes</span> <span class="o">=</span> <span class="p">[[</span><span class="n">ann</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">xywh</span><span class="p">()</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">annotations</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
+    <span class="n">img_metadata_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{filename}{size}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+    <span class="n">img_metadata_values</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+            <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s1">&#39;regions&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;shape_attributes&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;rect&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="n">width</span><span class="p">,</span> <span class="s1">&#39;height&#39;</span><span class="p">:</span> <span class="n">height</span>
+                    <span class="p">},</span>
+                    <span class="s1">&#39;region_attributes&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="n">label_key</span><span class="p">:</span> <span class="n">ann</span><span class="o">.</span><span class="n">category</span><span class="o">.</span><span class="n">name</span>
+                    <span class="p">}</span>
+                <span class="p">}</span> <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">ann</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">bboxes</span><span class="p">,</span> <span class="n">scene</span><span class="o">.</span><span class="n">annotations</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">scene</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span> <span class="n">bboxes</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sc_bboxes</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">via_attributes</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;region&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">label_key</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;dropdown&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;options&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
+                    <span class="nb">zip</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">category</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="n">collection</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">],</span>
+                        <span class="p">[</span><span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">category</span> <span class="ow">in</span> <span class="n">collection</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
+                <span class="s1">&#39;default_options&#39;</span><span class="p">:</span> <span class="p">{}</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="p">{}</span>
+    <span class="p">}</span>
+    <span class="n">export_object</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;_via_img_metadata&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">img_metadata_keys</span><span class="p">,</span> <span class="n">img_metadata_values</span><span class="p">)),</span>
+        <span class="s1">&#39;_via_attributes&#39;</span><span class="p">:</span> <span class="n">via_attributes</span><span class="p">,</span>
+        <span class="s2">&quot;_via_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;ui&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;annotation_editor_height&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+                <span class="s2">&quot;annotation_editor_fontsize&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+                <span class="s2">&quot;leftsidebar_width&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+                <span class="s2">&quot;image_grid&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;img_height&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+                    <span class="s2">&quot;rshape_fill&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;rshape_fill_opacity&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+                    <span class="s2">&quot;rshape_stroke&quot;</span><span class="p">:</span> <span class="s2">&quot;yellow&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;rshape_stroke_width&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="s2">&quot;show_region_shape&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                    <span class="s2">&quot;show_image_policy&quot;</span><span class="p">:</span> <span class="s2">&quot;all&quot;</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;region_label&quot;</span><span class="p">:</span> <span class="s2">&quot;__via_region_id__&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;region_color&quot;</span><span class="p">:</span> <span class="s2">&quot;__via_default_region_color__&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;region_label_font&quot;</span><span class="p">:</span> <span class="s2">&quot;10px Sans&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;on_image_annotation_editor_placement&quot;</span><span class="p">:</span> <span class="s2">&quot;NEAR_REGION&quot;</span>
+                <span class="p">}</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;core&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;buffer_size&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+                <span class="s2">&quot;filepath&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="s2">&quot;default_filepath&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;project&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">project_name</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="s1">&#39;via.json&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  <span class="c1"># pylint: disable=invalid-name</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">export_object</span><span class="p">))</span>
 </pre></div>
 
            </div>

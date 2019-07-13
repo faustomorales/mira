@@ -185,19 +185,14 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">metrics</span>
-<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">Annotation</span><span class="p">,</span>
-    <span class="n">Image</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span><span class="n">SceneCollection</span><span class="p">,</span> <span class="n">Annotation</span><span class="p">,</span> <span class="n">Image</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Detector"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector">[docs]</a><span class="k">class</span> <span class="nc">Detector</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<div class="viewcode-block" id="Detector.detect"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.detect">[docs]</a>    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
-        <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.5</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Detector.detect"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.detect">[docs]</a>    <span class="k">def</span> <span class="nf">detect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+               <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Run detection for a given image.</span>
 
 <span class="sd">        Args:</span>
@@ -211,18 +206,13 @@
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_inputs</span><span class="p">([</span><span class="n">image</span><span class="p">])</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
         <span class="n">annotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invert_targets</span><span class="p">(</span>
-            <span class="n">y</span><span class="p">,</span>
-            <span class="n">images</span><span class="o">=</span><span class="p">[</span><span class="n">image</span><span class="p">],</span>
-            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">annotations</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">]</span></div>
+            <span class="n">y</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="p">[</span><span class="n">image</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">annotations</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">annotations</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Detector.detect_batch"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.detect_batch">[docs]</a>    <span class="k">def</span> <span class="nf">detect_batch</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
-        <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">32</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]]:</span>
+<div class="viewcode-block" id="Detector.detect_batch"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.detect_batch">[docs]</a>    <span class="k">def</span> <span class="nf">detect_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
+                     <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Annotation</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform object detection on a batch of images.</span>
 
@@ -236,28 +226,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">image</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]</span>
         <span class="n">images</span><span class="p">,</span> <span class="n">scales</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-            <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scale_to_model_size</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">])</span>
-        <span class="p">)</span>
+            <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scale_to_model_size</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]))</span>
         <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_inputs</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
-        <span class="n">scenes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invert_targets</span><span class="p">(</span>
-            <span class="n">y</span><span class="p">,</span>
-            <span class="n">images</span><span class="o">=</span><span class="n">images</span><span class="p">,</span>
-            <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="p">[</span>
-            <span class="p">[</span>
-                <span class="n">a</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">scale</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">scene</span><span class="o">.</span><span class="n">annotations</span>
-            <span class="p">]</span> <span class="k">for</span> <span class="n">scene</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">scenes</span><span class="p">,</span> <span class="n">scales</span><span class="p">)</span>
-        <span class="p">]</span></div>
+        <span class="n">scenes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invert_targets</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="n">images</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="n">a</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">scene</span><span class="o">.</span><span class="n">annotations</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">scene</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">scenes</span><span class="p">,</span> <span class="n">scales</span><span class="p">)]</span></div>
 
     <span class="k">def</span> <span class="nf">_scale_to_model_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="p">):</span>
         <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">image</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
-                <span class="n">height</span><span class="o">=</span><span class="n">height</span>
-            <span class="p">)</span>
+            <span class="n">image</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">scale</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">scale</span>
@@ -278,10 +257,8 @@
         <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="Detector.compute_targets"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.compute_targets">[docs]</a>    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">compute_targets</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">compute_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span>
+                        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Compute the expected outputs for a model. *You</span>
 <span class="sd">        usually should not need this method*. For training,</span>
 <span class="sd">        use `detector.train()`. For detection, use</span>
@@ -310,38 +287,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">compute_Xy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">compute_inputs</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">images</span><span class="p">),</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">compute_targets</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_inputs</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">images</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">compute_targets</span><span class="p">(</span><span class="n">collection</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">batch_generator</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
-        <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
-        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">batch_generator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+                        <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+                        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">sample</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-                <span class="n">n</span><span class="o">=</span><span class="n">batch_size</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span>
-                <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span>
+                <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+                    <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_Xy</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Detector.train"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">training</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
-        <span class="n">validation</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">):</span>
+<div class="viewcode-block" id="Detector.train"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+              <span class="n">training</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+              <span class="n">validation</span><span class="p">:</span> <span class="n">SceneCollection</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+              <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+              <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Run training job. All additional keyword arguments</span>
 <span class="sd">        passed to Keras&#39; `fit_generator`. Note that, at a minimum,</span>
 <span class="sd">        you must provide the `epochs` and `steps_per_epoch` arguments.</span>
@@ -380,23 +346,17 @@
             <span class="n">collection</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
             <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">,</span>
-            <span class="n">train_shape</span><span class="o">=</span><span class="n">train_shape</span>
-        <span class="p">)</span>
+            <span class="n">train_shape</span><span class="o">=</span><span class="n">train_shape</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">validation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">history</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span>
-                <span class="n">generator</span><span class="o">=</span><span class="n">training_generator</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">kwargs</span>
-            <span class="p">)</span>
+                <span class="n">generator</span><span class="o">=</span><span class="n">training_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">validation</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">history</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span>
                 <span class="n">generator</span><span class="o">=</span><span class="n">training_generator</span><span class="p">,</span>
                 <span class="n">validation_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_Xy</span><span class="p">(</span><span class="n">validation</span><span class="p">),</span>
-                <span class="o">**</span><span class="n">kwargs</span>
-            <span class="p">)</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">history</span></div>
 
 <div class="viewcode-block" id="Detector.mAP"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.mAP">[docs]</a>    <span class="k">def</span> <span class="nf">mAP</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
@@ -411,18 +371,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            mAP score</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">pred</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
-            <span class="n">scenes</span><span class="o">=</span><span class="p">[</span>
-                <span class="n">s</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
-                    <span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-                <span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">annotations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detect</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span>
+        <span class="p">])</span>
         <span class="k">return</span> <span class="n">metrics</span><span class="o">.</span><span class="n">mAP</span><span class="p">(</span>
             <span class="n">true_collection</span><span class="o">=</span><span class="n">collection</span><span class="p">,</span>
             <span class="n">pred_collection</span><span class="o">=</span><span class="n">pred</span><span class="p">,</span>
-            <span class="n">iou_threshold</span><span class="o">=</span><span class="n">iou_threshold</span>
-        <span class="p">)</span></div></div>
+            <span class="n">iou_threshold</span><span class="o">=</span><span class="n">iou_threshold</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

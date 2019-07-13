@@ -186,63 +186,63 @@
   <div class="section" id="transfer-learning">
 <h1>Transfer Learning<a class="headerlink" href="#transfer-learning" title="Permalink to this headline">¶</a></h1>
 <p>This example inspired by <a class="reference external" href="https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/running_pets.md">the TensorFlow object detection tutorial</a>.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mira</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">detectors</span>
-<span class="kn">from</span> <span class="nn">imgaug</span> <span class="kn">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
-<span class="kn">from</span> <span class="nn">keras</span> <span class="kn">import</span> <span class="n">callbacks</span>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>from mira import datasets, detectors
+from imgaug import augmenters as iaa
+from keras import callbacks
 
-<span class="c1"># Load the Oxford pets datasets with a class</span>
-<span class="c1"># for each breed.</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_oxfordiiitpets</span><span class="p">(</span><span class="n">breed</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+# Load the Oxford pets datasets with a class
+# for each breed.
+dataset = datasets.load_oxfordiiitpets(breed=True)
 
-<span class="c1"># Load YOLO with pretrained backbone. We&#39;ll</span>
-<span class="c1"># use the annotation configuration for our</span>
-<span class="c1"># new task.</span>
-<span class="n">detector</span> <span class="o">=</span> <span class="n">detectors</span><span class="o">.</span><span class="n">YOLOv3</span><span class="p">(</span>
-    <span class="n">input_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
-    <span class="n">pretrained_top</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-    <span class="n">pretrained_backbone</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-    <span class="n">annotation_config</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span>
-    <span class="n">size</span><span class="o">=</span><span class="s1">&#39;tiny&#39;</span>
-<span class="p">)</span>
+# Load YOLO with pretrained backbone. We&#39;ll
+# use the annotation configuration for our
+# new task.
+detector = detectors.YOLOv3(
+    input_shape=(256, 256, 3),
+    pretrained_top=False,
+    pretrained_backbone=True,
+    annotation_config=dataset.annotation_config,
+    size=&#39;tiny&#39;
+)
 
-<span class="c1"># Split our dataset into training, validation,</span>
-<span class="c1"># and test.</span>
-<span class="n">trainval</span><span class="p">,</span> <span class="n">testing</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
-    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span>
-<span class="p">)</span>
-<span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">trainval</span><span class="o">.</span><span class="n">train_test_split</span><span class="p">(</span>
-    <span class="n">train_size</span><span class="o">=</span><span class="mf">0.66</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.33</span>
-<span class="p">)</span>
+# Split our dataset into training, validation,
+# and test.
+trainval, testing = dataset.train_test_split(
+    train_size=0.7, test_size=0.3
+)
+training, validation = trainval.train_test_split(
+    train_size=0.66, test_size=0.33
+)
 
-<span class="c1"># Create an augmenter</span>
-<span class="n">augmenter</span> <span class="o">=</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
-    <span class="n">iaa</span><span class="o">.</span><span class="n">Fliplr</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="c1"># horizontally flip 50% of the images</span>
-    <span class="n">iaa</span><span class="o">.</span><span class="n">GaussianBlur</span><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">))</span> <span class="c1"># blur images with a sigma of 0 to 3.0</span>
-<span class="p">])</span>
+# Create an augmenter
+augmenter = iaa.Sequential([
+    iaa.Fliplr(0.5), # horizontally flip 50% of the images
+    iaa.GaussianBlur(sigma=(0, 3.0)) # blur images with a sigma of 0 to 3.0
+])
 
-<span class="c1"># Make a callback to stop the training job</span>
-<span class="c1"># early if we plateau on the validation set.</span>
-<span class="n">cbs</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">callbacks</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
-        <span class="n">monitor</span><span class="o">=</span><span class="s1">&#39;val_loss&#39;</span><span class="p">,</span>
-        <span class="n">min_delta</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
-        <span class="n">patience</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
-        <span class="n">restore_best_weights</span><span class="o">=</span><span class="bp">True</span>
-    <span class="p">)</span>
-<span class="p">]</span>
+# Make a callback to stop the training job
+# early if we plateau on the validation set.
+cbs = [
+    callbacks.EarlyStopping(
+        monitor=&#39;val_loss&#39;,
+        min_delta=0.1,
+        patience=50,
+        verbose=1,
+        mode=&#39;auto&#39;,
+        restore_best_weights=True
+    )
+]
 
-<span class="c1"># Run training job</span>
-<span class="n">detector</span><span class="o">.</span><span class="n">train</span><span class="p">(</span>
-    <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
-    <span class="n">validation</span><span class="o">=</span><span class="n">validation</span><span class="p">,</span>
-    <span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-    <span class="n">epochs</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-    <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
-    <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">,</span>
-    <span class="n">callbacks</span><span class="o">=</span><span class="n">cbs</span>
-<span class="p">)</span>
+# Run training job
+detector.train(
+    training=training,
+    validation=validation,
+    steps_per_epoch=50,
+    epochs=1000,
+    batch_size=8,
+    augmenter=augmenter,
+    callbacks=cbs
+)
 </pre></div>
 </div>
 </div>

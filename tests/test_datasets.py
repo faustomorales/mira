@@ -1,6 +1,13 @@
+"""
+Test dataset functions.
+"""
+
+import tempfile
+import os
+
 from mira import datasets, core
 
-test_string = """
+TEST_VOC_XML_STRING = """
 <annotation>
     <folder>VOC2012</folder>
     <filename>test_voc.jpg</filename>
@@ -68,19 +75,32 @@ test_string = """
 
 
 def test_voc():
-    with open('tests/assets/test_voc.xml', 'w') as f:
-        f.write(test_string)
-    core.Image.new(
-        width=486,
-        height=500,
-        channels=3
-    ).save(
-        'tests/assets/test_voc.jpg'
-    )
+    """Test VOC loading operations."""
+    with tempfile.TemporaryDirectory() as tempdir:
+        fpath_xml = os.path.join(tempdir, 'test_voc.xml')
+        with open(fpath_xml, 'w') as f:  # pylint: disable=invalid-name
+            f.write(TEST_VOC_XML_STRING)
+        fpath_jpg = os.path.join(tempdir, 'test_voc.jpg')
+        core.Image.new(width=486, height=500, channels=3).save(fpath_jpg)
 
-    original = datasets.load_voc(
-        filepaths=['tests/assets/test_voc.xml'],
-        annotation_config=core.AnnotationConfiguration(['person']),
-        image_dir='tests/assets/'
-    )
-    assert len(original[0].annotations) == 1
+        original = datasets.load_voc(
+            filepaths=[fpath_xml],
+            annotation_config=core.AnnotationConfiguration(['person']),
+            image_dir=tempdir)
+        assert len(original[0].annotations) == 1
+
+
+def test_via():
+    """Test VIA loading and saving operations."""
+    collection = datasets.via.load_via('tests/assets/via_project.json')
+    with tempfile.TemporaryDirectory() as tempdir:
+        savedir = os.path.join(tempdir, 'export')
+        datasets.via.save_via(collection, savedir)
+        collection_recovered = datasets.via.load_via(
+            os.path.join(savedir, 'via.json'))
+        assert len(collection_recovered) == 1
+        assert len(collection_recovered[0].annotations) == 1
+        bbox1 = collection[0].annotations[0].selection.bbox()
+        bbox2 = collection_recovered[0].annotations[0].selection.bbox()
+        print(bbox1, bbox2)
+        assert all(v1 == v2 for v1, v2 in zip(bbox1, bbox2))

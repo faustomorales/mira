@@ -187,106 +187,96 @@
 <h1>Load existing datasets<a class="headerlink" href="#load-existing-datasets" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="mira.datasets.load_voc2012">
-<code class="descclassname">mira.datasets.</code><code class="descname">load_voc2012</code><span class="sig-paren">(</span><em>subset='train'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_voc2012"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_voc2012" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mira.datasets.</code><code class="sig-name descname">load_voc2012</code><span class="sig-paren">(</span><em class="sig-param">subset='train'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_voc2012"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_voc2012" title="Permalink to this definition">¶</a></dt>
 <dd><p>PASCAL VOC 2012</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>subset</strong> – One of <cite>train</cite>, <cite>val</cite>, or <cite>trainval</cite>.
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>subset</strong> – One of <cite>train</cite>, <cite>val</cite>, or <cite>trainval</cite>.
 If <cite>trainval</cite>, the scene collection contains both the
 train and validation sets. If <cite>train</cite>, only the
 training set. If <cite>val</cite> only the validation
-set.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A scene collection containing the PASCAL VOC 2012
-dataset.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></td>
-</tr>
-</tbody>
-</table>
+set.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A scene collection containing the PASCAL VOC 2012
+dataset.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mira.datasets.load_icdar2015">
-<code class="descclassname">mira.datasets.</code><code class="descname">load_icdar2015</code><span class="sig-paren">(</span><em>subset='train'</em>, <em>text_category='text'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_icdar2015"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_icdar2015" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mira.datasets.</code><code class="sig-name descname">load_icdar2015</code><span class="sig-paren">(</span><em class="sig-param">subset='train'</em>, <em class="sig-param">text_category='text'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_icdar2015"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_icdar2015" title="Permalink to this definition">¶</a></dt>
 <dd><p>Loads dataset from 2015 Robust Reading Competition.
 More details available at <a class="reference external" href="http://rrc.cvc.uab.es/?ch=4&amp;com=introduction">http://rrc.cvc.uab.es/?ch=4&amp;com=introduction</a></p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>subset</strong> – One of <cite>train</cite>, <cite>test</cite>, or <cite>traintest</cite>.
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subset</strong> – One of <cite>train</cite>, <cite>test</cite>, or <cite>traintest</cite>.
 If <cite>traintest</cite>, the scene collection contains both the
 train and test sets. If <cite>train</cite>, only the
-training set. If <cite>test</cite> only the test set.</li>
-<li><strong>text_category</strong> – The category name to use for the
-annotation configuration.</li>
+training set. If <cite>test</cite> only the test set.</p></li>
+<li><p><strong>text_category</strong> – The category name to use for the
+annotation configuration.</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A scene collection containing the ICDAR 2015 dataset
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A scene collection containing the ICDAR 2015 dataset
 dataset.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mira.datasets.load_oxfordiiitpets">
-<code class="descclassname">mira.datasets.</code><code class="descname">load_oxfordiiitpets</code><span class="sig-paren">(</span><em>breed=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_oxfordiiitpets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_oxfordiiitpets" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mira.datasets.</code><code class="sig-name descname">load_oxfordiiitpets</code><span class="sig-paren">(</span><em class="sig-param">breed=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_oxfordiiitpets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_oxfordiiitpets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the Oxford-IIIT pets dataset. It is not divided into
 train, validation, and test because it appeared some files were missing
 from the trainval and test set documents
 (e.g., english_cocker_spaniel_164).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>breed</strong> – Whether to use the breeds as the class labels. If False, the
-class labels are limited to dog or cat.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A scene collection containing the dataset</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>breed</strong> – Whether to use the breeds as the class labels. If False, the
+class labels are limited to dog or cat.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A scene collection containing the dataset</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="mira.datasets.load_shapes">
-<code class="descclassname">mira.datasets.</code><code class="descname">load_shapes</code><span class="sig-paren">(</span><em>width=256</em>, <em>height=256</em>, <em>object_count_bounds=(3</em>, <em>8)</em>, <em>object_width_bounds=(20</em>, <em>40)</em>, <em>n_scenes=100</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_shapes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_shapes" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">mira.datasets.</code><code class="sig-name descname">load_shapes</code><span class="sig-paren">(</span><em class="sig-param">width=256</em>, <em class="sig-param">height=256</em>, <em class="sig-param">object_count_bounds=(3</em>, <em class="sig-param">8)</em>, <em class="sig-param">object_width_bounds=(20</em>, <em class="sig-param">40)</em>, <em class="sig-param">n_scenes=100</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/datasets/preloaded.html#load_shapes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.datasets.load_shapes" title="Permalink to this definition">¶</a></dt>
 <dd><p>A simple dataset for testing.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>width</strong> – The width of each image</li>
-<li><strong>height</strong> – The height of each image</li>
-<li><strong>object_count_bounds</strong> – A tuple indicating the minimum and maximum
-number of objects in each image</li>
-<li><strong>object_width_bounds</strong> – A tuple indicating the minimum and maximum
-widths of the objects in each image</li>
-<li><strong>n_scenes</strong> – The number of scenes to generate</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> – The width of each image</p></li>
+<li><p><strong>height</strong> – The height of each image</p></li>
+<li><p><strong>object_count_bounds</strong> – A tuple indicating the minimum and maximum
+number of objects in each image</p></li>
+<li><p><strong>object_width_bounds</strong> – A tuple indicating the minimum and maximum
+widths of the objects in each image</p></li>
+<li><p><strong>n_scenes</strong> – The number of scenes to generate</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A scene collection of images with circles and rectangles in it.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A scene collection of images with circles and rectangles in it.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>

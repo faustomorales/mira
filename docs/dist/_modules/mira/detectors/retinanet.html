@@ -193,13 +193,14 @@
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">core</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">utils</span>
 
-
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="n">pretrained</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;resnet50&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;hash&#39;</span><span class="p">:</span> <span class="s1">&#39;6518ad56a0cca4d1bd8cbba268dd4e299c7633efe7d15902d5acbb0ba180027c&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-        <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://github.com/fizyr/keras-retinanet/releases/download/0.5.0/resnet50_coco_best_v2.1.0.h5&#39;</span>  <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;hash&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;6518ad56a0cca4d1bd8cbba268dd4e299c7633efe7d15902d5acbb0ba180027c&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="s1">&#39;url&#39;</span><span class="p">:</span>
+        <span class="s1">&#39;https://storage.googleapis.com/miradata/weights/retinanet/resnet50_coco_best_v2.1.0.h5&#39;</span>  <span class="c1"># noqa: E501</span>
     <span class="p">}</span>
 <span class="p">}</span>
 
@@ -222,16 +223,19 @@
 <span class="sd">            extraction and bounding box regression / classification model.</span>
 <span class="sd">            You should use this model for loading and saving weights.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">annotation_config</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">COCO</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-        <span class="n">input_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
-        <span class="n">pretrained_backbone</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">pretrained_top</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">backbone_name</span><span class="o">=</span><span class="s1">&#39;resnet50&#39;</span>
-    <span class="p">):</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">annotation_config</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span>
+            <span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">COCO</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+            <span class="n">input_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="n">pretrained_backbone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">pretrained_top</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="n">backbone_name</span><span class="o">=</span><span class="s1">&#39;resnet50&#39;</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">pretrained_top</span> <span class="ow">and</span> <span class="n">pretrained_backbone</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Disabling imagenet weights, using pretrained full network instead&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s1">&#39;Disabling imagenet weights, using pretrained full network &#39;</span>
+                <span class="s1">&#39;instead.&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
             <span class="n">pretrained_backbone</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">pretrained_top</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">backbone_name</span> <span class="ow">in</span> <span class="n">pretrained</span><span class="p">,</span> <span class="p">(</span>
@@ -245,44 +249,28 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rn_backbone</span><span class="o">.</span><span class="n">retinanet</span><span class="p">(</span>
             <span class="n">inputs</span><span class="o">=</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">input_shape</span><span class="p">),</span>
             <span class="n">num_classes</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">),</span>
-            <span class="n">num_anchors</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_params</span><span class="o">.</span><span class="n">num_anchors</span><span class="p">()</span>
-        <span class="p">)</span>
+            <span class="n">num_anchors</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_params</span><span class="o">.</span><span class="n">num_anchors</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">pretrained_backbone</span><span class="p">:</span>
             <span class="n">weights_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rn_backbone</span><span class="o">.</span><span class="n">download_imagenet</span><span class="p">()</span>
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading weights from &#39;</span> <span class="o">+</span> <span class="n">weights_path</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span>
-                <span class="n">weights_path</span><span class="p">,</span>
-                <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">weights_path</span><span class="p">,</span> <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">pretrained_top</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">annotation_config</span> <span class="o">==</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">COCO</span><span class="p">,</span> \
                 <span class="s1">&#39;To use pretrained_top, annotation config must be core.AnnotationConfiguration.COCO&#39;</span>  <span class="c1"># noqa: E501</span>
             <span class="n">pretrained_params</span> <span class="o">=</span> <span class="n">pretrained</span><span class="p">[</span><span class="n">backbone_name</span><span class="p">]</span>
-            <span class="n">weights_path</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-                <span class="n">origin</span><span class="o">=</span><span class="n">pretrained_params</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">],</span>
-                <span class="n">file_hash</span><span class="o">=</span><span class="n">pretrained_params</span><span class="p">[</span><span class="s1">&#39;hash&#39;</span><span class="p">],</span>
-                <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;retinanet&#39;</span><span class="p">),</span>
-                <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
-                <span class="n">extract</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span>
-                <span class="n">weights_path</span><span class="p">,</span>
-                <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span>
-            <span class="p">)</span>
+            <span class="n">weights_path</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span><span class="n">origin</span><span class="o">=</span><span class="n">pretrained_params</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">],</span>
+                                          <span class="n">file_hash</span><span class="o">=</span><span class="n">pretrained_params</span><span class="p">[</span><span class="s1">&#39;hash&#39;</span><span class="p">],</span>
+                                          <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                                              <span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="s1">&#39;retinanet&#39;</span><span class="p">),</span>
+                                          <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
+                                          <span class="n">extract</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="n">weights_path</span><span class="p">,</span> <span class="n">by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">invert_targets</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">,</span>
-        <span class="n">images</span><span class="p">,</span>
-        <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-        <span class="n">nms_threshold</span><span class="o">=</span><span class="mf">0.1</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">invert_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">nms_threshold</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
 
-        <span class="n">boxes</span> <span class="o">=</span> <span class="n">rn_anchors</span><span class="o">.</span><span class="n">anchors_for_shape</span><span class="p">(</span>
-            <span class="n">image_shape</span><span class="o">=</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-            <span class="n">anchor_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_params</span>
-        <span class="p">)</span>
+        <span class="n">boxes</span> <span class="o">=</span> <span class="n">rn_anchors</span><span class="o">.</span><span class="n">anchors_for_shape</span><span class="p">(</span><span class="n">image_shape</span><span class="o">=</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                             <span class="n">anchor_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_params</span><span class="p">)</span>
 
         <span class="c1"># We filter the third dimension in order to remove the anchor states</span>
         <span class="c1"># if `invert_targets` is directly called with the output</span>
@@ -311,9 +299,8 @@
         <span class="n">yb</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">y0</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">std</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">mean</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">*</span> <span class="n">height</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">xr</span> <span class="o">-</span> <span class="n">xl</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">yb</span> <span class="o">-</span> <span class="n">yt</span>
-        <span class="n">xywh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">xl</span><span class="p">,</span> <span class="n">yt</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span>
-        <span class="p">)</span>
+        <span class="n">xywh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">xl</span><span class="p">,</span> <span class="n">yt</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">]],</span>
+                              <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="n">scenes</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">boxes</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xywh</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">images</span><span class="p">):</span>
@@ -329,88 +316,64 @@
                     <span class="n">class_positive</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[:,</span> <span class="n">c</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">threshold</span>
                     <span class="n">subboxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[</span><span class="n">class_positive</span><span class="p">]</span>
                     <span class="n">sublabels</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">class_positive</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
-                    <span class="n">bestIdxs</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">dnn</span><span class="o">.</span><span class="n">NMSBoxes</span><span class="p">(</span>
-                        <span class="n">bboxes</span><span class="o">=</span><span class="n">subboxes</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                        <span class="n">scores</span><span class="o">=</span><span class="n">sublabels</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                        <span class="n">score_threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
-                        <span class="n">nms_threshold</span><span class="o">=</span><span class="mf">0.1</span>
-                    <span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
+                    <span class="n">bestIdxs</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">dnn</span><span class="o">.</span><span class="n">NMSBoxes</span><span class="p">(</span><span class="n">bboxes</span><span class="o">=</span><span class="n">subboxes</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                                <span class="n">scores</span><span class="o">=</span><span class="n">sublabels</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                                <span class="n">score_threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+                                                <span class="n">nms_threshold</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
                     <span class="n">subboxes</span> <span class="o">=</span> <span class="n">subboxes</span><span class="p">[</span><span class="n">bestIdxs</span><span class="p">]</span>
                     <span class="n">predictions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">subboxes</span><span class="p">])</span>
                     <span class="n">annotations</span> <span class="o">=</span> <span class="p">[</span>
-                        <span class="n">core</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
-                            <span class="n">selection</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">Selection</span><span class="p">([</span>
-                                <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
-                                <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span><span class="p">]</span>
-                            <span class="p">]),</span>
-                            <span class="n">category</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
-                        <span class="p">)</span>
+                        <span class="n">core</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span><span class="n">selection</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">Selection</span><span class="p">(</span>
+                            <span class="p">[[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span><span class="p">]]),</span>
+                                        <span class="n">category</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">c</span><span class="p">])</span>
                         <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">predictions</span>
                     <span class="p">]</span>
             <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">core</span><span class="o">.</span><span class="n">Scene</span><span class="p">(</span>
-                    <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
-                    <span class="n">annotation_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span>
-                    <span class="n">image</span><span class="o">=</span><span class="n">image</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+                <span class="n">core</span><span class="o">.</span><span class="n">Scene</span><span class="p">(</span><span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
+                           <span class="n">annotation_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span>
+                           <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">scenes</span>
 
-    <span class="k">def</span> <span class="nf">compute_targets</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">collection</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">compute_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">):</span>
         <span class="c1"># Targets are two outputs with shapes</span>
         <span class="c1"># (B, N, 5) (four anchor regression targets + anchor state)</span>
         <span class="c1"># (B, N, M + 1) (M classification targets + anchor state)</span>
         <span class="k">assert</span> <span class="n">collection</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span> \
             <span class="s1">&#39;Found incompatible annotation configuration.&#39;</span>
-        <span class="n">annotations_group</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s1">&#39;bboxes&#39;</span><span class="p">:</span> <span class="n">b</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="n">b</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]}</span>
-            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">[</span>
-                <span class="n">s</span><span class="o">.</span><span class="n">bboxes</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span>
-            <span class="p">]</span>
-        <span class="p">]</span>
+        <span class="n">annotations_group</span> <span class="o">=</span> <span class="p">[{</span>
+            <span class="s1">&#39;bboxes&#39;</span><span class="p">:</span> <span class="n">b</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">],</span>
+            <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="n">b</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">bboxes</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]]</span>
         <span class="n">images</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">images</span>
         <span class="n">anchors</span> <span class="o">=</span> <span class="n">rn_anchors</span><span class="o">.</span><span class="n">anchors_for_shape</span><span class="p">(</span>
-            <span class="n">image_shape</span><span class="o">=</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-            <span class="n">anchor_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_params</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">rn_anchors</span><span class="o">.</span><span class="n">anchor_targets_bbox</span><span class="p">(</span>
-            <span class="n">anchors</span><span class="o">=</span><span class="n">anchors</span><span class="p">,</span>
-            <span class="n">image_group</span><span class="o">=</span><span class="n">images</span><span class="p">,</span>
-            <span class="n">annotations_group</span><span class="o">=</span><span class="n">annotations_group</span><span class="p">,</span>
-            <span class="n">num_classes</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">),</span>
-            <span class="n">negative_overlap</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
-            <span class="n">positive_overlap</span><span class="o">=</span><span class="mf">0.5</span>
-        <span class="p">))</span>
+            <span class="n">image_shape</span><span class="o">=</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">anchor_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">rn_anchors</span><span class="o">.</span><span class="n">anchor_targets_bbox</span><span class="p">(</span><span class="n">anchors</span><span class="o">=</span><span class="n">anchors</span><span class="p">,</span>
+                                           <span class="n">image_group</span><span class="o">=</span><span class="n">images</span><span class="p">,</span>
+                                           <span class="n">annotations_group</span><span class="o">=</span><span class="n">annotations_group</span><span class="p">,</span>
+                                           <span class="n">num_classes</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">),</span>
+                                           <span class="n">negative_overlap</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+                                           <span class="n">positive_overlap</span><span class="o">=</span><span class="mf">0.5</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">compute_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">core</span><span class="o">.</span><span class="n">Image</span><span class="p">]):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">([</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rn_backbone</span><span class="o">.</span><span class="n">preprocess_image</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span>
-        <span class="p">])</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rn_backbone</span><span class="o">.</span><span class="n">preprocess_image</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-            <span class="n">loss</span><span class="o">=</span><span class="p">{</span>
-                <span class="s1">&#39;regression&#39;</span><span class="p">:</span> <span class="n">rn_losses</span><span class="o">.</span><span class="n">smooth_l1</span><span class="p">(),</span>
-                <span class="s1">&#39;classification&#39;</span><span class="p">:</span> <span class="n">rn_losses</span><span class="o">.</span><span class="n">focal</span><span class="p">()</span>
-            <span class="p">},</span>
-            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizers</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">clipnorm</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;regression&#39;</span><span class="p">:</span> <span class="n">rn_losses</span><span class="o">.</span><span class="n">smooth_l1</span><span class="p">(),</span>
+            <span class="s1">&#39;classification&#39;</span><span class="p">:</span> <span class="n">rn_losses</span><span class="o">.</span><span class="n">focal</span><span class="p">()</span>
+        <span class="p">},</span>
+                           <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizers</span><span class="o">.</span><span class="n">adam</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">clipnorm</span><span class="o">=</span><span class="mf">0.001</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">freeze_backbone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">output_names</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">&#39;regression_submodel&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;classification_submodel&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;P3&#39;</span><span class="p">,</span> <span class="s1">&#39;P4&#39;</span><span class="p">,</span> <span class="s1">&#39;P5&#39;</span><span class="p">,</span> <span class="s1">&#39;P6&#39;</span><span class="p">,</span> <span class="s1">&#39;P7&#39;</span>
+            <span class="s1">&#39;regression_submodel&#39;</span><span class="p">,</span> <span class="s1">&#39;classification_submodel&#39;</span><span class="p">,</span> <span class="s1">&#39;P3&#39;</span><span class="p">,</span> <span class="s1">&#39;P4&#39;</span><span class="p">,</span> <span class="s1">&#39;P5&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;P6&#39;</span><span class="p">,</span> <span class="s1">&#39;P7&#39;</span>
         <span class="p">]</span>
         <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="n">l</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">output_names</span> <span class="ow">or</span>
-                <span class="n">l</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">output_names</span>
-            <span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">output_names</span> <span class="ow">or</span> <span class="n">l</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">output_names</span><span class="p">):</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Not freezing &#39;</span> <span class="o">+</span> <span class="n">l</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Freezing &#39;</span> <span class="o">+</span> <span class="n">l</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>

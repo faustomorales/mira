@@ -187,234 +187,200 @@
 <h1>Selections<a class="headerlink" href="#selections" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="mira.core.Selection">
-<em class="property">class </em><code class="descclassname">mira.core.</code><code class="descname">Selection</code><span class="sig-paren">(</span><em>points</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mira.core.</code><code class="sig-name descname">Selection</code><span class="sig-paren">(</span><em class="sig-param">points</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a selection within an image.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>points</strong> – A list of points defining the selection.</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> – A list of points defining the selection.</p>
+</dd>
+</dl>
 <dl class="method">
 <dt id="mira.core.Selection.area">
-<code class="descname">area</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.area" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">area</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the area of the selection.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.assign_keypoints">
-<code class="descname">assign_keypoints</code><span class="sig-paren">(</span><em>keypoints</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.assign_keypoints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.assign_keypoints" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">assign_keypoints</code><span class="sig-paren">(</span><em class="sig-param">keypoints</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.assign_keypoints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.assign_keypoints" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain a revised version of the selection
 with the given keypoints</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.bbox">
-<code class="descname">bbox</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.bbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.bbox" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">bbox</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.bbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.bbox" title="Permalink to this definition">¶</a></dt>
 <dd><p>The simple bounding box containing the selection.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The coordinates (x1, y1, x2, y2). The first set always
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The coordinates (x1, y1, x2, y2). The first set always
 correspond with the top left of the image. The second
-set always correspond with the bottom right of the image.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</td>
-</tr>
-</tbody>
-</table>
+set always correspond with the bottom right of the image.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.contains_point">
-<code class="descname">contains_point</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.contains_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.contains_point" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">contains_point</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.contains_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.contains_point" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine whether this selection contains a
 particular point.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> – An iterable describing a point (x, y)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A bool, True if <cite>other</cite> is contained within
-selection, False otherwise.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>other</strong> – An iterable describing a point (x, y)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool, True if <cite>other</cite> is contained within
+selection, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.contains_points">
-<code class="descname">contains_points</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.contains_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.contains_points" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">contains_points</code><span class="sig-paren">(</span><em class="sig-param">other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.contains_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.contains_points" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine whether this selection contains a
 series of points.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> – A numpy array of shape (N, 2)</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A numpy array of shape (N, ), describing
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>other</strong> – A numpy array of shape (N, 2)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A numpy array of shape (N, ), describing
 whether or not the point at that
-position was in the selection.</td>
-</tr>
-</tbody>
-</table>
+position was in the selection.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.crop">
-<code class="descname">crop</code><span class="sig-paren">(</span><em>width</em>, <em>height</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.crop" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">crop</code><span class="sig-paren">(</span><em class="sig-param">width</em>, <em class="sig-param">height</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.crop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.crop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crop a selection to a given image width
 and height.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>width</strong> – The width of the image</li>
-<li><strong>height</strong> – The height of the image</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> – The width of the image</p></li>
+<li><p><strong>height</strong> – The height of the image</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.draw">
-<code class="descname">draw</code><span class="sig-paren">(</span><em>image</em>, <em>color</em>, <em>opaque=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.draw" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">draw</code><span class="sig-paren">(</span><em class="sig-param">image</em>, <em class="sig-param">color</em>, <em class="sig-param">opaque=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.draw" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draw selection onto given image.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>image</strong> – The image to draw on.</li>
-<li><strong>color</strong> – The color to use.</li>
-<li><strong>opaque</strong> – Whether the box should be filled.</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> – The image to draw on.</p></li>
+<li><p><strong>color</strong> – The color to use.</p></li>
+<li><p><strong>opaque</strong> – Whether the box should be filled.</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The image with the selection drawn</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The image with the selection drawn</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.extract">
-<code class="descname">extract</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.extract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.extract" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">extract</code><span class="sig-paren">(</span><em class="sig-param">image</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.extract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.extract" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract selection from image (i.e., crop the image
 to the selection).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.keypoints">
-<code class="descname">keypoints</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.keypoints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.keypoints" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">keypoints</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.keypoints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.keypoints" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain a list of keypoints for the selection.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of keypoints</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Keypoint</span></code>]</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A list of keypoints</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Keypoint</span></code>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.rbox">
-<code class="descname">rbox</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.rbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.rbox" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">rbox</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.rbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.rbox" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain the parameters of a rotated box.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The vertices of the rotated box in top-left,
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The vertices of the rotated box in top-left,
 top-right, bottom-right, bottom-left order along
-with the angle of rotation about the bottom left corner.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</td>
-</tr>
-</tbody>
-</table>
+with the angle of rotation about the bottom left corner.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.resize">
-<code class="descname">resize</code><span class="sig-paren">(</span><em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.resize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">resize</code><span class="sig-paren">(</span><em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.resize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.resize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain a revised selection with a given
 uniform scaling.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.shrink">
-<code class="descname">shrink</code><span class="sig-paren">(</span><em>scale</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.shrink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.shrink" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">shrink</code><span class="sig-paren">(</span><em class="sig-param">scale</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.shrink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.shrink" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain a new shrunk version of the selection.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scale</strong> – The amount by which to shrink the
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scale</strong> – The amount by which to shrink the
 selection. Values less than 1 cause
 shrinking. Values larger than 1 cause
-expansion.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></td>
-</tr>
-</tbody>
-</table>
+expansion.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Selection</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.core.Selection.xywh">
-<code class="descname">xywh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.xywh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.xywh" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">xywh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/selection.html#Selection.xywh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Selection.xywh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the bounding box as x, y, width
 and height.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

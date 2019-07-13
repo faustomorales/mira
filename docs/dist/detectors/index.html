@@ -186,150 +186,135 @@
 <p>Detectors are high-level abstractions of Keras object detection architectures. They share a common API.</p>
 <dl class="class">
 <dt id="mira.detectors.Detector">
-<em class="property">class </em><code class="descclassname">mira.detectors.</code><code class="descname">Detector</code><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mira.detectors.</code><code class="sig-name descname">Detector</code><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
 <dt id="mira.detectors.Detector.compute_inputs">
-<code class="descname">compute_inputs</code><span class="sig-paren">(</span><em>images</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.compute_inputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.compute_inputs" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">compute_inputs</code><span class="sig-paren">(</span><em class="sig-param">images</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.compute_inputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.compute_inputs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert images into suitable model inputs. <em>You
 usually should not need this method</em>. For training,
 use <cite>detector.train()</cite>. For detection, use
 <cite>detector.detect()</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>images</strong> – The images to convert</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The input to the model</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>images</strong> – The images to convert</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The input to the model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.detectors.Detector.compute_targets">
-<code class="descname">compute_targets</code><span class="sig-paren">(</span><em>collection</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.compute_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.compute_targets" title="Permalink to this definition">¶</a></dt>
+<em class="property">abstract </em><code class="sig-name descname">compute_targets</code><span class="sig-paren">(</span><em class="sig-param">collection</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.compute_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.compute_targets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the expected outputs for a model. <em>You
 usually should not need this method</em>. For training,
 use <cite>detector.train()</cite>. For detection, use
 <cite>detector.detect()</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>collection</strong> – The scene collection for which the
-outputs should be calculated.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The output(s) as a list of numpy arrays</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>collection</strong> – The scene collection for which the
+outputs should be calculated.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The output(s) as a list of numpy arrays</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.detectors.Detector.detect">
-<code class="descname">detect</code><span class="sig-paren">(</span><em>image</em>, <em>threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.detect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.detect" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">detect</code><span class="sig-paren">(</span><em class="sig-param">image</em>, <em class="sig-param">threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.detect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.detect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run detection for a given image.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>image</strong> – The image to run detection on</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list of annotations</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Annotation</span></code>]</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>image</strong> – The image to run detection on</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of annotations</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Annotation</span></code>]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.detectors.Detector.detect_batch">
-<code class="descname">detect_batch</code><span class="sig-paren">(</span><em>images</em>, <em>threshold=0.5</em>, <em>batch_size=32</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.detect_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.detect_batch" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">detect_batch</code><span class="sig-paren">(</span><em class="sig-param">images</em>, <em class="sig-param">threshold=0.5</em>, <em class="sig-param">batch_size=32</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.detect_batch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.detect_batch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform object detection on a batch of images.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>images</strong> – A list of images</li>
-<li><strong>threshold</strong> – The detection threshold for the images</li>
-<li><strong>batch_size</strong> – The batch size to use with the underlying model</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>images</strong> – A list of images</p></li>
+<li><p><strong>threshold</strong> – The detection threshold for the images</p></li>
+<li><p><strong>batch_size</strong> – The batch size to use with the underlying model</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A list of lists of annotations.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Annotation</span></code>]]</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of lists of annotations.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Annotation</span></code>]]</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.detectors.Detector.freeze_backbone">
-<code class="descname">freeze_backbone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.freeze_backbone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.freeze_backbone" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">freeze_backbone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.freeze_backbone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.freeze_backbone" title="Permalink to this definition">¶</a></dt>
 <dd><p>Freeze the body of the model, leaving the final classification and
 regression layer as trainable.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.detectors.Detector.mAP">
-<code class="descname">mAP</code><span class="sig-paren">(</span><em>collection</em>, <em>iou_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.mAP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.mAP" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">mAP</code><span class="sig-paren">(</span><em class="sig-param">collection</em>, <em class="sig-param">iou_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.mAP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.mAP" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the mAP metric for a given collection
 of ground truth scenes.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>collection</strong> – The collection to evaluate</li>
-<li><strong>iou_threshold</strong> – The IoU threshold required for
-a match</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>collection</strong> – The collection to evaluate</p></li>
+<li><p><strong>iou_threshold</strong> – The IoU threshold required for
+a match</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">mAP score</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>mAP score</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.detectors.Detector.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>training</em>, <em>validation=None</em>, <em>batch_size=1</em>, <em>augmenter=None</em>, <em>train_shape=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.train" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">training</em>, <em class="sig-param">validation=None</em>, <em class="sig-param">batch_size=1</em>, <em class="sig-param">augmenter=None</em>, <em class="sig-param">train_shape=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.train"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run training job. All additional keyword arguments
 passed to Keras’ <cite>fit_generator</cite>. Note that, at a minimum,
 you must provide the <cite>epochs</cite> and <cite>steps_per_epoch</cite> arguments.
 If validation data is provided, you will also need to provide a
 <cite>validation_steps</cite> argument.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>training</strong> – The collection of training images</li>
-<li><strong>validation</strong> – The collection of validation images</li>
-<li><strong>batch_size</strong> – The batch size to use for training</li>
-<li><strong>augmenter</strong> – The augmenter for generating samples</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>training</strong> – The collection of training images</p></li>
+<li><p><strong>validation</strong> – The collection of validation images</p></li>
+<li><p><strong>batch_size</strong> – The batch size to use for training</p></li>
+<li><p><strong>augmenter</strong> – The augmenter for generating samples</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="mira.detectors.Detector.unfreeze_backbone">
-<code class="descname">unfreeze_backbone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.unfreeze_backbone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.unfreeze_backbone" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">unfreeze_backbone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/detectors/detector.html#Detector.unfreeze_backbone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.detectors.Detector.unfreeze_backbone" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unfreeze the body of the model, making all layers trainable.</p>
 </dd></dl>
 

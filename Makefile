@@ -1,11 +1,8 @@
 # You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-SOURCEDIR     = ./docs
-BUILDDIR      = ./docs/_build
 WORKDIR = /usr/src
 NOTEBOOK_PORT = 5000
 DOCUMENTATION_PORT = 5001
+DOCKER_ARGS = $(VOLUMES) -w $(WORKDIR) --rm 
 IMAGE_NAME = mira
 VOLUME_NAME = $(IMAGE_NAME)_venv
 VOLUMES = -v $(PWD):/usr/src -v $(VOLUME_NAME):/usr/src/.venv --rm
@@ -17,14 +14,15 @@ build:
 	@-docker volume rm $(VOLUME_NAME)
 init:
 	PIPENV_VENV_IN_PROJECT=true pipenv install --dev --skip-lock
-build:
-	docker build -t $(IMAGE_NAME) .
 lab-server:
-	docker run -it $(VOLUMES) -p $(NOTEBOOK_PORT):$(NOTEBOOK_PORT) -w $(WORKDIR) $(IMAGE_NAME) pipenv run jupyter lab $(JUPYTER_OPTIONS)
+	docker run -it $(DOCKER_ARGS) -p $(NOTEBOOK_PORT):$(NOTEBOOK_PORT) $(IMAGE_NAME) pipenv run jupyter lab $(JUPYTER_OPTIONS)
 documentation-server:
-	docker run -it $(VOLUMES) -p $(DOCUMENTATION_PORT):8000 -w $(WORKDIR)  $(IMAGE_NAME) sphinx-autobuild -b html "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) --host 0.0.0.0 $(O)
+	docker run -it $(DOCKER_ARGS)-p $(DOCUMENTATION_PORT):$(DOCUMENTATION_PORT) $(IMAGE_NAME) pipenv run sphinx-autobuild -b html "docs" "docs/_build/html" --host 0.0.0.0 --port $(DOCUMENTATION_PORT) $(O)
 .PHONY: tests
 test:
-	docker run -it $(VOLUMES) -w $(WORKDIR) $(IMAGE_NAME) pipenv run pytest
+	docker run -it $(DOCKER_ARGS) $(IMAGE_NAME) pipenv run pytest
+.PHONY: docs
+docs:
+	docker run -it $(DOCKER_ARGS) $(IMAGE_NAME) pipenv run sphinx-build -b html "docs" "docs/dist"
 bash:
-	docker run -it $(VOLUMES) -w $(WORKDIR) $(IMAGE_NAME) bash
+	docker run -it $(DOCKER_ARGS) $(IMAGE_NAME) bash

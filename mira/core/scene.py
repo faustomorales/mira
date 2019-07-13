@@ -32,13 +32,12 @@ class Scene:
             If `False`, image is loaded from the file path or URL whenever
             the image is requested.
     """
-    def __init__(
-        self,
-        annotation_config: AnnotationConfiguration,
-        annotations: List[Annotation],
-        image: Union[Image, np.ndarray, str],
-        cache: bool=True
-    ):
+
+    def __init__(self,
+                 annotation_config: AnnotationConfiguration,
+                 annotations: List[Annotation],
+                 image: Union[Image, np.ndarray, str],
+                 cache: bool = True):
         assert isinstance(image, np.ndarray) or isinstance(image, str), \
             'Image must be string or ndarray, not ' + str(type(image))
         if isinstance(image, np.ndarray):
@@ -57,11 +56,8 @@ class Scene:
             return self._image
 
         # Check the cache first if image is a URL
-        if (
-            validators.url(self._image) and
-            type(self.cache) == str and
-            path.isfile(self.cache)
-        ):
+        if (validators.url(self._image) and type(self.cache) == str
+                and path.isfile(self.cache)):
             self._image = self.cache
 
         # Load the image
@@ -75,9 +71,8 @@ class Scene:
         elif self.cache is False:
             pass
         else:
-            raise ValueError(
-                'Cannot handle cache parameter: {0}.'.format(self.cache)
-            )
+            raise ValueError('Cannot handle cache parameter: {0}.'.format(
+                self.cache))
         return image
 
     @property
@@ -104,10 +99,8 @@ class Scene:
             ]
             revised = [ann for ann in revised if ann is not None]
             removed = len(annotations) - len(revised)
-            log.debug(
-                'Removed {0} annotations when changing '.format(removed) +
-                'annotation configuration.'
-            )
+            log.debug('Removed {0} annotations when changing '.format(removed)
+                      + 'annotation configuration.')
             kwargs['annotations'] = revised
         # We use the _image instead of image to avoid triggering an
         # unnecessary read of the actual image.
@@ -129,26 +122,19 @@ class Scene:
     def scores(self):
         """Obtain an array containing the confidence
         score for each annotation."""
-        return np.array(
-            [a.score for a in self.annotations]
-        )
+        return np.array([a.score for a in self.annotations])
 
     def bboxes(self):
         """Obtain an array of shape (N, 5) where the columns are
         x1, y1, x2, y2, class_index where class_index is determined
         from the annotation configuration."""
-        return np.array(
-            [
-                a.selection.bbox() + [self.annotation_config.index(a.category)]  # noqa: E501
-                for a in self.annotations
-            ]
-        )
+        return np.array([
+            a.selection.bbox() + [self.annotation_config.index(a.category)
+                                  ]  # noqa: E501
+            for a in self.annotations
+        ])
 
-    def fit(
-        self,
-        width,
-        height
-    ):
+    def fit(self, width, height):
         """Obtain a new scene fitted to the given width and height.
 
         Args:
@@ -162,14 +148,12 @@ class Scene:
         annotations = [ann.resize(scale=scale) for ann in self.annotations]
         return self.assign(image=image, annotations=annotations), scale
 
-    def annotated(
-        self,
-        dpi=72,
-        fontsize='x-large',
-        labels=True,
-        opaque=False,
-        color=(255, 0, 0)
-    ) -> Image:
+    def annotated(self,
+                  dpi=72,
+                  fontsize='x-large',
+                  labels=True,
+                  opaque=False,
+                  color=(255, 0, 0)) -> Image:
         """Show annotations on the image itself.
 
         Args:
@@ -199,8 +183,7 @@ class Scene:
                     s=ann.category.name,
                     xy=(x1, y1),
                     fontsize=fontsize,
-                    backgroundcolor=(1, 1, 1, 0.5)
-                )
+                    backgroundcolor=(1, 1, 1, 0.5))
         ax.set_xlim(0, img_raw.width)
         ax.set_ylim(img_raw.height, 0)
         fig.canvas.draw()
@@ -211,8 +194,7 @@ class Scene:
             frameon=True,
             pad_inches=0,
             transparent=False,
-            bbox_inches='tight'
-        )
+            bbox_inches='tight')
         plt.close(fig)
         plt.ion()
         raw.seek(0)
@@ -229,14 +211,10 @@ class Scene:
         """
         return self.assign(
             image=self.image.resize(scale),
-            annotations=[ann.resize(scale) for ann in self.annotations]
-        )
+            annotations=[ann.resize(scale) for ann in self.annotations])
 
-    def augment(
-            self,
-            augmenter: iaa.Augmenter=None,
-            threshold: float=0.25
-    ) -> 'Scene':
+    def augment(self, augmenter: iaa.Augmenter = None,
+                threshold: float = 0.25) -> 'Scene':
         """Obtain an augmented version of the scene using the given augmenter.
 
         Returns:
@@ -262,20 +240,11 @@ class Scene:
             current = keypoints[startIdx:endIdx]
             selection = ann.selection.assign_keypoints(current)
             area = selection.area()
-            selection = selection.crop(
-                width=image.width, height=image.height
-            )
+            selection = selection.crop(width=image.width, height=image.height)
             if area == 0 or (selection.area() / area < threshold):
                 continue
-            annotations.append(
-                ann.assign(
-                    selection=selection
-                )
-            )
-        return self.assign(
-            image=image,
-            annotations=annotations
-        )
+            annotations.append(ann.assign(selection=selection))
+        return self.assign(image=image, annotations=annotations)
 
 
 class SceneCollection:
@@ -287,11 +256,9 @@ class SceneCollection:
         scenes: The list of scenes.
     """
 
-    def __init__(
-        self,
-        scenes: List[Scene],
-        annotation_config: AnnotationConfiguration=None
-    ):
+    def __init__(self,
+                 scenes: List[Scene],
+                 annotation_config: AnnotationConfiguration = None):
         assert len(scenes) > 0, \
             'A scene collection must have at least one scene'
         if annotation_config is None:
@@ -300,10 +267,7 @@ class SceneCollection:
             if s.annotation_config != annotation_config:
                 raise ValueError(
                     'Scene {0} of {1} has inconsistent configuration.'.format(
-                        i+1,
-                        len(scenes)
-                    )
-                )
+                        i + 1, len(scenes)))
         self._annotation_config = annotation_config
         self._scenes = scenes
 
@@ -327,13 +291,16 @@ class SceneCollection:
     def uniform(self):
         """Specifies whether all scenes in the collection are
         of the same size. Note: This will trigger an image load."""
-        return np.unique(np.array([s.image.shape for s in self.scenes]), axis=0).shape[0] == 1  # noqa: E501
+        return np.unique(
+            np.array([s.image.shape for s in self.scenes]),
+            axis=0).shape[0] == 1  # noqa: E501
 
     @property
     def consistent(self):
         """Specifies whether all scenes have the same annotation
         configuration."""
-        return all(s.annotation_config == self.annotation_config for s in self.scenes)  # noqa: E501
+        return all(s.annotation_config == self.annotation_config
+                   for s in self.scenes)  # noqa: E501
 
     @property
     def images(self):
@@ -342,13 +309,10 @@ class SceneCollection:
     def augment(self, **kwargs):
         """Obtained an augmented version of the given collection.
         All arguments passed to `Scene.augment`"""
-        return self.assign(
-            scenes=[s.augment(**kwargs) for s in self.scenes]
-        )
+        return self.assign(scenes=[s.augment(**kwargs) for s in self.scenes])
 
-    def train_test_split(
-        self, *args, **kwargs
-    ) -> Tuple['SceneCollection', 'SceneCollection']:
+    def train_test_split(self, *args, **kwargs
+                         ) -> Tuple['SceneCollection', 'SceneCollection']:
         """Obtain new scene collections, split into train
         and test. All arguments passed to
         `sklearn.model_selection.train_test_split
@@ -375,15 +339,8 @@ class SceneCollection:
         Returns:
             A train and test scene collection.
         """
-        train, test = train_test_split(
-            self.scenes,
-            *args,
-            **kwargs
-        )
-        return (
-            self.assign(scenes=train),
-            self.assign(scenes=test)
-        )
+        train, test = train_test_split(self.scenes, *args, **kwargs)
+        return (self.assign(scenes=train), self.assign(scenes=test))
 
     def assign(self, **kwargs) -> 'Scene':
         """Obtain a new scene with the given keyword arguments
@@ -427,13 +384,7 @@ class SceneCollection:
             scales.append(scale)
         return self.assign(scenes=scenes), scales
 
-    def thumbnails(
-        self,
-        n=10,
-        width=200,
-        height=200,
-        ncols=2
-    ):
+    def thumbnails(self, n=10, width=200, height=200, ncols=2):
         """Get a thumbnail sample of the images in the collection.
 
         Args:
@@ -448,38 +399,21 @@ class SceneCollection:
             (n / ncols)*height
         """
         if n > len(self.scenes):
-            log.warning(
-                'Collection only has {0} scenes but '
-                'you requested {1} thumbnails. Limiting '
-                'to {0} thumbnails.'.format(
-                    len(self.scenes),
-                    n
-                )
-            )
+            log.warning('Collection only has {0} scenes but '
+                        'you requested {1} thumbnails. Limiting '
+                        'to {0} thumbnails.'.format(len(self.scenes), n))
             n = len(self.scenes)
         nrows = math.ceil(n / ncols)
-        sample_indices = np.random.choice(
-            len(self.scenes),
-            n,
-            replace=False
-        )
-        sample = [
-            self.scenes[i] for i in sample_indices
-        ]
+        sample_indices = np.random.choice(len(self.scenes), n, replace=False)
+        sample = [self.scenes[i] for i in sample_indices]
         thumbnails = [scene.annotated() for scene in sample]
-        thumbnails = [
-            t.fit(width=width, height=height)[0] for t in thumbnails]
+        thumbnails = [t.fit(width=width, height=height)[0] for t in thumbnails]
         thumbnail = Image.new(
-            width=ncols*width,
-            height=nrows*height,
-            channels=3
-        )
+            width=ncols * width, height=nrows * height, channels=3)
         for rowIdx in range(nrows):
             for colIdx in range(ncols):
                 if len(thumbnails) == 0:
                     break
-                thumbnail[
-                    rowIdx*width:(rowIdx+1)*width,
-                    colIdx*height:(colIdx+1)*height
-                ] = thumbnails.pop()
+                thumbnail[rowIdx * width:(rowIdx + 1) * width, colIdx *
+                          height:(colIdx + 1) * height] = thumbnails.pop()
         return thumbnail
