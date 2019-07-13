@@ -104,6 +104,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets/index.html">Datasets</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../datasets/existing.html">Load existing datasets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../datasets/load.html">Load new datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../datasets/save.html">Save scene collections as new datasets</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../../detectors/index.html">Detectors</a><ul>
@@ -258,7 +259,7 @@
         <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
     <span class="p">)</span></div>
 
-<span class="k">def</span> <span class="nf">save_via</span><span class="p">(</span>
+<div class="viewcode-block" id="save_via"><a class="viewcode-back" href="../../../datasets/save.html#mira.datasets.save_via">[docs]</a><span class="k">def</span> <span class="nf">save_via</span><span class="p">(</span>
         <span class="n">collection</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">,</span>
         <span class="n">export_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">label_key</span><span class="o">=</span><span class="s1">&#39;class&#39;</span><span class="p">,</span>
@@ -353,7 +354,7 @@
         <span class="p">}</span>
     <span class="p">}</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="s1">&#39;via.json&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>  <span class="c1"># pylint: disable=invalid-name</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">export_object</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">export_object</span><span class="p">))</span></div>
 </pre></div>
 
            </div>
