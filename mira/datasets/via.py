@@ -109,6 +109,7 @@ def save_via(
         {
             'filename': filename,
             'size': size,
+            "file_attributes": {},
             'regions': [
                 {
                     'shape_attributes': {
