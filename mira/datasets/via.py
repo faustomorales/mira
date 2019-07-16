@@ -6,10 +6,13 @@ import os
 import json
 import uuid
 import typing
+import logging
 
 import pandas as pd
 
 from .. import core
+
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 def load_via(project_file: str,
@@ -40,12 +43,21 @@ def load_via(project_file: str,
         project_data = json.loads(f.read())
     img_metadata = project_data['_via_img_metadata'].values()
     project_attrs = project_data['_via_attributes']
-    filenames = [img['filename'] for img in img_metadata]
     regions_df = pd.concat([
         pd.io.json.json_normalize(img['regions']).assign(
             filename=img['filename']
         ) for img in img_metadata
     ], axis=0, sort=False)
+    bad_filenames = regions_df[
+        regions_df[f'region_attributes.{label_key}'].isnull()
+    ]['filename'].unique()
+    if len(bad_filenames) > 0:  # pylint: disable=len-as-condition
+        log.warning(
+            'The following files, which will be skipped, have missing labels: %s',
+            ', '.join(bad_filenames)
+        )
+    filenames = [img['filename'] for img in img_metadata if img['filename'] not in bad_filenames]
+    regions_df = regions_df[~regions_df.filename.isin(bad_filenames)]
 
     annotation_config = core.AnnotationConfiguration(
         project_attrs['region'][label_key]['options'].keys()

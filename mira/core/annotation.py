@@ -17,6 +17,7 @@ class AnnotationCategory:
         name: The name of the annotation category
 
     """
+
     def __init__(self, name: str):
         self._name = name
 
@@ -35,41 +36,32 @@ class AnnotationConfiguration:
     Args:
         names: The list of class names
     """
+
     def __init__(self, names: List[str]):
         names = [s.lower() for s in names]
         if len(names) != len(set(names)):
-            raise ValueError(
-                'All class names must be unique '
-                '(case-insensitive).'
-            )
-        self._types = [
-            AnnotationCategory(
-                name=name
-            ) for name in names
-        ]
+            raise ValueError('All class names must be unique '
+                             '(case-insensitive).')
+        self._types = [AnnotationCategory(name=name) for name in names]
 
     def __getitem__(self, key):
         if type(key) == np.int64:
             key = int(key)
         if type(key) == int:
             if key >= len(self):
-                raise ValueError(
-                    'Index {0} is out of bounds '.format(key) +
-                    '(only have {0} entries)'.format(len(self))
-                )
+                raise ValueError('Index {0} is out of bounds '.format(key) +
+                                 '(only have {0} entries)'.format(len(self)))
             return self.types[key]
         elif type(key) == str:
             key = key.lower()
             val = next((e for e in self._types if e.name == key), None)
             if val is None:
                 raise ValueError(
-                    'Did not find {0} in configuration'.format(key)
-                )
+                    'Did not find {0} in configuration'.format(key))
             return val
         else:
             raise ValueError(
-                'Key must be int or str, not ' + str(type(key))
-            )
+                f'Key must be int or str, not {key} of type {str(type(key))}')
 
     def __iter__(self):
         return iter(self._types)
@@ -80,10 +72,8 @@ class AnnotationConfiguration:
         elif type(key) == AnnotationCategory:
             return any(e == key for e in self._types)
         else:
-            raise ValueError(
-                'Key must be str or AnnotationCategory, not '
-                '' + str(type(key))
-            )
+            raise ValueError('Key must be str or AnnotationCategory, not '
+                             '' + str(type(key)))
 
     def __eq__(self, other):
         if type(other) != type(self):
@@ -104,15 +94,11 @@ class AnnotationConfiguration:
 
 
 AnnotationConfiguration.COCO = AnnotationConfiguration(
-    resource_string(
-        __name__, 'assets/coco_classes.txt'
-    ).decode('utf-8').split('\n')
-)
+    resource_string(__name__,
+                    'assets/coco_classes.txt').decode('utf-8').split('\n'))
 AnnotationConfiguration.VOC = AnnotationConfiguration(
-    resource_string(
-        __name__, 'assets/voc_classes.txt'
-    ).decode('utf-8').split('\n')
-)
+    resource_string(__name__,
+                    'assets/voc_classes.txt').decode('utf-8').split('\n'))
 
 
 class Annotation:
@@ -123,16 +109,13 @@ class Annotation:
         category: The category of the annotation
         score: A score for the annotation
     """
-    def __init__(
-        self,
-        selection: Selection,
-        category: AnnotationCategory,
-        score: float=None
-    ):
+
+    def __init__(self,
+                 selection: Selection,
+                 category: AnnotationCategory,
+                 score: float = None):
         if category is None:
-            raise ValueError(
-                'A category object must be specified.'
-            )
+            raise ValueError('A category object must be specified.')
         self.selection = selection
         self.category = category
         self.score = score
@@ -151,14 +134,10 @@ class Annotation:
     def convert(self, annotation_config) -> 'Annotation':
         name = self.category.name
         if name in annotation_config:
-            return self.assign(
-                category=annotation_config[name],
-            )
+            return self.assign(category=annotation_config[name], )
         else:
-            log.warning(
-                '{0} is not in the new annotation '
-                'configuration.'.format(name)
-            )
+            log.warning('{0} is not in the new annotation '
+                        'configuration.'.format(name))
             return None
 
     def resize(self, scale) -> 'Annotation':
@@ -169,7 +148,4 @@ class Annotation:
     def __eq__(self, other):
         self_bbox = self.selection.bbox()
         other_bbox = other.selection.bbox()
-        return (
-            self_bbox == other_bbox and
-            self.category == other.category
-        )
+        return (self_bbox == other_bbox and self.category == other.category)
