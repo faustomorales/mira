@@ -45,7 +45,7 @@ def load_via(project_file: str,
         pd.io.json.json_normalize(img['regions']).assign(
             filename=img['filename']
         ) for img in img_metadata
-    ], axis=0)
+    ], axis=0, sort=False)
 
     annotation_config = core.AnnotationConfiguration(
         project_attrs['region'][label_key]['options'].keys()
