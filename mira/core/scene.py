@@ -128,11 +128,14 @@ class Scene:
         """Obtain an array of shape (N, 5) where the columns are
         x1, y1, x2, y2, class_index where class_index is determined
         from the annotation configuration."""
-        return np.array([
-            a.selection.bbox() + [self.annotation_config.index(a.category)
-                                  ]  # noqa: E501
-            for a in self.annotations
-        ])
+        # We reshape in order to avoid indexing problems when
+        # there are no annotations.
+        return np.array(
+            [
+                a.selection.bbox() +
+                [self.annotation_config.index(a.category)]  # noqa: E501
+                for a in self.annotations
+            ], ).reshape(-1, 5)
 
     def fit(self, width, height):
         """Obtain a new scene fitted to the given width and height.
