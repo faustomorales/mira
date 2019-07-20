@@ -78,19 +78,19 @@ class RetinaNet(Detector):
             assert annotation_config == core.AnnotationConfiguration.COCO, \
                 'To use pretrained_top, annotation config must be core.AnnotationConfiguration.COCO'  # noqa: E501
             pretrained_params = pretrained[backbone_name]
-            weights_path = utils.get_file(origin=pretrained_params['url'],
-                                          file_hash=pretrained_params['hash'],
-                                          cache_subdir=path.join(
-                                              'weights', 'retinanet'),
-                                          hash_algorithm='sha256',
-                                          extract=False)
+            weights_path = utils.get_file(
+                origin=pretrained_params['url'],
+                file_hash=pretrained_params['hash'],
+                cache_subdir=path.join('weights', 'retinanet'),
+                hash_algorithm='sha256',
+                extract=False)
             self.model.load_weights(weights_path, by_name=True)
         self.compile()
 
     def invert_targets(self, y, images, threshold=0.5, nms_threshold=0.1):
 
-        boxes = rn_anchors.anchors_for_shape(image_shape=images[0].shape,
-                                             anchor_params=self.anchor_params)
+        boxes = rn_anchors.anchors_for_shape(
+            image_shape=images[0].shape, anchor_params=self.anchor_params)
 
         # We filter the third dimension in order to remove the anchor states
         # if `invert_targets` is directly called with the output
@@ -136,22 +136,27 @@ class RetinaNet(Detector):
                     class_positive = labels[:, c] > threshold
                     subboxes = boxes[class_positive]
                     sublabels = labels[class_positive, c]
-                    bestIdxs = cv2.dnn.NMSBoxes(bboxes=subboxes.tolist(),
-                                                scores=sublabels.tolist(),
-                                                score_threshold=threshold,
-                                                nms_threshold=0.1)[:, 0]
+                    bestIdxs = cv2.dnn.NMSBoxes(
+                        bboxes=subboxes.tolist(),
+                        scores=sublabels.tolist(),
+                        score_threshold=threshold,
+                        nms_threshold=0.1)[:, 0]
                     subboxes = subboxes[bestIdxs]
+                    sublabels = sublabels[bestIdxs][:, np.newaxis]
+                    subboxes = np.concatenate([subboxes, sublabels], axis=1)
                     predictions.extend([b.tolist() + [c] for b in subboxes])
-                    annotations = [
-                        core.Annotation(selection=core.Selection(
-                            [[x, y], [x + w, y + h]]),
-                                        category=self.annotation_config[c])
-                        for x, y, w, h, c in predictions
-                    ]
+                annotations = [
+                    core.Annotation(
+                        selection=core.Selection([[x, y], [x + w, y + h]]),
+                        score=s,
+                        category=self.annotation_config[c])
+                    for x, y, w, h, s, c in predictions
+                ]
             scenes.append(
-                core.Scene(annotations=annotations,
-                           annotation_config=self.annotation_config,
-                           image=image))
+                core.Scene(
+                    annotations=annotations,
+                    annotation_config=self.annotation_config,
+                    image=image))
         return scenes
 
     def compute_targets(self, collection: core.SceneCollection):
@@ -168,24 +173,25 @@ class RetinaNet(Detector):
         anchors = rn_anchors.anchors_for_shape(
             image_shape=images[0].shape, anchor_params=self.anchor_params)
         return list(
-            rn_anchors.anchor_targets_bbox(anchors=anchors,
-                                           image_group=images,
-                                           annotations_group=annotations_group,
-                                           num_classes=len(
-                                               self.annotation_config),
-                                           negative_overlap=0.4,
-                                           positive_overlap=0.5))
+            rn_anchors.anchor_targets_bbox(
+                anchors=anchors,
+                image_group=images,
+                annotations_group=annotations_group,
+                num_classes=len(self.annotation_config),
+                negative_overlap=0.4,
+                positive_overlap=0.5))
 
     def compute_inputs(self, images: List[core.Image]):
         return np.float32(
             [self.rn_backbone.preprocess_image(image) for image in images])
 
     def compile(self):
-        self.model.compile(loss={
-            'regression': rn_losses.smooth_l1(),
-            'classification': rn_losses.focal()
-        },
-                           optimizer=optimizers.adam(lr=1e-5, clipnorm=0.001))
+        self.model.compile(
+            loss={
+                'regression': rn_losses.smooth_l1(),
+                'classification': rn_losses.focal()
+            },
+            optimizer=optimizers.adam(lr=1e-5, clipnorm=0.001))
 
     def freeze_backbone(self):
         output_names = [
