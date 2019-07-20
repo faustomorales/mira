@@ -1,16 +1,22 @@
+"""Scene and SceneCollection objects"""
+
+# pylint: disable=invalid-name,len-as-condition
+
 from typing import Union, List, Tuple
 from os import path
-import numpy as np
 import logging
 import math
 import io
 
 from sklearn.model_selection import train_test_split
+from scipy import spatial
 from imgaug import augmenters as iaa
+import imgaug as ia
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import imgaug as ia
+import numpy as np
 import validators
+import cv2
 
 from .annotation import AnnotationConfiguration, Annotation
 from .image import Image
@@ -52,16 +58,16 @@ class Scene:
         """The image that is being annotated"""
         # Check to see if we have an actual image
         # or just a string
-        if type(self._image) != str:
+        if not isinstance(self._image, str):
             return self._image
 
         # Check the cache first if image is a URL
-        if (validators.url(self._image) and type(self.cache) == str
-                and path.isfile(self.cache)):
+        if validators.url(self._image) and isinstance(
+                self.cache, str) and path.isfile(self.cache):
             self._image = self.cache
 
         # Load the image
-        log.debug('Reading from ' + self._image)
+        log.debug('Reading from %s', self._image)
         image = Image.read(self._image)
 
         # Check how to handle caching the image
@@ -99,8 +105,9 @@ class Scene:
             ]
             revised = [ann for ann in revised if ann is not None]
             removed = len(annotations) - len(revised)
-            log.debug('Removed {0} annotations when changing '.format(removed)
-                      + 'annotation configuration.')
+            log.debug(
+                'Removed %s annotations when changing annotation configuration.',
+                removed)
             kwargs['annotations'] = revised
         # We use the _image instead of image to avoid triggering an
         # unnecessary read of the actual image.
@@ -181,7 +188,7 @@ class Scene:
         img.show(ax=ax)
         if labels:
             for ann in self.annotations:
-                x1, y1, x2, y2 = ann.selection.bbox()
+                x1, y1, _, _ = ann.selection.bbox()
                 ax.annotate(
                     s=ann.category.name,
                     xy=(x1, y1),
@@ -307,6 +314,8 @@ class SceneCollection:
 
     @property
     def images(self):
+        """All the images for a scene collection.
+        All images will be loaded if not already cached."""
         return [s.image for s in self.scenes]
 
     def augment(self, **kwargs):
@@ -402,9 +411,9 @@ class SceneCollection:
             (n / ncols)*height
         """
         if n > len(self.scenes):
-            log.warning('Collection only has {0} scenes but '
-                        'you requested {1} thumbnails. Limiting '
-                        'to {0} thumbnails.'.format(len(self.scenes), n))
+            log.warning(
+                'Collection only has %s scenes but '
+                'you requested %s thumbnails.', len(self.scenes), n)
             n = len(self.scenes)
         nrows = math.ceil(n / ncols)
         sample_indices = np.random.choice(len(self.scenes), n, replace=False)
@@ -420,3 +429,21 @@ class SceneCollection:
                 thumbnail[rowIdx * width:(rowIdx + 1) * width, colIdx *
                           height:(colIdx + 1) * height] = thumbnails.pop()
         return thumbnail
+
+    def image_distances(self, other: 'SceneCollection') -> np.ndarray:
+        """Obtain an NxM matrix of distances between the N
+        scenes in this collection and the M scenes in the other
+        collection. You must install opencv-contrib-python for this to
+        work."""
+        if not hasattr(cv2, 'img_hash_MarrHildrethHash'):
+            raise Exception(
+                'This method is only available if opencv-contrib-python is installed.'
+            )
+        hasher = cv2.img_hash_MarrHildrethHash.create()  # pylint: disable=no-member
+        hashes_x = np.array(
+            [np.unpackbits(hasher.compute(s.image)[0]) for s in self])
+        hashes_y = np.array(
+            [np.unpackbits(hasher.compute(s.image)[0]) for s in other])
+        distance_matrix = spatial.distance.cdist(
+            XA=hashes_x, XB=hashes_y, metric='hamming')
+        return distance_matrix

@@ -21,3 +21,4 @@ sphinxcontrib-mermaid = "==0.3.1"
 [packages]
 tensorflow = "==1.13.1"
 mira = {editable = true,path = "."}
+opencv-contrib-python = "*"

@@ -1,25 +1,23 @@
+"""COCO parsing tools"""
+# pylint: disable=invalid-name
+
 import logging
 from os import path
 import json
 
+from tqdm import tqdm
 import numpy as np
 
-from .. import utils
-from ..core import (
-    Scene,
-    SceneCollection,
-    AnnotationConfiguration,
-    Annotation,
-    Selection
-)
+from ..core import (Scene, SceneCollection, AnnotationConfiguration,
+                    Annotation, Selection)
 
 log = logging.getLogger(__name__)
 
 
 def load_coco(
-    annotations_file: str,
-    image_dir: str,
-    annotation_config: AnnotationConfiguration=None,
+        annotations_file: str,
+        image_dir: str,
+        annotation_config: AnnotationConfiguration = None,
 ) -> SceneCollection:
     """Obtain a scene collection from a COCO JSON file.
 
@@ -44,9 +42,7 @@ def load_coco(
         c[1] for c in sorted(list(categories.items()), key=lambda x: x[0])
     ]
     if annotation_config is None:
-        annotation_config = AnnotationConfiguration(
-            category_names
-        )
+        annotation_config = AnnotationConfiguration(category_names)
     assert len(categories) == len(annotation_config), \
         'Annotation configuration incompatible with in-file categories'
     assert all([c in annotation_config for c in category_names]), \
@@ -54,22 +50,17 @@ def load_coco(
     assert all([c.name in category_names for c in annotation_config]), \
         'Some annotation configuration categories not in file'
 
-    annotations = np.array(
-        [
-            [ann['image_id'], ann['category_id']] + ann['bbox']
-            for ann in data['annotations']]
-    )
+    annotations = np.array([[ann['image_id'], ann['category_id']] + ann['bbox']
+                            for ann in data['annotations']])
     annotations = annotations[annotations[:, 0].argsort()]
     images = sorted(data['images'], key=lambda x: x['id'])
     del data
-    scenes = [None]*len(images)
-    p = utils.Progbar(len(images), task_name='Creating scenes')
+    scenes = [None] * len(images)
     startIdx = 0
-    for imageIdx, image in enumerate(images):
-        p.update(imageIdx + 1)
-        current = annotations[startIdx:][
-            annotations[startIdx:, 0] == image['id'], 1:
-        ]
+    for imageIdx, image in tqdm(
+            enumerate(images), total=len(images), desc='Creating scenes'):
+        current = annotations[startIdx:][annotations[startIdx:, 0] ==
+                                         image['id'], 1:]
         startIdx += len(current)
 
         scenes[imageIdx] = Scene(
@@ -79,30 +70,17 @@ def load_coco(
                 Annotation(
                     category=annotation_config[categories[int(ann[0])]],
                     selection=Selection(
-                        points=[
-                            [
-                                ann[1],
-                                ann[2]
-                            ],
-                            [
-                                ann[1] + ann[3],
-                                ann[2] + ann[4]
-                            ]
-                        ]
-                    )
-                ) for ann in current
-            ]
-        )
-    return SceneCollection(
-        scenes=scenes,
-        annotation_config=annotation_config
-    )
+                        points=[[ann[1], ann[2]],
+                                [ann[1] + ann[3], ann[2] + ann[4]]]))
+                for ann in current
+            ])
+    return SceneCollection(scenes=scenes, annotation_config=annotation_config)
 
 
 def load_coco_text(
-    annotations_file: str,
-    image_dir: str,
-    annotation_config: AnnotationConfiguration=None,
+        annotations_file: str,
+        image_dir: str,
+        annotation_config: AnnotationConfiguration = None,
 ) -> SceneCollection:
     """Obtain a scene collection from a COCO Text JSON file
     (e.g., that which can be obtained from https://bgshih.github.io/cocotext/)
@@ -122,7 +100,8 @@ def load_coco_text(
 
     category_names = set([ann['class'] for ann in data['anns'].values()])
     if annotation_config is None:
-        annotation_config = AnnotationConfiguration(sorted(list(category_names)))  # noqa: E501
+        annotation_config = AnnotationConfiguration(
+            sorted(list(category_names)))  # noqa: E501
     assert len(category_names) == len(annotation_config), \
         'Annotation configuration incompatible with in-file categories'
     assert all([c in annotation_config for c in category_names]), \
@@ -131,29 +110,26 @@ def load_coco_text(
         'Some annotation configuration categories not in file'
 
     images = data['imgs']
-    p = utils.Progbar(len(images), task_name='Creating scenes')
-    scenes = [None]*len(images)
+    scenes = [None] * len(images)
 
-    for sceneIdx, (imageId, imageData) in enumerate(images.items()):
-        p.update(sceneIdx + 1)
-        anns = [data['anns'][str(annId)] for annId in data['imgToAnns'][imageId]]  # noqa: E501
+    for sceneIdx, (imageId, imageData) in tqdm(
+            enumerate(images.items()), total=len(images),
+            desc='Creating scenes'):
+        anns = [
+            data['anns'][str(annId)] for annId in data['imgToAnns'][imageId]
+        ]  # noqa: E501
         scenes[sceneIdx] = Scene(
             annotation_config=annotation_config,
             image=path.join(image_dir, imageData['file_name']),
             annotations=[
                 Annotation(
                     category=annotation_config[ann['class']],
-                    selection=Selection(
+                    selection=Selection([
+                        [ann['bbox'][0], ann['bbox'][1]],
                         [
-                            [ann['bbox'][0], ann['bbox'][1]],
-                            [ann['bbox'][0] + ann['bbox'][2], ann['bbox'][1] + ann['bbox'][3]]  # noqa: E501
-                        ]
-                    )
-                )
-                for ann in anns
-            ]
-        )
-    return SceneCollection(
-        scenes=scenes,
-        annotation_config=annotation_config
-    )
+                            ann['bbox'][0] + ann['bbox'][2],
+                            ann['bbox'][1] + ann['bbox'][3]
+                        ]  # noqa: E501
+                    ])) for ann in anns
+            ])
+    return SceneCollection(scenes=scenes, annotation_config=annotation_config)
