@@ -47,7 +47,7 @@ class ProgressFileObject(io.FileIO):  # noqa: E302
         io.FileIO.__init__(self, path, *args, **kwargs)
 
     def read(self, size=-1):
-        self.progbar.update(self.tell())
+        self.progbar.update(size)
         return io.FileIO.read(self, size)
 
     def close(self):
@@ -200,7 +200,7 @@ def get_file(origin,
                 ProgressTracker.progbar = tqdm(
                     total=total_size, desc='Downloading data from ' + origin)
             else:
-                ProgressTracker.progbar.update(count * block_size)
+                ProgressTracker.progbar.update(block_size)
 
         error_msg = 'URL fetch failure on {} : {} -- {}'
         try:
