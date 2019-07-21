@@ -14,6 +14,7 @@ from imgaug import augmenters as iaa
 import imgaug as ia
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from tqdm import tqdm
 import numpy as np
 import validators
 import cv2
@@ -33,6 +34,7 @@ class Scene:
         annotations: The list of annotations.
         image: The image that was annotated. Can be lazy-loaded by passing
             a string filepath.
+        metadata: Metadata about the scene as a dictionary
         cache: Defines caching behavior for the image. If `True`, image is
             loaded into memory the first time that the image is requested.
             If `False`, image is loaded from the file path or URL whenever
@@ -43,11 +45,13 @@ class Scene:
                  annotation_config: AnnotationConfiguration,
                  annotations: List[Annotation],
                  image: Union[Image, np.ndarray, str],
+                 metadata: dict = None,
                  cache: bool = True):
         assert isinstance(image, np.ndarray) or isinstance(image, str), \
             'Image must be string or ndarray, not ' + str(type(image))
         if isinstance(image, np.ndarray):
             image = image.view(Image)
+        self.metadata = metadata
         self._image = image
         self._annotations = annotations
         self._annotation_config = annotation_config
@@ -115,7 +119,8 @@ class Scene:
             'annotation_config': self.annotation_config,
             'annotations': self.annotations,
             'image': self._image,
-            'cache': self.cache
+            'cache': self.cache,
+            'metadata': self.metadata
         }
         kwargs = {**defaults, **kwargs}
         return Scene(**kwargs)
@@ -284,6 +289,13 @@ class SceneCollection:
     def __getitem__(self, key):
         return self.scenes[key]
 
+    def __setitem__(self, key, val):
+        if key >= len(self.scenes):
+            raise ValueError(
+                f'Cannot set scene {key} when collection has length {len(self.scenes)}.'
+            )
+        self.scenes[key] = val
+
     def __len__(self):
         return len(self._scenes)
 
@@ -430,20 +442,37 @@ class SceneCollection:
                           height:(colIdx + 1) * height] = thumbnails.pop()
         return thumbnail
 
-    def image_distances(self, other: 'SceneCollection') -> np.ndarray:
+    def deduplicated(self, threshold=0.3) -> 'SceneCollection':
+        """Obtain a deduplicated version of the collection."""
+        distance_matrix = self.image_distances()
+        return self.assign(scenes=[
+            s for i, s in enumerate(self) if i +
+            1 == len(self) or distance_matrix[i, i + 1:].min() > threshold
+        ])
+
+    def image_distances(self, other: 'SceneCollection' = None) -> np.ndarray:
         """Obtain an NxM matrix of distances between the N
         scenes in this collection and the M scenes in the other
         collection. You must install opencv-contrib-python for this to
-        work."""
+        work.
+        
+        Args:
+            other: The other scene collection with which to compute distances. If
+                None, distances are computed against the collection itself.
+        """
         if not hasattr(cv2, 'img_hash_MarrHildrethHash'):
             raise Exception(
                 'This method is only available if opencv-contrib-python is installed.'
             )
         hasher = cv2.img_hash_MarrHildrethHash.create()  # pylint: disable=no-member
-        hashes_x = np.array(
-            [np.unpackbits(hasher.compute(s.image)[0]) for s in self])
-        hashes_y = np.array(
-            [np.unpackbits(hasher.compute(s.image)[0]) for s in other])
+        hashes_x = np.array([
+            np.unpackbits(hasher.compute(s.image)[0])
+            for s in tqdm(self, 'Computing hashes')
+        ])
+        hashes_y = hashes_x if other is None else np.array([
+            np.unpackbits(hasher.compute(s.image)[0])
+            for s in tqdm(other, desc='Computing hashes for other')
+        ])
         distance_matrix = spatial.distance.cdist(
             XA=hashes_x, XB=hashes_y, metric='hamming')
         return distance_matrix

@@ -8,6 +8,7 @@ import uuid
 import typing
 import logging
 
+from tqdm import tqdm
 import pandas as pd
 
 from .. import core
@@ -56,7 +57,10 @@ def load_via(project_file: str,
             'The following files, which will be skipped, have missing labels: %s',
             ', '.join(bad_filenames)
         )
-    filenames = [img['filename'] for img in img_metadata if img['filename'] not in bad_filenames]
+    filenames_metadata = [
+        (img['filename'], {**img['file_attributes'], **{'filename': img['filename']}})
+        for img in img_metadata if img['filename'] not in bad_filenames
+    ]
     regions_df = regions_df[~regions_df.filename.isin(bad_filenames)]
 
     annotation_config = core.AnnotationConfiguration(
@@ -70,6 +74,7 @@ def load_via(project_file: str,
                 image=os.path.join(image_dir, filename),
                 annotation_config=annotation_config,
                 cache=cache,
+                metadata=metadata,
                 annotations=[
                     core.Annotation(
                         selection=core.Selection(
@@ -85,7 +90,7 @@ def load_via(project_file: str,
                     )
                     for _, r in regions_df[regions_df.filename == filename].iterrows()
                 ]
-            ) for filename in filenames
+            ) for filename, metadata in filenames_metadata
         ],
         annotation_config=annotation_config
     )
@@ -94,7 +99,8 @@ def save_via(
         collection: core.SceneCollection,
         export_dir: str,
         label_key='class',
-        project_name='mira_export'
+        project_name='mira_export',
+        filenames: typing.List[str] = None
 ):
     """Save a scene collection in VIA format.
 
@@ -108,9 +114,19 @@ def save_via(
     if os.path.isdir(export_dir):
         raise ValueError(f'{export_dir} already exists.')
     os.makedirs(export_dir, exist_ok=False)
-    data = [(f'{uuid.uuid4()}.jpg', scene) for scene in collection]
-    for filename, scene in data:
+    if filenames is not None:
+        assert len(filenames) == len(collection), \
+            'Length of filenames must be equal to length of collection'
+    else:
+        filenames = [scene.metadata.get('filename', f'{uuid.uuid4()}.jpg') for scene in collection]
+    assert len(set(filenames)) == len(filenames), 'Filenames must be unique.'
+    data = [(filename, scene) for scene, filename in zip(collection, filenames)]
+    metadata_keys = []
+    for filename, scene in tqdm(data, desc='Saving images'):
         scene.image.save(os.path.join(export_dir, filename))
+        if scene.metadata is not None:
+            metadata_keys.extend(list(scene.metadata.keys()))
+    metadata_keys = list(set(metadata_keys))
     data = [
         (filename, scene, os.path.getsize(os.path.join(export_dir, filename)))
         for filename, scene in data
@@ -121,7 +137,11 @@ def save_via(
         {
             'filename': filename,
             'size': size,
-            "file_attributes": {},
+            "file_attributes": {} if scene.metadata is None else dict(
+                zip(
+                    metadata_keys, [scene.metadata.get(k, '') for k in metadata_keys]
+                )
+            ),
             'regions': [
                 {
                     'shape_attributes': {
@@ -149,7 +169,18 @@ def save_via(
                 'default_options': {}
             }
         },
-        'file': {}
+        'file': dict(
+            zip(
+                metadata_keys,
+                [
+                    {
+                        'type': 'text',
+                        'description': '',
+                        'default_value': ''
+                    } for k in metadata_keys
+                ]
+            )
+        ) if metadata_keys else {}
     }
     export_object = {
         '_via_img_metadata': dict(zip(img_metadata_keys, img_metadata_values)),
