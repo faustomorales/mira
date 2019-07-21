@@ -36,7 +36,7 @@ def get_datadir_base():
     if cache_dir_env is not None:
         cache_dir = os.path.abspath(cache_dir_env)
     else:
-        cache_dir = os.path.join(os.path.expanduser('~'), '.MIRA')
+        cache_dir = os.path.join(os.path.expanduser('~'), '.mira')
     return os.path.expanduser(cache_dir)
 
 

@@ -49,9 +49,13 @@ def load_via(project_file: str,
             filename=img['filename']
         ) for img in img_metadata
     ], axis=0, sort=False)
-    bad_filenames = regions_df[
-        regions_df[f'region_attributes.{label_key}'].isnull()
-    ]['filename'].unique()
+    # We may not have any regions!
+    if len(regions_df.index) > 0:
+        bad_filenames = regions_df[
+            regions_df[f'region_attributes.{label_key}'].isnull()
+        ]['filename'].unique()
+    else:
+        bad_filenames = []
     if len(bad_filenames) > 0:  # pylint: disable=len-as-condition
         log.warning(
             'The following files, which will be skipped, have missing labels: %s',
@@ -66,7 +70,7 @@ def load_via(project_file: str,
     annotation_config = core.AnnotationConfiguration(
         project_attrs['region'][label_key]['options'].keys()
     )
-    assert (regions_df['shape_attributes.name'] == 'rect').all(), \
+    assert len(regions_df) == 0 or (regions_df['shape_attributes.name'] == 'rect').all(), \
         'Only axis aligned rectangular selections are supported.'
     return core.SceneCollection(
         scenes=[
