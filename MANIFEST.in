@@ -1,2 +1,3 @@
-include mira/core/assets/*.txtinclude versioneer.py
+include mira/core/assets/*.txt
+include versioneer.py
 include mira/_version.py
