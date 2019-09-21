@@ -5,8 +5,8 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras import regularizers, layers, models, optimizers
+from keras import backend as K
+from keras import regularizers, layers, models, optimizers
 
 from .detector import Detector
 from ..utils import compute_overlap
