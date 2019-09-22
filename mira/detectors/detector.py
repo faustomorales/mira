@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Union, Tuple
+import itertools
+import random
 
 from imgaug import augmenters as iaa
 import numpy as np
@@ -114,11 +116,15 @@ class Detector(ABC):
                         collection: SceneCollection,
                         train_shape: Tuple[int, int, int],
                         batch_size: int = 1,
-                        augmenter: iaa.Augmenter = None):
-        while True:
-            sample = collection.sample(n=batch_size).augment(
-                augmenter=augmenter).fit(
-                    height=train_shape[0], width=train_shape[1])[0]
+                        augmenter: iaa.Augmenter = None,
+                        shuffle=True):
+        index = np.arange(len(collection)).tolist()
+        for idx in itertools.cycle(range(0, len(collection), batch_size)):
+            if idx == 0 and shuffle:
+                random.shuffle(index)
+            sample = collection.assign(scenes=[collection[i] for i in index[idx:idx+batch_size]]) \
+                               .augment(augmenter=augmenter) \
+                               .fit(height=train_shape[0], width=train_shape[1])[0]
             yield self.compute_Xy(sample)
 
     def train(self,
@@ -129,10 +135,7 @@ class Detector(ABC):
               train_shape: Tuple[int, int, int] = None,
               **kwargs):
         """Run training job. All additional keyword arguments
-        passed to Keras' `fit_generator`. Note that, at a minimum,
-        you must provide the `epochs` and `steps_per_epoch` arguments.
-        If validation data is provided, you will also need to provide a
-        `validation_steps` argument.
+        passed to Keras' `fit_generator`.
 
         Args:
             training: The collection of training images
@@ -162,20 +165,33 @@ class Detector(ABC):
             train_shape = training_model.input_shape[1:]
             assert all(s is not None for s in train_shape), \
                 'train_shape must be provided for this model.'
+        if 'steps_per_epoch' not in kwargs:
+            kwargs['steps_per_epoch'] = int(len(training)//batch_size)
+        if validation is not None and 'validation_steps' not in kwargs:
+            kwargs['validation_steps'] = int(len(validation)//batch_size)
+        if 'epochs' not in kwargs:
+            kwargs['epochs'] = 1000
         training_generator = self.batch_generator(
             collection=training,
             batch_size=batch_size,
             augmenter=augmenter,
+            shuffle=True,
             train_shape=train_shape)
         if validation is None:
             history = training_model.fit_generator(
                 generator=training_generator, **kwargs)
         else:
-            validation = validation.fit(
-                height=train_shape[0], width=train_shape[1])[0]
+            validation_generator = self.batch_generator(
+                collection=validation,
+                batch_size=batch_size,
+                augmenter=None,
+                train_shape=train_shape,
+                shuffle=False
+            )
+            kwargs['validation_steps'] = int(len(validation)//batch_size)
             history = training_model.fit_generator(
                 generator=training_generator,
-                validation_data=self.compute_Xy(validation),
+                validation_data=validation_generator,
                 **kwargs)
         return history
 

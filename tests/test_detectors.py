@@ -55,6 +55,12 @@ def test_yolo():
     inverted = yolo.invert_targets(y=yolo.compute_targets(collection), images=collection.images)  # noqa: E501
     assert all(e - 1 <= a < e + 1 for a, e in zip(inverted[0].annotations[0].selection.bbox(), [0, 0, 50, 50]))  # noqa: E501
     assert all(e - 1 <= a < e + 1 for a, e in zip(inverted[1].annotations[0].selection.bbox(), [20, 20, 80, 80]))  # noqa: E501
+    # Verify that training doesn't crash.
+    history = yolo.train(
+        training=collection,
+        epochs=2,
+        train_shape=(224, 224, 3)
+    )
 
 
 def test_east():
