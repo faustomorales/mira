@@ -262,7 +262,7 @@ def get_top(backbone, num_anchors_per_output, num_classes):
     return models.Model(backbone.inputs, outputs)
 
 
-def anchors_for_shape(input_shape, anchor_groups):
+def anchors_for_shape(input_shape, anchor_groups, strides):
     """Compute the anchors for a given output shape and anchor
     groups.
 
@@ -274,7 +274,7 @@ def anchors_for_shape(input_shape, anchor_groups):
     """
     image_h, image_w = input_shape
     anchors = []
-    for seeds, stride in zip(anchor_groups, [32, 16, 8]):
+    for seeds, stride in zip(anchor_groups, strides):
         steps_y, steps_x = [int(s / stride) for s in input_shape]
         cx = np.reshape(
             np.arange(start=0, stop=steps_x, dtype='float32'),
@@ -404,6 +404,7 @@ class YOLOv3(Detector):
             'pretrained_top requires annotation configuration '
             'to be AnnotationConfiguration.COCO'
         )
+        self.strides = [32, 16] if size == 'tiny' else [32, 16, 8]
         self.anchor_groups = YOLO_ANCHOR_GROUPS[size]
         self.annotation_config = annotation_config
         self.size = size
@@ -456,7 +457,8 @@ class YOLOv3(Detector):
         num_features = 4+1+len(self.annotation_config)
         output_anchors = anchors_for_shape(
             input_shape=images[0].shape[:2],
-            anchor_groups=self.anchor_groups
+            anchor_groups=self.anchor_groups,
+            strides=self.strides
         )
         batch_size = len(y[0])
         processed = []
@@ -532,7 +534,8 @@ class YOLOv3(Detector):
         ignore_overlap = 0.5
         anchors = anchors_for_shape(
             input_shape=collection.images[0].shape[:2],
-            anchor_groups=self.anchor_groups
+            anchor_groups=self.anchor_groups,
+            strides=self.strides
         )
         results = [[] for group in anchors]
         anchors_xywh = np.concatenate(
