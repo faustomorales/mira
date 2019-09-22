@@ -56,7 +56,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -179,57 +179,37 @@
            <div itemprop="articleBody">
             
   <h1>Source code for mira.datasets.voc</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
+<span></span><span class="sd">&quot;&quot;&quot;VOC parsing tools&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span>
 <span class="kn">from</span> <span class="nn">xml.etree</span> <span class="k">import</span> <span class="n">ElementTree</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">Progbar</span>
-<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">Selection</span><span class="p">,</span>
-    <span class="n">Scene</span><span class="p">,</span>
-    <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">AnnotationConfiguration</span><span class="p">,</span>
-    <span class="n">Annotation</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span><span class="n">Selection</span><span class="p">,</span> <span class="n">Scene</span><span class="p">,</span> <span class="n">SceneCollection</span><span class="p">,</span> <span class="n">AnnotationConfiguration</span><span class="p">,</span>
+                    <span class="n">Annotation</span><span class="p">)</span>
 
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>  <span class="c1"># pylint: disable=invalid-name</span>
 
-<span class="n">VOC_SCENE_METADATA_MAP</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">[</span><span class="s1">&#39;folder&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="s1">&#39;height&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;database&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;image&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;segmented&#39;</span><span class="p">]</span>
-<span class="p">]</span>
+<span class="n">VOC_SCENE_METADATA_MAP</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;folder&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">],</span>
+                          <span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="s1">&#39;height&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;database&#39;</span><span class="p">],</span>
+                          <span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;image&#39;</span><span class="p">],</span>
+                          <span class="p">[</span><span class="s1">&#39;segmented&#39;</span><span class="p">]]</span>
 
-<span class="n">VOC_ANNOTATION_METADATA_MAP</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">[</span><span class="s1">&#39;pose&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;truncated&#39;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s1">&#39;difficult&#39;</span><span class="p">]</span>
-<span class="p">]</span>
+<span class="n">VOC_ANNOTATION_METADATA_MAP</span> <span class="o">=</span> <span class="p">[[</span><span class="s1">&#39;pose&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;truncated&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;difficult&#39;</span><span class="p">]]</span>
 
 
-<span class="k">def</span> <span class="nf">map_xml_to_metadata</span><span class="p">(</span>
-    <span class="n">paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
-    <span class="n">root</span><span class="p">:</span> <span class="n">ElementTree</span><span class="o">.</span><span class="n">Element</span>
-<span class="p">):</span>
+<span class="k">def</span> <span class="nf">map_xml_to_metadata</span><span class="p">(</span><span class="n">paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">root</span><span class="p">:</span> <span class="n">ElementTree</span><span class="o">.</span><span class="n">Element</span><span class="p">):</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">elem</span> <span class="o">=</span> <span class="n">root</span>
-        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
             <span class="n">elem</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">elem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s1">&#39;Missing annotation metadata: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Missing annotation metadata: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
                 <span class="k">break</span>
         <span class="k">if</span> <span class="n">elem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">continue</span>
@@ -238,9 +218,9 @@
 
 
 <div class="viewcode-block" id="load_voc"><a class="viewcode-back" href="../../../datasets/load.html#mira.datasets.load_voc">[docs]</a><span class="k">def</span> <span class="nf">load_voc</span><span class="p">(</span>
-    <span class="n">filepaths</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="p">,</span>
-    <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">filepaths</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="p">,</span>
+        <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Read a scene from a VOC XML annotation file. Remaining arguments</span>
 <span class="sd">    passed to scene constructor.</span>
@@ -256,63 +236,43 @@
 <span class="sd">        A new scene collection, one scene per VOC file</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">scenes</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">Progbar</span><span class="p">(</span>
-        <span class="nb">len</span><span class="p">(</span><span class="n">filepaths</span><span class="p">),</span>
-        <span class="n">task_name</span><span class="o">=</span><span class="s1">&#39;Loading </span><span class="si">{0}</span><span class="s1"> VOC annotation files.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filepaths</span><span class="p">))</span>
-    <span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepaths</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">filepaths</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Loading VOC annotation files.&#39;</span><span class="p">):</span>
         <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">root</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
 
         <span class="c1"># Get the scene level metadata</span>
         <span class="n">scene_metadata</span> <span class="o">=</span> <span class="n">map_xml_to_metadata</span><span class="p">(</span>
-            <span class="n">paths</span><span class="o">=</span><span class="n">VOC_SCENE_METADATA_MAP</span><span class="p">,</span>
-            <span class="n">root</span><span class="o">=</span><span class="n">root</span>
-        <span class="p">)</span>
+            <span class="n">paths</span><span class="o">=</span><span class="n">VOC_SCENE_METADATA_MAP</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">image_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">folder</span> <span class="o">=</span> <span class="n">scene_metadata</span><span class="p">[</span><span class="s1">&#39;folder&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">folder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">image_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+                <span class="n">image_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">image_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                    <span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filepath</span><span class="p">),</span>
-                    <span class="n">folder</span>
-                <span class="p">)</span>
+                <span class="n">image_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filepath</span><span class="p">),</span> <span class="n">folder</span><span class="p">)</span>
 
-        <span class="n">image_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">scene_metadata</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">])</span>
+        <span class="n">image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">scene_metadata</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;object&#39;</span><span class="p">):</span>
             <span class="n">category</span> <span class="o">=</span> <span class="n">annotation_config</span><span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">]</span>
             <span class="n">selection</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">for</span> <span class="n">bndbox</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;bndbox&#39;</span><span class="p">):</span>
-                <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span>
-                    <span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bndbox</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">)),</span>
-                    <span class="p">[</span><span class="s1">&#39;xmin&#39;</span><span class="p">,</span> <span class="s1">&#39;ymin&#39;</span><span class="p">,</span> <span class="s1">&#39;xmax&#39;</span><span class="p">,</span> <span class="s1">&#39;ymax&#39;</span><span class="p">]</span>
-                <span class="p">)</span>
-                <span class="n">current</span> <span class="o">=</span> <span class="n">Selection</span><span class="p">(</span>
-                    <span class="p">[</span>
-                        <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">],</span>
-                        <span class="p">[</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">]</span>
-                    <span class="p">]</span>
-                <span class="p">)</span>
+                <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bndbox</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;xmin&#39;</span><span class="p">,</span> <span class="s1">&#39;ymin&#39;</span><span class="p">,</span> <span class="s1">&#39;xmax&#39;</span><span class="p">,</span> <span class="s1">&#39;ymax&#39;</span><span class="p">]</span>
+                <span class="p">]</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">Selection</span><span class="p">([[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">],</span> <span class="p">[</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">]])</span>
                 <span class="k">if</span> <span class="n">selection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">selection</span> <span class="o">=</span> <span class="n">current</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">selection</span> <span class="o">+=</span> <span class="n">current</span>
-            <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Annotation</span><span class="p">(</span>
-                <span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span>
-                <span class="n">category</span><span class="o">=</span><span class="n">category</span>
-            <span class="p">))</span>
-        <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Scene</span><span class="p">(</span>
-            <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">,</span>
-            <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
-            <span class="n">image</span><span class="o">=</span><span class="n">image_path</span>
-        <span class="p">))</span>
-    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span>
-        <span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span>
-        <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-    <span class="p">)</span></div>
+            <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Annotation</span><span class="p">(</span><span class="n">selection</span><span class="o">=</span><span class="n">selection</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="p">))</span>
+        <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">Scene</span><span class="p">(</span>
+                <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">,</span>
+                <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
+                <span class="n">image</span><span class="o">=</span><span class="n">image_path</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span> <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

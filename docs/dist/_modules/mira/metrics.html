@@ -56,7 +56,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -179,7 +179,9 @@
            <div itemprop="articleBody">
             
   <h1>Source code for mira.metrics</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="c1"># pylint: disable=invalid-name</span>
+<span class="sd">&quot;&quot;&quot;Metrics for object detection tasks.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -187,11 +189,9 @@
 <span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="n">SceneCollection</span>
 
 
-<div class="viewcode-block" id="precision_recall_curve"><a class="viewcode-back" href="../../metrics.html#mira.metrics.precision_recall_curve">[docs]</a><span class="k">def</span> <span class="nf">precision_recall_curve</span><span class="p">(</span>
-    <span class="n">true_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">pred_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.5</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+<div class="viewcode-block" id="precision_recall_curve"><a class="viewcode-back" href="../../metrics.html#mira.metrics.precision_recall_curve">[docs]</a><span class="k">def</span> <span class="nf">precision_recall_curve</span><span class="p">(</span><span class="n">true_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+                           <span class="n">pred_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+                           <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;Compute the precision-recall curve for each of the</span>
 <span class="sd">    classes.</span>
 
@@ -201,22 +201,21 @@
 <span class="sd">        iou_threshold: The threshold for detection</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A list of 3-tuples, one for each class. The tuple</span>
-<span class="sd">        consists of the precision, recall, and score</span>
-<span class="sd">        thresholds, respectively.</span>
+<span class="sd">        A dict with category names as keys and array of shape (Ni, 3)</span>
+<span class="sd">        which is the precision, recall, and score for each of the</span>
+<span class="sd">        predicted boxes for the category.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">true_collection</span><span class="o">.</span><span class="n">annotation_config</span> <span class="o">==</span> <span class="n">pred_collection</span><span class="o">.</span><span class="n">annotation_config</span><span class="p">,</span> <span class="p">(</span>  <span class="c1"># noqa: E501</span>
-        <span class="s1">&#39;Annotation configurations must match&#39;</span>
-    <span class="p">)</span>
+        <span class="s1">&#39;Annotation configurations must match&#39;</span><span class="p">)</span>
     <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">true_collection</span><span class="o">.</span><span class="n">annotation_config</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_collection</span><span class="o">.</span><span class="n">scenes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">pred_collection</span><span class="o">.</span><span class="n">scenes</span><span class="p">),</span> \
         <span class="s1">&#39;Must have same scenes in each collection&#39;</span>
 
-    <span class="c1"># The ith entry in tfs is a list of length three,</span>
+    <span class="c1"># The ith entry in tfs is a list of lists, each of length three,</span>
     <span class="c1"># which are the change in the number of true positives and</span>
     <span class="c1"># false positives, along with the score at which the change</span>
     <span class="c1"># occurred for the ith class.</span>
-    <span class="n">tfs</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">))]</span>
+    <span class="n">tfs</span> <span class="o">=</span> <span class="p">[[[],</span> <span class="p">[],</span> <span class="p">[]]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">))]</span>
 
     <span class="c1"># The ith entry in tfs is the number of true boxes</span>
     <span class="c1"># for the ith class.</span>
@@ -226,75 +225,83 @@
         <span class="n">pred_bboxes</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">bboxes</span><span class="p">()</span>
         <span class="n">true_bboxes</span> <span class="o">=</span> <span class="n">true</span><span class="o">.</span><span class="n">bboxes</span><span class="p">()</span>
         <span class="n">pred_scores</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">scores</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">s</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                   <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">pred_scores</span><span class="p">),</span> <span class="s1">&#39;All annotations must have a score.&#39;</span>
 
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">)):</span>
-            <span class="n">pred_bboxes_cur</span> <span class="o">=</span> <span class="n">pred_bboxes</span><span class="p">[</span><span class="n">pred_bboxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">c</span><span class="p">]</span>
-            <span class="n">true_bboxes_cur</span> <span class="o">=</span> <span class="n">true_bboxes</span><span class="p">[</span><span class="n">true_bboxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">c</span><span class="p">]</span>
-            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pred_bboxes_cur</span><span class="p">)</span>
-            <span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_bboxes_cur</span><span class="p">)</span>
-            <span class="n">pos</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">m</span>
+        <span class="k">for</span> <span class="n">classIdx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">)):</span>
+            <span class="n">pred_bboxes_cur</span> <span class="o">=</span> <span class="n">pred_bboxes</span><span class="p">[</span><span class="n">pred_bboxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">classIdx</span><span class="p">]</span>
+            <span class="n">true_bboxes_cur</span> <span class="o">=</span> <span class="n">true_bboxes</span><span class="p">[</span><span class="n">true_bboxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">classIdx</span><span class="p">]</span>
+            <span class="n">pred_scores_cur</span> <span class="o">=</span> <span class="n">pred_scores</span><span class="p">[</span><span class="n">pred_bboxes</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">classIdx</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nPredicted</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pred_bboxes_cur</span><span class="p">)</span>
+            <span class="n">nTrue</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">true_bboxes_cur</span><span class="p">)</span>
+            <span class="n">pos</span><span class="p">[</span><span class="n">classIdx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nTrue</span>
+
+            <span class="k">if</span> <span class="n">nPredicted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># We have no new information to add if there were no</span>
+                <span class="c1"># predicted boxes.</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># (n, m): The IoU between the ith predicted</span>
-            <span class="c1">#         box and the jth true box</span>
+            <span class="k">if</span> <span class="n">nTrue</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># All of them are false positives</span>
+                <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">pred_scores_cur</span><span class="p">:</span>
+                    <span class="n">tfs</span><span class="p">[</span><span class="n">classIdx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">tfs</span><span class="p">[</span><span class="n">classIdx</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">tfs</span><span class="p">[</span><span class="n">classIdx</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Sort the predicted boxes by decreasing confidence</span>
+            <span class="n">pred_bboxes_cur</span> <span class="o">=</span> <span class="n">pred_bboxes_cur</span><span class="p">[(</span><span class="o">-</span><span class="n">pred_scores_cur</span><span class="p">)</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span>
+            <span class="n">pred_scores_cur</span> <span class="o">=</span> <span class="n">pred_scores_cur</span><span class="p">[(</span><span class="o">-</span><span class="n">pred_scores_cur</span><span class="p">)</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span>
+
+            <span class="c1"># (n, m): status for ith prediction for jth true box</span>
             <span class="n">det</span> <span class="o">=</span> <span class="n">compute_overlap</span><span class="p">(</span>
                 <span class="n">boxes</span><span class="o">=</span><span class="n">pred_bboxes_cur</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span>
-                <span class="n">query_boxes</span><span class="o">=</span><span class="n">true_bboxes_cur</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
-            <span class="p">)</span> <span class="o">&gt;</span> <span class="n">iou_threshold</span>
+                <span class="n">query_boxes</span><span class="o">=</span><span class="n">true_bboxes_cur</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">iou_threshold</span>
 
-            <span class="c1"># (n): The index of the ith highest confidence</span>
-            <span class="c1">#      prediction</span>
-            <span class="n">pred_bbox_idx</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">pred_scores</span><span class="p">)</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
-            <span class="n">tp</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">fp</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-                <span class="c1"># For each of the best i bounding boxes,</span>
-                <span class="c1"># find the number of true ground boxes that</span>
-                <span class="c1"># were detected.</span>
-                <span class="n">tpc</span> <span class="o">=</span> <span class="n">det</span><span class="p">[</span><span class="n">pred_bbox_idx</span><span class="p">[:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-                <span class="n">fpc</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">tpc</span>
-                <span class="n">sc</span> <span class="o">=</span> <span class="n">pred_scores</span><span class="p">[</span><span class="n">pred_bbox_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            <span class="n">fp_prev</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">tp_prev</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nPredicted</span><span class="p">):</span>
+                <span class="n">tp_cur</span> <span class="o">=</span> <span class="n">det</span><span class="p">[:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">fp_cur</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">det</span><span class="p">[:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-                <span class="n">tpd</span> <span class="o">=</span> <span class="n">tpc</span> <span class="o">-</span> <span class="n">tp</span>
-                <span class="n">fpd</span> <span class="o">=</span> <span class="n">fpc</span> <span class="o">-</span> <span class="n">fp</span>
+                <span class="n">tp_delta</span> <span class="o">=</span> <span class="n">tp_cur</span> <span class="o">-</span> <span class="n">tp_prev</span>
+                <span class="n">fp_delta</span> <span class="o">=</span> <span class="n">fp_cur</span> <span class="o">-</span> <span class="n">fp_prev</span>
 
-                <span class="n">tp</span> <span class="o">=</span> <span class="n">tpc</span>
-                <span class="n">fp</span> <span class="o">=</span> <span class="n">fpc</span>
+                <span class="k">assert</span> <span class="n">tp_delta</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+                <span class="k">assert</span> <span class="n">fp_delta</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+                <span class="k">assert</span> <span class="n">tp_cur</span> <span class="o">&lt;=</span> <span class="n">nTrue</span>
+                <span class="k">assert</span> <span class="n">fp_cur</span> <span class="o">&lt;=</span> <span class="n">nPredicted</span>
 
-                <span class="c1"># We keep a running delta for</span>
-                <span class="c1"># later use.</span>
-                <span class="n">tfs</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">tpd</span><span class="p">,</span> <span class="n">fpd</span><span class="p">,</span> <span class="n">sc</span><span class="p">])</span>
+                <span class="n">tp_prev</span> <span class="o">=</span> <span class="n">tp_cur</span>
+                <span class="n">fp_prev</span> <span class="o">=</span> <span class="n">fp_cur</span>
 
-    <span class="n">prs</span> <span class="o">=</span> <span class="p">[(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">)</span>
+                <span class="n">tfs</span><span class="p">[</span><span class="n">classIdx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tp_delta</span><span class="p">)</span>
+                <span class="n">tfs</span><span class="p">[</span><span class="n">classIdx</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fp_delta</span><span class="p">)</span>
+                <span class="n">tfs</span><span class="p">[</span><span class="n">classIdx</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pred_scores_cur</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-    <span class="k">for</span> <span class="n">tfs_cur</span><span class="p">,</span> <span class="n">pos_cur</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-        <span class="n">tfs</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">))</span>
-    <span class="p">):</span>
-        <span class="c1"># If we had no detections or there</span>
+    <span class="n">prs</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">))]</span>
+
+    <span class="k">for</span> <span class="n">classIdx</span><span class="p">,</span> <span class="n">tfs_cur</span><span class="p">,</span> <span class="n">pos_cur</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">)),</span> <span class="n">tfs</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="c1"># If we had no detections AND there</span>
         <span class="c1"># were no true boxes, precision and recall</span>
         <span class="c1"># are not defined.</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tfs_cur</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">pos_cur</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">tfs_cur</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tfs_cur</span><span class="p">)</span>
+        <span class="n">tfs_cur</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tfs_cur</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="n">tfs_cur</span> <span class="o">=</span> <span class="n">tfs_cur</span><span class="p">[(</span><span class="o">-</span><span class="n">tfs_cur</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span>
-
         <span class="n">tp</span> <span class="o">=</span> <span class="n">tfs_cur</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
         <span class="n">fp</span> <span class="o">=</span> <span class="n">tfs_cur</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
-        <span class="n">prs</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span><span class="p">),</span>
-            <span class="n">tp</span> <span class="o">/</span> <span class="n">pos_cur</span><span class="p">,</span>
-            <span class="n">tfs_cur</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">prs</span></div>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">tfs_cur</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">precisions</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span><span class="p">)</span>
+        <span class="n">recalls</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="n">pos_cur</span>
+        <span class="n">prs</span><span class="p">[</span><span class="n">classIdx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">precisions</span><span class="p">,</span> <span class="n">recalls</span><span class="p">,</span> <span class="n">scores</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">annotation_config</span><span class="p">],</span> <span class="n">prs</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="mAP"><a class="viewcode-back" href="../../metrics.html#mira.metrics.mAP">[docs]</a><span class="k">def</span> <span class="nf">mAP</span><span class="p">(</span>
-    <span class="n">true_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">pred_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.5</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="mAP"><a class="viewcode-back" href="../../metrics.html#mira.metrics.mAP">[docs]</a><span class="k">def</span> <span class="nf">mAP</span><span class="p">(</span><span class="n">true_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+        <span class="n">pred_collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
+        <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Compute mAP (mean average precision) for</span>
 <span class="sd">    a pair of scene collections.</span>
 
@@ -304,26 +311,31 @@
 <span class="sd">        iou_threshold: The threshold for detection</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        mAP score</span>
+<span class="sd">        mAP class scores</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">prs</span> <span class="o">=</span> <span class="n">precision_recall_curve</span><span class="p">(</span>
-        <span class="n">true_collection</span><span class="p">,</span>
-        <span class="n">pred_collection</span><span class="p">,</span>
-        <span class="n">iou_threshold</span>
-    <span class="p">)</span>
-    <span class="n">aps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">prs</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-    <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">rs</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prs</span><span class="p">):</span>
+    <span class="n">prs</span> <span class="o">=</span> <span class="n">precision_recall_curve</span><span class="p">(</span><span class="n">true_collection</span><span class="p">,</span> <span class="n">pred_collection</span><span class="p">,</span>
+                                 <span class="n">iou_threshold</span><span class="p">)</span>
+    <span class="n">aps</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">className</span><span class="p">,</span> <span class="n">prs_cur</span> <span class="ow">in</span> <span class="n">prs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">ps</span> <span class="o">=</span> <span class="n">prs_cur</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">prs_cur</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+        <span class="c1"># If rs is None, there were no detections and no true</span>
+        <span class="c1"># boxes. If it is all nans, then there were no</span>
+        <span class="c1"># true boxes but there were detections.</span>
+        <span class="k">if</span> <span class="n">rs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="n">rs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">aps</span><span class="p">[</span><span class="n">className</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+            <span class="k">continue</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">)):</span>
             <span class="c1"># From section 4.2 of VOC paper,the precision at each</span>
             <span class="c1"># recall level r is interpolated by taking the maximum</span>
             <span class="c1"># precision measured for a method for which</span>
             <span class="c1"># the corresponding recall exceeds r</span>
-            <span class="n">pc</span> <span class="o">=</span> <span class="n">ps</span><span class="p">[</span><span class="n">rs</span> <span class="o">&gt;</span> <span class="n">r</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pc</span> <span class="o">=</span> <span class="n">ps</span><span class="p">[</span><span class="n">rs</span> <span class="o">&gt;=</span> <span class="n">r</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># pylint: disable=len-as-condition</span>
                 <span class="n">pi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-        <span class="n">aps</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">pi</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">aps</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span></div>
+        <span class="n">aps</span><span class="p">[</span><span class="n">className</span><span class="p">]</span> <span class="o">=</span> <span class="n">pi</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">aps</span></div>
 </pre></div>
 
            </div>

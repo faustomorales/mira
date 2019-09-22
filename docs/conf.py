@@ -27,8 +27,10 @@ project = 'mira'
 copyright = '2019, Fausto Morales'
 author = 'Fausto Morales'
 
+import mira._version
+
 # The short X.Y version
-version = '0.1'
+version = mira._version.get_versions()['version']
 # The full version, including alpha/beta/rc tags
 # release = ''
 

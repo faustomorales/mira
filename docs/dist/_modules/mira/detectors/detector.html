@@ -56,7 +56,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -181,6 +181,8 @@
   <h1>Source code for mira.detectors.detector</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">random</span>
 
 <span class="kn">from</span> <span class="nn">imgaug</span> <span class="k">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -295,11 +297,15 @@
                         <span class="n">collection</span><span class="p">:</span> <span class="n">SceneCollection</span><span class="p">,</span>
                         <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
                         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-                        <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">sample</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">augment</span><span class="p">(</span>
-                <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                    <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">augmenter</span><span class="p">:</span> <span class="n">iaa</span><span class="o">.</span><span class="n">Augmenter</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">shuffle</span><span class="p">:</span>
+                <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="p">[</span><span class="n">collection</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">[</span><span class="n">idx</span><span class="p">:</span><span class="n">idx</span><span class="o">+</span><span class="n">batch_size</span><span class="p">]])</span> \
+                               <span class="o">.</span><span class="n">augment</span><span class="p">(</span><span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">)</span> \
+                               <span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_Xy</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Detector.train"><a class="viewcode-back" href="../../../detectors/index.html#mira.detectors.Detector.train">[docs]</a>    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -310,10 +316,7 @@
               <span class="n">train_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
               <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Run training job. All additional keyword arguments</span>
-<span class="sd">        passed to Keras&#39; `fit_generator`. Note that, at a minimum,</span>
-<span class="sd">        you must provide the `epochs` and `steps_per_epoch` arguments.</span>
-<span class="sd">        If validation data is provided, you will also need to provide a</span>
-<span class="sd">        `validation_steps` argument.</span>
+<span class="sd">        passed to Keras&#39; `fit_generator`.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            training: The collection of training images</span>
@@ -343,20 +346,33 @@
             <span class="n">train_shape</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
             <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">s</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">train_shape</span><span class="p">),</span> \
                 <span class="s1">&#39;train_shape must be provided for this model.&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;steps_per_epoch&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;steps_per_epoch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">)</span><span class="o">//</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">validation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;validation_steps&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;validation_steps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">validation</span><span class="p">)</span><span class="o">//</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;epochs&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;epochs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1000</span>
         <span class="n">training_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_generator</span><span class="p">(</span>
             <span class="n">collection</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
             <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">train_shape</span><span class="o">=</span><span class="n">train_shape</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">validation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">history</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span>
                 <span class="n">generator</span><span class="o">=</span><span class="n">training_generator</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">validation</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-                <span class="n">height</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">width</span><span class="o">=</span><span class="n">train_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">validation_generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_generator</span><span class="p">(</span>
+                <span class="n">collection</span><span class="o">=</span><span class="n">validation</span><span class="p">,</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                <span class="n">augmenter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">train_shape</span><span class="o">=</span><span class="n">train_shape</span><span class="p">,</span>
+                <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;validation_steps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">validation</span><span class="p">)</span><span class="o">//</span><span class="n">batch_size</span><span class="p">)</span>
             <span class="n">history</span> <span class="o">=</span> <span class="n">training_model</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span>
                 <span class="n">generator</span><span class="o">=</span><span class="n">training_generator</span><span class="p">,</span>
-                <span class="n">validation_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_Xy</span><span class="p">(</span><span class="n">validation</span><span class="p">),</span>
+                <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_generator</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">history</span></div>
 

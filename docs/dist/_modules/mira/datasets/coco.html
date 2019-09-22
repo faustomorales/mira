@@ -56,7 +56,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -179,28 +179,26 @@
            <div itemprop="articleBody">
             
   <h1>Source code for mira.datasets.coco</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span></span><span class="sd">&quot;&quot;&quot;COCO parsing tools&quot;&quot;&quot;</span>
+<span class="c1"># pylint: disable=invalid-name</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
 <span class="kn">import</span> <span class="nn">json</span>
 
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">Scene</span><span class="p">,</span>
-    <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">AnnotationConfiguration</span><span class="p">,</span>
-    <span class="n">Annotation</span><span class="p">,</span>
-    <span class="n">Selection</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span><span class="n">Scene</span><span class="p">,</span> <span class="n">SceneCollection</span><span class="p">,</span> <span class="n">AnnotationConfiguration</span><span class="p">,</span>
+                    <span class="n">Annotation</span><span class="p">,</span> <span class="n">Selection</span><span class="p">)</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="load_coco"><a class="viewcode-back" href="../../../datasets/load.html#mira.datasets.load_coco">[docs]</a><span class="k">def</span> <span class="nf">load_coco</span><span class="p">(</span>
-    <span class="n">annotations_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">annotations_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Obtain a scene collection from a COCO JSON file.</span>
 
@@ -225,9 +223,7 @@
         <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">categories</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">annotation_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span>
-            <span class="n">category_names</span>
-        <span class="p">)</span>
+        <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span><span class="n">category_names</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">categories</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">),</span> \
         <span class="s1">&#39;Annotation configuration incompatible with in-file categories&#39;</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">c</span> <span class="ow">in</span> <span class="n">annotation_config</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">category_names</span><span class="p">]),</span> \
@@ -235,22 +231,17 @@
     <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">category_names</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">annotation_config</span><span class="p">]),</span> \
         <span class="s1">&#39;Some annotation configuration categories not in file&#39;</span>
 
-    <span class="n">annotations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-        <span class="p">[</span>
-            <span class="p">[</span><span class="n">ann</span><span class="p">[</span><span class="s1">&#39;image_id&#39;</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;category_id&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;annotations&#39;</span><span class="p">]]</span>
-    <span class="p">)</span>
+    <span class="n">annotations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">ann</span><span class="p">[</span><span class="s1">&#39;image_id&#39;</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;category_id&#39;</span><span class="p">]]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;annotations&#39;</span><span class="p">]])</span>
     <span class="n">annotations</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">annotations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span>
     <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;images&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
     <span class="k">del</span> <span class="n">data</span>
-    <span class="n">scenes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">Progbar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">),</span> <span class="n">task_name</span><span class="o">=</span><span class="s1">&#39;Creating scenes&#39;</span><span class="p">)</span>
+    <span class="n">scenes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
     <span class="n">startIdx</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">imageIdx</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">images</span><span class="p">):</span>
-        <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">imageIdx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">current</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">startIdx</span><span class="p">:][</span>
-            <span class="n">annotations</span><span class="p">[</span><span class="n">startIdx</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">image</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="p">]</span>
+    <span class="k">for</span> <span class="n">imageIdx</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+            <span class="nb">enumerate</span><span class="p">(</span><span class="n">images</span><span class="p">),</span> <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Creating scenes&#39;</span><span class="p">):</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">startIdx</span><span class="p">:][</span><span class="n">annotations</span><span class="p">[</span><span class="n">startIdx</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span>
+                                         <span class="n">image</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">:]</span>
         <span class="n">startIdx</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
 
         <span class="n">scenes</span><span class="p">[</span><span class="n">imageIdx</span><span class="p">]</span> <span class="o">=</span> <span class="n">Scene</span><span class="p">(</span>
@@ -260,30 +251,17 @@
                 <span class="n">Annotation</span><span class="p">(</span>
                     <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">categories</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ann</span><span class="p">[</span><span class="mi">0</span><span class="p">])]],</span>
                     <span class="n">selection</span><span class="o">=</span><span class="n">Selection</span><span class="p">(</span>
-                        <span class="n">points</span><span class="o">=</span><span class="p">[</span>
-                            <span class="p">[</span>
-                                <span class="n">ann</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                                <span class="n">ann</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-                            <span class="p">],</span>
-                            <span class="p">[</span>
-                                <span class="n">ann</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
-                                <span class="n">ann</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
-                            <span class="p">]</span>
-                        <span class="p">]</span>
-                    <span class="p">)</span>
-                <span class="p">)</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">current</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span>
-        <span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span>
-        <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-    <span class="p">)</span></div>
+                        <span class="n">points</span><span class="o">=</span><span class="p">[[</span><span class="n">ann</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                                <span class="p">[</span><span class="n">ann</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="mi">4</span><span class="p">]]]))</span>
+                <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">current</span>
+            <span class="p">])</span>
+    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span> <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">load_coco_text</span><span class="p">(</span>
-    <span class="n">annotations_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">annotations_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">image_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">annotation_config</span><span class="p">:</span> <span class="n">AnnotationConfiguration</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Obtain a scene collection from a COCO Text JSON file</span>
 <span class="sd">    (e.g., that which can be obtained from https://bgshih.github.io/cocotext/)</span>
@@ -303,7 +281,8 @@
 
     <span class="n">category_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">ann</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;anns&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
     <span class="k">if</span> <span class="n">annotation_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">category_names</span><span class="p">)))</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">category_names</span><span class="p">)))</span>  <span class="c1"># noqa: E501</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">category_names</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">annotation_config</span><span class="p">),</span> \
         <span class="s1">&#39;Annotation configuration incompatible with in-file categories&#39;</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">c</span> <span class="ow">in</span> <span class="n">annotation_config</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">category_names</span><span class="p">]),</span> \
@@ -312,32 +291,29 @@
         <span class="s1">&#39;Some annotation configuration categories not in file&#39;</span>
 
     <span class="n">images</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;imgs&#39;</span><span class="p">]</span>
-    <span class="n">p</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">Progbar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">),</span> <span class="n">task_name</span><span class="o">=</span><span class="s1">&#39;Creating scenes&#39;</span><span class="p">)</span>
-    <span class="n">scenes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+    <span class="n">scenes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">sceneIdx</span><span class="p">,</span> <span class="p">(</span><span class="n">imageId</span><span class="p">,</span> <span class="n">imageData</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">images</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-        <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sceneIdx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">anns</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;anns&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">annId</span><span class="p">)]</span> <span class="k">for</span> <span class="n">annId</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;imgToAnns&#39;</span><span class="p">][</span><span class="n">imageId</span><span class="p">]]</span>  <span class="c1"># noqa: E501</span>
+    <span class="k">for</span> <span class="n">sceneIdx</span><span class="p">,</span> <span class="p">(</span><span class="n">imageId</span><span class="p">,</span> <span class="n">imageData</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+            <span class="nb">enumerate</span><span class="p">(</span><span class="n">images</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span> <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">),</span>
+            <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Creating scenes&#39;</span><span class="p">):</span>
+        <span class="n">anns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;anns&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">annId</span><span class="p">)]</span> <span class="k">for</span> <span class="n">annId</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;imgToAnns&#39;</span><span class="p">][</span><span class="n">imageId</span><span class="p">]</span>
+        <span class="p">]</span>  <span class="c1"># noqa: E501</span>
         <span class="n">scenes</span><span class="p">[</span><span class="n">sceneIdx</span><span class="p">]</span> <span class="o">=</span> <span class="n">Scene</span><span class="p">(</span>
             <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">,</span>
             <span class="n">image</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">imageData</span><span class="p">[</span><span class="s1">&#39;file_name&#39;</span><span class="p">]),</span>
             <span class="n">annotations</span><span class="o">=</span><span class="p">[</span>
                 <span class="n">Annotation</span><span class="p">(</span>
                     <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">ann</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]],</span>
-                    <span class="n">selection</span><span class="o">=</span><span class="n">Selection</span><span class="p">(</span>
+                    <span class="n">selection</span><span class="o">=</span><span class="n">Selection</span><span class="p">([</span>
+                        <span class="p">[</span><span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
                         <span class="p">[</span>
-                            <span class="p">[</span><span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]],</span>
-                            <span class="p">[</span><span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">]]</span>  <span class="c1"># noqa: E501</span>
-                        <span class="p">]</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-                <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">anns</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span>
-        <span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span>
-        <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-    <span class="p">)</span>
+                            <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
+                            <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">ann</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+                        <span class="p">]</span>  <span class="c1"># noqa: E501</span>
+                    <span class="p">]))</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">anns</span>
+            <span class="p">])</span>
+    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span> <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span>
 </pre></div>
 
            </div>

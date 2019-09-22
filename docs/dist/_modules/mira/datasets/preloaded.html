@@ -56,7 +56,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -179,26 +179,23 @@
            <div itemprop="articleBody">
             
   <h1>Source code for mira.datasets.preloaded</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span></span><span class="sd">&quot;&quot;&quot;Datasets available out of the box.&quot;&quot;&quot;</span>
+<span class="c1"># pylint: disable=invalid-name,line-too-long</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span> <span class="nn">os</span> <span class="k">import</span> <span class="n">path</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">product</span>
 
 <span class="kn">from</span> <span class="nn">glob</span> <span class="k">import</span> <span class="n">glob</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span> <span class="nn">cv2</span>
-<span class="kn">import</span> <span class="nn">re</span>
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span>
-    <span class="n">Image</span><span class="p">,</span>
-    <span class="n">Scene</span><span class="p">,</span>
-    <span class="n">Selection</span><span class="p">,</span>
-    <span class="n">SceneCollection</span><span class="p">,</span>
-    <span class="n">Annotation</span><span class="p">,</span>
-    <span class="n">AnnotationConfiguration</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="k">import</span> <span class="p">(</span><span class="n">Image</span><span class="p">,</span> <span class="n">Scene</span><span class="p">,</span> <span class="n">Selection</span><span class="p">,</span> <span class="n">SceneCollection</span><span class="p">,</span> <span class="n">Annotation</span><span class="p">,</span>
+                    <span class="n">AnnotationConfiguration</span><span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.voc</span> <span class="k">import</span> <span class="n">load_voc</span>
-
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -223,24 +220,24 @@
     <span class="k">def</span> <span class="nf">extract_check_fn</span><span class="p">(</span><span class="n">root_dir</span><span class="p">):</span>
         <span class="n">image_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;vocdevkit&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">,</span> <span class="s1">&#39;jpegimages&#39;</span><span class="p">)</span>
         <span class="n">image_files</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">))</span>
-        <span class="n">annotation_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;vocdevkit&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">,</span> <span class="s1">&#39;annotations&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">annotation_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;vocdevkit&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">,</span>
+                                   <span class="s1">&#39;annotations&#39;</span><span class="p">)</span>
         <span class="n">annotation_files</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotation_dir</span><span class="p">,</span> <span class="s1">&#39;*.xml&#39;</span><span class="p">))</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">annotation_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">17125</span> <span class="ow">and</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">image_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">17125</span>
-        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">annotation_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">17125</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">17125</span>
+
     <span class="n">root_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-        <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;http://pjreddie.com/media/files/VOCtrainval_11-May-2012.tar&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-        <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;e14f763270cf193d0b5f74b169f44157a4b0c6efa708f4dd0ff78ee691763bcb&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;http://pjreddie.com/media/files/VOCtrainval_11-May-2012.tar&#39;</span><span class="p">,</span>
+        <span class="n">file_hash</span><span class="o">=</span>
+        <span class="s1">&#39;e14f763270cf193d0b5f74b169f44157a4b0c6efa708f4dd0ff78ee691763bcb&#39;</span><span class="p">,</span>
         <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">),</span>
         <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
         <span class="n">extract</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">archive_format</span><span class="o">=</span><span class="s1">&#39;tar&#39;</span><span class="p">,</span>
-        <span class="n">extract_check_fn</span><span class="o">=</span><span class="n">extract_check_fn</span>
-    <span class="p">)</span>
+        <span class="n">extract_check_fn</span><span class="o">=</span><span class="n">extract_check_fn</span><span class="p">)</span>
     <span class="n">image_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;vocdevkit&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">,</span> <span class="s1">&#39;jpegimages&#39;</span><span class="p">)</span>
     <span class="n">annotation_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;vocdevkit&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">,</span> <span class="s1">&#39;annotations&#39;</span><span class="p">)</span>
-    <span class="n">imageset_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;vocdevkit&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">,</span> <span class="s1">&#39;imagesets&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <span class="n">imageset_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="s1">&#39;vocdevkit&#39;</span><span class="p">,</span> <span class="s1">&#39;voc2012&#39;</span><span class="p">,</span> <span class="s1">&#39;imagesets&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;main&#39;</span><span class="p">)</span>
     <span class="n">sids</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="n">subset</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;trainval&#39;</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">]:</span>
         <span class="n">sid_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imageset_dir</span><span class="p">,</span> <span class="s1">&#39;train.txt&#39;</span><span class="p">)</span>
@@ -251,22 +248,21 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sid_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">sids</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span>
     <span class="n">filepaths</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotation_dir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.xml&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sid</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">sid</span> <span class="ow">in</span> <span class="n">sids</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sid</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotation_dir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.xml&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sid</span><span class="p">))</span> <span class="k">for</span> <span class="n">sid</span> <span class="ow">in</span> <span class="n">sids</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sid</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="p">]</span>
     <span class="k">return</span> <span class="n">load_voc</span><span class="p">(</span>
         <span class="n">filepaths</span><span class="o">=</span><span class="n">filepaths</span><span class="p">,</span>
         <span class="n">annotation_config</span><span class="o">=</span><span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">VOC</span><span class="p">,</span>
-        <span class="n">image_dir</span><span class="o">=</span><span class="n">image_dir</span>
-    <span class="p">)</span></div>
+        <span class="n">image_dir</span><span class="o">=</span><span class="n">image_dir</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="load_shapes"><a class="viewcode-back" href="../../../datasets/existing.html#mira.datasets.load_shapes">[docs]</a><span class="k">def</span> <span class="nf">load_shapes</span><span class="p">(</span>
-    <span class="n">width</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
-    <span class="n">height</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
-    <span class="n">object_count_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
-    <span class="n">object_width_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
-    <span class="n">n_scenes</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+        <span class="n">object_count_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="n">object_width_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+        <span class="n">n_scenes</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A simple dataset for testing.</span>
 
@@ -282,29 +278,19 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        A scene collection of images with circles and rectangles in it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span>
-        <span class="p">[</span>
-            <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span>
-                <span class="p">[</span><span class="s1">&#39;RED&#39;</span><span class="p">,</span> <span class="s1">&#39;BLUE&#39;</span><span class="p">,</span> <span class="s1">&#39;GREEN&#39;</span><span class="p">],</span>
-                <span class="p">[</span><span class="s1">&#39;RECTANGLE&#39;</span><span class="p">,</span> <span class="s1">&#39;CIRCLE&#39;</span><span class="p">]</span>
-            <span class="p">)</span>
-        <span class="p">]</span>
-    <span class="p">)</span>
+    <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">([</span>
+        <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">product</span><span class="p">([</span><span class="s1">&#39;RED&#39;</span><span class="p">,</span> <span class="s1">&#39;BLUE&#39;</span><span class="p">,</span> <span class="s1">&#39;GREEN&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;RECTANGLE&#39;</span><span class="p">,</span> <span class="s1">&#39;CIRCLE&#39;</span><span class="p">])</span>
+    <span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">make_scene</span><span class="p">():</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">cval</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
         <span class="n">object_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">*</span><span class="n">object_count_bounds</span><span class="p">)</span>
         <span class="n">ws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">*</span><span class="n">object_width_bounds</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">object_count</span><span class="p">)</span>
         <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
-            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">high</span><span class="o">=</span><span class="n">width</span> <span class="o">-</span> <span class="n">object_width_bounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-            <span class="n">size</span><span class="o">=</span><span class="n">object_count</span>
-        <span class="p">)</span>
+            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">width</span> <span class="o">-</span> <span class="n">object_width_bounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">object_count</span><span class="p">)</span>
         <span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
-            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="n">high</span><span class="o">=</span><span class="n">height</span> <span class="o">-</span> <span class="n">object_width_bounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-            <span class="n">size</span><span class="o">=</span><span class="n">object_count</span>
-        <span class="p">)</span>
+            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">height</span> <span class="o">-</span> <span class="n">object_width_bounds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">object_count</span><span class="p">)</span>
         <span class="n">shapes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;RECTANGLE&#39;</span><span class="p">,</span> <span class="s1">&#39;CIRCLE&#39;</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">object_count</span><span class="p">)</span>
         <span class="n">colors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;RED&#39;</span><span class="p">,</span> <span class="s1">&#39;BLUE&#39;</span><span class="p">,</span> <span class="s1">&#39;GREEN&#39;</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">object_count</span><span class="p">)</span>
         <span class="n">lookup</span> <span class="o">=</span> <span class="p">{</span>
@@ -315,40 +301,32 @@
         <span class="n">annotations</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">shapes</span><span class="p">,</span> <span class="n">colors</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">shape</span> <span class="o">==</span> <span class="s1">&#39;RECTANGLE&#39;</span><span class="p">:</span>
-                <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span>
+                <span class="n">cv2</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span>  <span class="c1"># pylint: disable=no-member</span>
                     <span class="n">image</span><span class="p">,</span>
                     <span class="n">pt1</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span>
-                    <span class="n">pt2</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">w</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">w</span><span class="p">),</span>
+                    <span class="n">pt2</span><span class="o">=</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">),</span>
                     <span class="n">thickness</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">color</span><span class="o">=</span><span class="n">lookup</span><span class="p">[</span><span class="n">color</span><span class="p">]</span>
-                <span class="p">)</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">lookup</span><span class="p">[</span><span class="n">color</span><span class="p">])</span>
             <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="s1">&#39;CIRCLE&#39;</span><span class="p">:</span>
                 <span class="n">r</span> <span class="o">=</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">2</span>
-                <span class="n">w</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">r</span>
-                <span class="n">cv2</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">r</span>
+                <span class="n">cv2</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span>  <span class="c1"># pylint: disable=no-member</span>
                     <span class="n">image</span><span class="p">,</span>
-                    <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">r</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">r</span><span class="p">),</span>
+                    <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">r</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">r</span><span class="p">),</span>
                     <span class="n">radius</span><span class="o">=</span><span class="n">r</span><span class="p">,</span>
                     <span class="n">thickness</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="n">color</span><span class="o">=</span><span class="n">lookup</span><span class="p">[</span><span class="n">color</span><span class="p">]</span>
-                <span class="p">)</span>
-            <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Annotation</span><span class="p">(</span>
-                <span class="n">selection</span><span class="o">=</span><span class="n">Selection</span><span class="p">([</span>
-                    <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span>
-                    <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">]</span>
-                <span class="p">]),</span>
-                <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">color</span><span class="p">,</span> <span class="n">shape</span><span class="p">])]</span>
-            <span class="p">))</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">lookup</span><span class="p">[</span><span class="n">color</span><span class="p">])</span>
+            <span class="n">annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Annotation</span><span class="p">(</span>
+                    <span class="n">selection</span><span class="o">=</span><span class="n">Selection</span><span class="p">([[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">]]),</span>
+                    <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">color</span><span class="p">,</span> <span class="n">shape</span><span class="p">])]))</span>
         <span class="k">return</span> <span class="n">Scene</span><span class="p">(</span>
             <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
             <span class="n">image</span><span class="o">=</span><span class="n">image</span><span class="p">,</span>
-            <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-        <span class="p">)</span>
+            <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span>
+
     <span class="n">scenes</span> <span class="o">=</span> <span class="p">[</span><span class="n">make_scene</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_scenes</span><span class="p">)]</span>
-    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span>
-        <span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span>
-        <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-    <span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span><span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">,</span> <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="load_oxfordiiitpets"><a class="viewcode-back" href="../../../datasets/existing.html#mira.datasets.load_oxfordiiitpets">[docs]</a><span class="k">def</span> <span class="nf">load_oxfordiiitpets</span><span class="p">(</span><span class="n">breed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
@@ -365,53 +343,56 @@
 <span class="sd">        A scene collection containing the dataset</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">image_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-        <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;http://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-        <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;67195c5e1c01f1ab5f9b6a5d22b8c27a580d896ece458917e61d459337fa318d&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;http://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz&#39;</span><span class="p">,</span>
+        <span class="n">file_hash</span><span class="o">=</span>
+        <span class="s1">&#39;67195c5e1c01f1ab5f9b6a5d22b8c27a580d896ece458917e61d459337fa318d&#39;</span><span class="p">,</span>
         <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span><span class="p">,</span> <span class="s1">&#39;oxfordiiitpets&#39;</span><span class="p">),</span>
         <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
         <span class="n">extract</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">archive_format</span><span class="o">=</span><span class="s1">&#39;tar&#39;</span><span class="p">,</span>
-        <span class="n">extract_check_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;images&#39;</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">7390</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">extract_check_fn</span><span class="o">=</span>
+        <span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;images&#39;</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">7390</span>
     <span class="p">)</span>
     <span class="n">annotations_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-        <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;http://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-        <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;52425fb6de5c424942b7626b428656fcbd798db970a937df61750c0f1d358e91&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;http://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz&#39;</span><span class="p">,</span>
+        <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;52425fb6de5c424942b7626b428656fcbd798db970a937df61750c0f1d358e91&#39;</span><span class="p">,</span>
         <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span><span class="p">,</span> <span class="s1">&#39;oxfordiiitpets&#39;</span><span class="p">),</span>
         <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
         <span class="n">extract</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">archive_format</span><span class="o">=</span><span class="s1">&#39;tar&#39;</span><span class="p">,</span>
-        <span class="n">extract_check_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;annotations&#39;</span><span class="p">,</span> <span class="s1">&#39;xmls&#39;</span><span class="p">,</span> <span class="s1">&#39;*.xml&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">3686</span>  <span class="c1"># noqa: E501</span>
+        <span class="n">extract_check_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;annotations&#39;</span><span class="p">,</span> <span class="s1">&#39;xmls&#39;</span><span class="p">,</span> <span class="s1">&#39;*.xml&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">3686</span>
     <span class="p">)</span>
     <span class="n">filepaths</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span>
-        <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotations_dir</span><span class="p">,</span> <span class="s1">&#39;annotations&#39;</span><span class="p">,</span> <span class="s1">&#39;xmls&#39;</span><span class="p">,</span> <span class="s1">&#39;*.xml&#39;</span><span class="p">)</span>
-    <span class="p">)</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotations_dir</span><span class="p">,</span> <span class="s1">&#39;annotations&#39;</span><span class="p">,</span> <span class="s1">&#39;xmls&#39;</span><span class="p">,</span> <span class="s1">&#39;*.xml&#39;</span><span class="p">))</span>
     <span class="n">image_dir</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="s1">&#39;images&#39;</span><span class="p">)</span>
     <span class="n">collection</span> <span class="o">=</span> <span class="n">load_voc</span><span class="p">(</span>
         <span class="n">filepaths</span><span class="o">=</span><span class="n">filepaths</span><span class="p">,</span>
         <span class="n">annotation_config</span><span class="o">=</span><span class="n">AnnotationConfiguration</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">]),</span>
-        <span class="n">image_dir</span><span class="o">=</span><span class="n">image_dir</span>
-    <span class="p">)</span>
+        <span class="n">image_dir</span><span class="o">=</span><span class="n">image_dir</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">breed</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">collection</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">annotations</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span><span class="o">.</span><span class="n">scenes</span><span class="p">),</span> \
         <span class="s1">&#39;An error occurred handling pets dataset&#39;</span>
-    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filepaths</span><span class="p">]</span>  <span class="c1"># noqa: E501</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filepaths</span>
+    <span class="p">]</span>
     <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
     <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span>
         <span class="n">scenes</span><span class="o">=</span><span class="p">[</span>
             <span class="n">scene</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
-                <span class="n">annotations</span><span class="o">=</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">label</span><span class="p">])</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">scene</span><span class="o">.</span><span class="n">annotations</span><span class="p">],</span>  <span class="c1"># noqa: E501</span>
-                <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-            <span class="p">)</span> <span class="k">for</span> <span class="n">scene</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">scenes</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+                <span class="n">annotations</span><span class="o">=</span><span class="p">[</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">label</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">scene</span><span class="o">.</span><span class="n">annotations</span>
+                <span class="p">],</span>
+                <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">scene</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">scenes</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
         <span class="p">],</span>
-        <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-    <span class="p">)</span></div>
+        <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="load_icdar2015"><a class="viewcode-back" href="../../../datasets/existing.html#mira.datasets.load_icdar2015">[docs]</a><span class="k">def</span> <span class="nf">load_icdar2015</span><span class="p">(</span>
-    <span class="n">subset</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span>
-    <span class="n">text_category</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;text&#39;</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
+<div class="viewcode-block" id="load_icdar2015"><a class="viewcode-back" href="../../../datasets/existing.html#mira.datasets.load_icdar2015">[docs]</a><span class="k">def</span> <span class="nf">load_icdar2015</span><span class="p">(</span><span class="n">subset</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;train&#39;</span><span class="p">,</span>
+                   <span class="n">text_category</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SceneCollection</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Loads dataset from 2015 Robust Reading Competition.</span>
 <span class="sd">    More details available at http://rrc.cvc.uab.es/?ch=4&amp;com=introduction</span>
 
@@ -437,16 +418,11 @@
         <span class="c1"># For an example, see gt_img_115.txt.</span>
         <span class="n">elements</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
         <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">,</span> <span class="n">x4</span><span class="p">,</span> <span class="n">y4</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">elements</span><span class="p">[:</span><span class="mi">8</span><span class="p">])</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="mi">8</span><span class="p">:])</span>  <span class="c1"># noqa: F841</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="mi">8</span><span class="p">:])</span>  <span class="c1"># pylint: disable=unused-variable</span>
         <span class="k">return</span> <span class="n">Annotation</span><span class="p">(</span>
-            <span class="n">selection</span><span class="o">=</span><span class="n">Selection</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-                <span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">],</span>
-                <span class="p">[</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">],</span>
-                <span class="p">[</span><span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">],</span>
-                <span class="p">[</span><span class="n">x4</span><span class="p">,</span> <span class="n">y4</span><span class="p">]</span>
-            <span class="p">])),</span>
-            <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">text_category</span><span class="p">]</span>
-        <span class="p">)</span>
+            <span class="n">selection</span><span class="o">=</span><span class="n">Selection</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">],</span> <span class="p">[</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">],</span> <span class="p">[</span><span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">],</span> <span class="p">[</span><span class="n">x4</span><span class="p">,</span> <span class="n">y4</span><span class="p">]])),</span>
+            <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">text_category</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">scene_from_files</span><span class="p">(</span><span class="n">annotation_file</span><span class="p">,</span> <span class="n">image_file</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">annotation_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8-sig&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -456,85 +432,75 @@
         <span class="k">return</span> <span class="n">Scene</span><span class="p">(</span>
             <span class="n">image</span><span class="o">=</span><span class="n">image_file</span><span class="p">,</span>
             <span class="n">annotations</span><span class="o">=</span><span class="n">annotations</span><span class="p">,</span>
-            <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
-        <span class="p">)</span>
+            <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">scenes_from_directories</span><span class="p">(</span><span class="n">annotations_dir</span><span class="p">,</span> <span class="n">images_dir</span><span class="p">):</span>
         <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;img_([0-9]+).&#39;</span><span class="p">)</span>
         <span class="n">image_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">images_dir</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">)),</span>
-            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">pattern</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="p">)</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">pattern</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">annotation_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">annotations_dir</span><span class="p">,</span> <span class="s1">&#39;*.txt&#39;</span><span class="p">)),</span>
-            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">pattern</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="p">)</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">pattern</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_files</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">annotation_files</span><span class="p">),</span> \
             <span class="s1">&#39;An error occurred loading the dataset.&#39;</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">Progbar</span><span class="p">(</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">annotation_files</span><span class="p">),</span>
-            <span class="n">task_name</span><span class="o">=</span><span class="s1">&#39;Creating scenes from &#39;</span> <span class="o">+</span> <span class="n">annotations_dir</span>
-        <span class="p">)</span>
         <span class="n">scenes</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">annotation_file</span><span class="p">,</span> <span class="n">image_file</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
-            <span class="nb">zip</span><span class="p">(</span><span class="n">annotation_files</span><span class="p">,</span> <span class="n">image_files</span><span class="p">)</span>
-        <span class="p">):</span>
-            <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">scene_from_files</span><span class="p">(</span><span class="n">annotation_file</span><span class="p">,</span> <span class="n">image_file</span><span class="p">)</span>
-            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">annotation_file</span><span class="p">,</span> <span class="n">image_file</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="nb">zip</span><span class="p">(</span><span class="n">annotation_files</span><span class="p">,</span> <span class="n">image_files</span><span class="p">),</span>
+                <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Creating scenes from &#39;</span> <span class="o">+</span> <span class="n">annotations_dir</span><span class="p">,</span>
+                <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">annotation_files</span><span class="p">)):</span>
+            <span class="n">scenes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scene_from_files</span><span class="p">(</span><span class="n">annotation_file</span><span class="p">,</span> <span class="n">image_file</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">scenes</span>
 
     <span class="k">if</span> <span class="n">subset</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;traintest&#39;</span><span class="p">]:</span>
         <span class="n">images_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-            <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_images.zip&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-            <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;07e2d816dab67df4cd509641b1e1e8c720d3b15873a65b6dc9c1aa6a4de3d2c6&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+            <span class="n">origin</span><span class="o">=</span>
+            <span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_images.zip&#39;</span><span class="p">,</span>
+            <span class="n">file_hash</span><span class="o">=</span>
+            <span class="s1">&#39;07e2d816dab67df4cd509641b1e1e8c720d3b15873a65b6dc9c1aa6a4de3d2c6&#39;</span><span class="p">,</span>
             <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span><span class="p">,</span> <span class="s1">&#39;rrc2015&#39;</span><span class="p">),</span>
             <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
             <span class="n">extract</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">archive_format</span><span class="o">=</span><span class="s1">&#39;zip&#39;</span><span class="p">,</span>
-            <span class="n">extract_check_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">1000</span>  <span class="c1"># noqa: E501</span>
-        <span class="p">)</span>
+            <span class="n">extract_check_fn</span><span class="o">=</span>
+            <span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">)</span>
         <span class="n">annotations_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-            <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_localization_transcription_gt.zip&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-            <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;b9f2f0343d016a326bcafe3c28e0ddbda18b3a1e4a8a595784ba9dc3e305d754&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+            <span class="n">origin</span><span class="o">=</span>
+            <span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_localization_transcription_gt.zip&#39;</span><span class="p">,</span>
+            <span class="n">file_hash</span><span class="o">=</span>
+            <span class="s1">&#39;b9f2f0343d016a326bcafe3c28e0ddbda18b3a1e4a8a595784ba9dc3e305d754&#39;</span><span class="p">,</span>
             <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span><span class="p">,</span> <span class="s1">&#39;rrc2015&#39;</span><span class="p">),</span>
             <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
             <span class="n">extract</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">archive_format</span><span class="o">=</span><span class="s1">&#39;zip&#39;</span><span class="p">,</span>
-            <span class="n">extract_check_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.txt&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">1000</span>  <span class="c1"># noqa: E501</span>
-        <span class="p">)</span>
-        <span class="n">scenes</span> <span class="o">+=</span> <span class="n">scenes_from_directories</span><span class="p">(</span>
-            <span class="n">annotations_dir</span><span class="p">,</span>
-            <span class="n">images_dir</span>
-        <span class="p">)</span>
+            <span class="n">extract_check_fn</span><span class="o">=</span>
+            <span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.txt&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="n">scenes</span> <span class="o">+=</span> <span class="n">scenes_from_directories</span><span class="p">(</span><span class="n">annotations_dir</span><span class="p">,</span> <span class="n">images_dir</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">subset</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;traintest&#39;</span><span class="p">]:</span>
         <span class="n">images_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-            <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_test_images.zip&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-            <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;ecfb2488333372b7381b14ccb5ac2127de88fb935f6759fe89e5c041b0e87358&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+            <span class="n">origin</span><span class="o">=</span>
+            <span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_test_images.zip&#39;</span><span class="p">,</span>
+            <span class="n">file_hash</span><span class="o">=</span>
+            <span class="s1">&#39;ecfb2488333372b7381b14ccb5ac2127de88fb935f6759fe89e5c041b0e87358&#39;</span><span class="p">,</span>
             <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span><span class="p">,</span> <span class="s1">&#39;rrc2015&#39;</span><span class="p">),</span>
             <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
             <span class="n">extract</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">archive_format</span><span class="o">=</span><span class="s1">&#39;zip&#39;</span><span class="p">,</span>
-            <span class="n">extract_check_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">500</span>  <span class="c1"># noqa: E501</span>
-        <span class="p">)</span>
+            <span class="n">extract_check_fn</span><span class="o">=</span>
+            <span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.jpg&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">500</span><span class="p">)</span>
         <span class="n">annotations_dir</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_file</span><span class="p">(</span>
-            <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/Challenge4_Test_Task1_GT.zip&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
-            <span class="n">file_hash</span><span class="o">=</span><span class="s1">&#39;8f434c410cfcf680b8421e3c22abf31b9297d8e255c3b13acc2890fddc6db6b0&#39;</span><span class="p">,</span>  <span class="c1"># noqa: E501</span>
+            <span class="n">origin</span><span class="o">=</span>
+            <span class="s1">&#39;https://storage.googleapis.com/miradata/datasets/rrc2015/Challenge4_Test_Task1_GT.zip&#39;</span><span class="p">,</span>
+            <span class="n">file_hash</span><span class="o">=</span>
+            <span class="s1">&#39;8f434c410cfcf680b8421e3c22abf31b9297d8e255c3b13acc2890fddc6db6b0&#39;</span><span class="p">,</span>
             <span class="n">cache_subdir</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;datasets&#39;</span><span class="p">,</span> <span class="s1">&#39;rrc2015&#39;</span><span class="p">),</span>
             <span class="n">hash_algorithm</span><span class="o">=</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span>
             <span class="n">extract</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">archive_format</span><span class="o">=</span><span class="s1">&#39;zip&#39;</span><span class="p">,</span>
-            <span class="n">extract_check_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.txt&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">500</span>  <span class="c1"># noqa: E501</span>
-        <span class="p">)</span>
-        <span class="n">scenes</span> <span class="o">+=</span> <span class="n">scenes_from_directories</span><span class="p">(</span>
-            <span class="n">annotations_dir</span><span class="p">,</span>
-            <span class="n">images_dir</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span>
-        <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">,</span>
-        <span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span>
-    <span class="p">)</span></div>
+            <span class="n">extract_check_fn</span><span class="o">=</span>
+            <span class="k">lambda</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;*.txt&#39;</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">500</span><span class="p">)</span>
+        <span class="n">scenes</span> <span class="o">+=</span> <span class="n">scenes_from_directories</span><span class="p">(</span><span class="n">annotations_dir</span><span class="p">,</span> <span class="n">images_dir</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SceneCollection</span><span class="p">(</span><span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">,</span> <span class="n">scenes</span><span class="o">=</span><span class="n">scenes</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

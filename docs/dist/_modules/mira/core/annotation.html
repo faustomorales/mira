@@ -56,7 +56,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -198,6 +198,7 @@
 <span class="sd">        name: The name of the annotation category</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
 
@@ -216,41 +217,32 @@
 <span class="sd">    Args:</span>
 <span class="sd">        names: The list of class names</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
         <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;All class names must be unique &#39;</span>
-                <span class="s1">&#39;(case-insensitive).&#39;</span>
-            <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_types</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">AnnotationCategory</span><span class="p">(</span>
-                <span class="n">name</span><span class="o">=</span><span class="n">name</span>
-            <span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span>
-        <span class="p">]</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All class names must be unique &#39;</span>
+                             <span class="s1">&#39;(case-insensitive).&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">AnnotationCategory</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span>
             <span class="n">key</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s1">&#39;Index </span><span class="si">{0}</span><span class="s1"> is out of bounds &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span>
-                    <span class="s1">&#39;(only have </span><span class="si">{0}</span><span class="s1"> entries)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Index </span><span class="si">{0}</span><span class="s1"> is out of bounds &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span>
+                                 <span class="s1">&#39;(only have </span><span class="si">{0}</span><span class="s1"> entries)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
             <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
             <span class="n">val</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_types</span> <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">key</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s1">&#39;Did not find </span><span class="si">{0}</span><span class="s1"> in configuration&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-                <span class="p">)</span>
+                    <span class="s1">&#39;Did not find </span><span class="si">{0}</span><span class="s1"> in configuration&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">val</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Key must be int or str, not &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
-            <span class="p">)</span>
+                <span class="n">f</span><span class="s1">&#39;Key must be int or str, not </span><span class="si">{key}</span><span class="s1"> of type {str(type(key))}&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_types</span><span class="p">)</span>
@@ -261,10 +253,8 @@
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="n">AnnotationCategory</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span> <span class="o">==</span> <span class="n">key</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_types</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Key must be str or AnnotationCategory, not &#39;</span>
-                <span class="s1">&#39;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Key must be str or AnnotationCategory, not &#39;</span>
+                             <span class="s1">&#39;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)))</span>
 
     <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -285,15 +275,11 @@
 
 
 <span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">COCO</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span>
-    <span class="n">resource_string</span><span class="p">(</span>
-        <span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;assets/coco_classes.txt&#39;</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="p">)</span>
+    <span class="n">resource_string</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span>
+                    <span class="s1">&#39;assets/coco_classes.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span>
 <span class="n">AnnotationConfiguration</span><span class="o">.</span><span class="n">VOC</span> <span class="o">=</span> <span class="n">AnnotationConfiguration</span><span class="p">(</span>
-    <span class="n">resource_string</span><span class="p">(</span>
-        <span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;assets/voc_classes.txt&#39;</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-<span class="p">)</span>
+    <span class="n">resource_string</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span>
+                    <span class="s1">&#39;assets/voc_classes.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="Annotation"><a class="viewcode-back" href="../../../core/annotations.html#mira.core.Annotation">[docs]</a><span class="k">class</span> <span class="nc">Annotation</span><span class="p">:</span>
@@ -304,16 +290,13 @@
 <span class="sd">        category: The category of the annotation</span>
 <span class="sd">        score: A score for the annotation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">selection</span><span class="p">:</span> <span class="n">Selection</span><span class="p">,</span>
-        <span class="n">category</span><span class="p">:</span> <span class="n">AnnotationCategory</span><span class="p">,</span>
-        <span class="n">score</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="kc">None</span>
-    <span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">selection</span><span class="p">:</span> <span class="n">Selection</span><span class="p">,</span>
+                 <span class="n">category</span><span class="p">:</span> <span class="n">AnnotationCategory</span><span class="p">,</span>
+                 <span class="n">score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">category</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;A category object must be specified.&#39;</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;A category object must be specified.&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">selection</span> <span class="o">=</span> <span class="n">selection</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">category</span> <span class="o">=</span> <span class="n">category</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">score</span>
@@ -332,14 +315,10 @@
     <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annotation_config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Annotation&#39;</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">category</span><span class="o">.</span><span class="n">name</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">annotation_config</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
-                <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
-            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not in the new annotation &#39;</span>
-                <span class="s1">&#39;configuration.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not in the new annotation &#39;</span>
+                        <span class="s1">&#39;configuration.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
             <span class="k">return</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Annotation.resize"><a class="viewcode-back" href="../../../core/annotations.html#mira.core.Annotation.resize">[docs]</a>    <span class="k">def</span> <span class="nf">resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Annotation&#39;</span><span class="p">:</span>
@@ -350,10 +329,7 @@
     <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">self_bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">bbox</span><span class="p">()</span>
         <span class="n">other_bbox</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">bbox</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="n">self_bbox</span> <span class="o">==</span> <span class="n">other_bbox</span> <span class="ow">and</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">category</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">category</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="p">(</span><span class="n">self_bbox</span> <span class="o">==</span> <span class="n">other_bbox</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">category</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">category</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

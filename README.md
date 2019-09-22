@@ -1,6 +1,4 @@
-# mira [![CircleCI](https://circleci.com/gh/faustomorales/mira/tree/master.svg?style=svg)](https://circleci.com/gh/faustomorales/mira/tree/master)
-
-**IMPORTANT**: mira is in pre-release. The API is still under development and subject to change. In addition, there are likely bugs in implementations of some of the object detection models. As with all works-in-progress, please use at your own risk.
+# mira
 
 mira provides tooling for simple object detection projects. The package spans three areas of focus.
 

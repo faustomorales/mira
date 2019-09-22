@@ -56,7 +56,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -187,10 +187,14 @@
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">uuid</span>
 <span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">import</span> <span class="nn">logging</span>
 
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">core</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>  <span class="c1"># pylint: disable=invalid-name</span>
 
 
 <div class="viewcode-block" id="load_via"><a class="viewcode-back" href="../../../datasets/load.html#mira.datasets.load_via">[docs]</a><span class="k">def</span> <span class="nf">load_via</span><span class="p">(</span><span class="n">project_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -221,17 +225,33 @@
         <span class="n">project_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
     <span class="n">img_metadata</span> <span class="o">=</span> <span class="n">project_data</span><span class="p">[</span><span class="s1">&#39;_via_img_metadata&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
     <span class="n">project_attrs</span> <span class="o">=</span> <span class="n">project_data</span><span class="p">[</span><span class="s1">&#39;_via_attributes&#39;</span><span class="p">]</span>
-    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">img_metadata</span><span class="p">]</span>
     <span class="n">regions_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">json_normalize</span><span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;regions&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
             <span class="n">filename</span><span class="o">=</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span>
         <span class="p">)</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">img_metadata</span>
-    <span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># We may not have any regions!</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">regions_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">bad_filenames</span> <span class="o">=</span> <span class="n">regions_df</span><span class="p">[</span>
+            <span class="n">regions_df</span><span class="p">[</span><span class="n">f</span><span class="s1">&#39;region_attributes.</span><span class="si">{label_key}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
+        <span class="p">][</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bad_filenames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_filenames</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># pylint: disable=len-as-condition</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s1">&#39;The following files, which will be skipped, have missing labels: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bad_filenames</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">filenames_metadata</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">],</span> <span class="p">{</span><span class="o">**</span><span class="n">img</span><span class="p">[</span><span class="s1">&#39;file_attributes&#39;</span><span class="p">],</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">img</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]}})</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">img_metadata</span> <span class="k">if</span> <span class="n">img</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bad_filenames</span>
+    <span class="p">]</span>
+    <span class="n">regions_df</span> <span class="o">=</span> <span class="n">regions_df</span><span class="p">[</span><span class="o">~</span><span class="n">regions_df</span><span class="o">.</span><span class="n">filename</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">bad_filenames</span><span class="p">)]</span>
 
     <span class="n">annotation_config</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">AnnotationConfiguration</span><span class="p">(</span>
         <span class="n">project_attrs</span><span class="p">[</span><span class="s1">&#39;region&#39;</span><span class="p">][</span><span class="n">label_key</span><span class="p">][</span><span class="s1">&#39;options&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
     <span class="p">)</span>
-    <span class="k">assert</span> <span class="p">(</span><span class="n">regions_df</span><span class="p">[</span><span class="s1">&#39;shape_attributes.name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rect&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> \
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">regions_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">regions_df</span><span class="p">[</span><span class="s1">&#39;shape_attributes.name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;rect&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> \
         <span class="s1">&#39;Only axis aligned rectangular selections are supported.&#39;</span>
     <span class="k">return</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">(</span>
         <span class="n">scenes</span><span class="o">=</span><span class="p">[</span>
@@ -239,6 +259,7 @@
                 <span class="n">image</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span>
                 <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">,</span>
                 <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
                 <span class="n">annotations</span><span class="o">=</span><span class="p">[</span>
                     <span class="n">core</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
                         <span class="n">selection</span><span class="o">=</span><span class="n">core</span><span class="o">.</span><span class="n">Selection</span><span class="p">(</span>
@@ -254,7 +275,7 @@
                     <span class="p">)</span>
                     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">regions_df</span><span class="p">[</span><span class="n">regions_df</span><span class="o">.</span><span class="n">filename</span> <span class="o">==</span> <span class="n">filename</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span>
                 <span class="p">]</span>
-            <span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span>
+            <span class="p">)</span> <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">metadata</span> <span class="ow">in</span> <span class="n">filenames_metadata</span>
         <span class="p">],</span>
         <span class="n">annotation_config</span><span class="o">=</span><span class="n">annotation_config</span>
     <span class="p">)</span></div>
@@ -263,7 +284,8 @@
         <span class="n">collection</span><span class="p">:</span> <span class="n">core</span><span class="o">.</span><span class="n">SceneCollection</span><span class="p">,</span>
         <span class="n">export_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">label_key</span><span class="o">=</span><span class="s1">&#39;class&#39;</span><span class="p">,</span>
-        <span class="n">project_name</span><span class="o">=</span><span class="s1">&#39;mira_export&#39;</span>
+        <span class="n">project_name</span><span class="o">=</span><span class="s1">&#39;mira_export&#39;</span><span class="p">,</span>
+        <span class="n">filenames</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Save a scene collection in VIA format.</span>
 
@@ -277,9 +299,19 @@
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">export_dir</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{export_dir}</span><span class="s1"> already exists.&#39;</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">[(</span><span class="n">f</span><span class="s1">&#39;{uuid.uuid4()}.jpg&#39;</span><span class="p">,</span> <span class="n">scene</span><span class="p">)</span> <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">filenames</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">filenames</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="p">),</span> \
+            <span class="s1">&#39;Length of filenames must be equal to length of collection&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">scene</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;{uuid.uuid4()}.jpg&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">filenames</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">filenames</span><span class="p">),</span> <span class="s1">&#39;Filenames must be unique.&#39;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[(</span><span class="n">filename</span><span class="p">,</span> <span class="n">scene</span><span class="p">)</span> <span class="k">for</span> <span class="n">scene</span><span class="p">,</span> <span class="n">filename</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">filenames</span><span class="p">)]</span>
+    <span class="n">metadata_keys</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Saving images&#39;</span><span class="p">):</span>
         <span class="n">scene</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">scene</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">metadata_keys</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">scene</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">metadata_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">metadata_keys</span><span class="p">))</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">scene</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)))</span>
         <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">data</span>
@@ -290,6 +322,11 @@
         <span class="p">{</span>
             <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
             <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s2">&quot;file_attributes&quot;</span><span class="p">:</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">scene</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">metadata_keys</span><span class="p">,</span> <span class="p">[</span><span class="n">scene</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">metadata_keys</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">),</span>
             <span class="s1">&#39;regions&#39;</span><span class="p">:</span> <span class="p">[</span>
                 <span class="p">{</span>
                     <span class="s1">&#39;shape_attributes&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -317,7 +354,18 @@
                 <span class="s1">&#39;default_options&#39;</span><span class="p">:</span> <span class="p">{}</span>
             <span class="p">}</span>
         <span class="p">},</span>
-        <span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="s1">&#39;file&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">metadata_keys</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;default_value&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span>
+                    <span class="p">}</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">metadata_keys</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="p">)</span> <span class="k">if</span> <span class="n">metadata_keys</span> <span class="k">else</span> <span class="p">{}</span>
     <span class="p">}</span>
     <span class="n">export_object</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;_via_img_metadata&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">img_metadata_keys</span><span class="p">,</span> <span class="n">img_metadata_values</span><span class="p">)),</span>

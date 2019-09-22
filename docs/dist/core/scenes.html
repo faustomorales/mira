@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                0.1
+                0.1a15.post.dev19
               </div>
             
           
@@ -191,7 +191,7 @@ Scenes store images and annotations together while SceneCollections
 combine a number of scenes into a single structure.</p>
 <dl class="class">
 <dt id="mira.core.Scene">
-<em class="property">class </em><code class="sig-prename descclassname">mira.core.</code><code class="sig-name descname">Scene</code><span class="sig-paren">(</span><em class="sig-param">annotation_config</em>, <em class="sig-param">annotations</em>, <em class="sig-param">image</em>, <em class="sig-param">cache=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">mira.core.</code><code class="sig-name descname">Scene</code><span class="sig-paren">(</span><em class="sig-param">annotation_config</em>, <em class="sig-param">annotations</em>, <em class="sig-param">image</em>, <em class="sig-param">metadata=None</em>, <em class="sig-param">cache=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#Scene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.Scene" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single annotated image.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -201,6 +201,7 @@ image.</p></li>
 <li><p><strong>annotations</strong> – The list of annotations.</p></li>
 <li><p><strong>image</strong> – The image that was annotated. Can be lazy-loaded by passing
 a string filepath.</p></li>
+<li><p><strong>metadata</strong> – Metadata about the scene as a dictionary</p></li>
 <li><p><strong>cache</strong> – Defines caching behavior for the image. If <cite>True</cite>, image is
 loaded into memory the first time that the image is requested.
 If <cite>False</cite>, image is loaded from the file path or URL whenever
@@ -393,6 +394,17 @@ configuration.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="mira.core.SceneCollection.deduplicated">
+<code class="sig-name descname">deduplicated</code><span class="sig-paren">(</span><em class="sig-param">threshold=0.3</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.deduplicated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.deduplicated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain a deduplicated version of the collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">SceneCollection</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="mira.core.SceneCollection.fit">
 <code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain a new scene collection, fitted to the given width
@@ -402,6 +414,31 @@ and height. All arguments passed to <cite>scene.fit()</cite></p>
 <dd class="field-odd"><p>The new scene collection and list of scales.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.image_distances">
+<code class="sig-name descname">image_distances</code><span class="sig-paren">(</span><em class="sig-param">other=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mira/core/scene.html#SceneCollection.image_distances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mira.core.SceneCollection.image_distances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain an NxM matrix of distances between the N
+scenes in this collection and the M scenes in the other
+collection. You must install opencv-contrib-python for this to
+work.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>other</strong> – The other scene collection with which to compute distances. If
+None, distances are computed against the collection itself.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="mira.core.SceneCollection.images">
+<em class="property">property </em><code class="sig-name descname">images</code><a class="headerlink" href="#mira.core.SceneCollection.images" title="Permalink to this definition">¶</a></dt>
+<dd><p>All the images for a scene collection.
+All images will be loaded if not already cached.</p>
 </dd></dl>
 
 <dl class="method">
