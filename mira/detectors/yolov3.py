@@ -3,6 +3,7 @@ from typing import Tuple, List
 import logging
 import os
 
+import cv2
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
@@ -452,7 +453,8 @@ class YOLOv3(Detector):
         self,
         y: List[np.ndarray],
         images: List[core.Image],
-        threshold: float=0.5
+        threshold: float=0.5,
+        nms_threshold: float=0.1
     ) -> core.SceneCollection:
         num_features = 4+1+len(self.annotation_config)
         output_anchors = anchors_for_shape(
@@ -473,31 +475,46 @@ class YOLOv3(Detector):
             bw = pw*twe
             bh = ph*the
             processed.append(np.concatenate([bx, by, bw, bh, c, cc], axis=-1))
-        box_groups = [
+        prediction_groups = [
             np.concatenate([p[idx] for p in processed])
             for idx in range(batch_size)
         ]
 
         scenes = []
-        for boxes, image in zip(box_groups, images):
-            boxes = boxes[boxes[:, 4] > threshold]
+        for predictions, image in zip(prediction_groups, images):
+            predictions = predictions[predictions[:, 4] > threshold]
             annotations = []
-            for xi, yi, w, h, s, c in zip(
-                boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3],
-                boxes[:, 4], boxes[:, 5:].argmax(axis=1)
-            ):
-                annotations.append(
-                    core.Annotation(
-                        selection=core.Selection(
-                            points=[
-                                (xi-w/2, yi-h/2),
-                                (xi+w/2, yi+h/2),
-                            ]
-                        ),
-                        category=self.annotation_config[c],
-                        score=s
-                    )
+            for class_index in range(len(self.annotation_config)):
+                scores = predictions[:, 5+class_index]
+                score_filter = scores > threshold
+                ws = predictions[score_filter, 2]
+                hs = predictions[score_filter, 3]
+                xls = predictions[score_filter, 0] - ws/2
+                yts = predictions[score_filter, 1] - hs/2
+                boxes = np.array([xls, yts, ws, hs]).T
+                scores = scores[score_filter]
+                indexes = cv2.dnn.NMSBoxes(
+                    bboxes=boxes.tolist(),
+                    scores=scores,
+                    score_threshold=threshold,
+                    nms_threshold=nms_threshold
                 )
+                if not isinstance(indexes, np.ndarray):
+                    continue
+                indexes = indexes[:, 0]
+                for (xl, yt, w, h), s in zip(boxes[indexes], scores[indexes]):
+                    annotations.append(
+                        core.Annotation(
+                            selection=core.Selection(
+                                points=[
+                                    (xl, yt),
+                                    (xl + w, yt + h),
+                                ]
+                            ),
+                            category=self.annotation_config[class_index],
+                            score=s
+                        )
+                    )
             scenes.append(core.Scene(
                 annotation_config=self.annotation_config,
                 annotations=annotations,

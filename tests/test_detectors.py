@@ -52,7 +52,7 @@ def test_yolo():
         pretrained_backbone=False,
         annotation_config=annotation_config
     )
-    inverted = yolo.invert_targets(y=yolo.compute_targets(collection), images=collection.images)  # noqa: E501
+    inverted = yolo.invert_targets(y=yolo.compute_targets(collection), images=collection.images, nms_threshold=1.)  # noqa: E501
     assert all(e - 1 <= a < e + 1 for a, e in zip(inverted[0].annotations[0].selection.bbox(), [0, 0, 50, 50]))  # noqa: E501
     assert all(e - 1 <= a < e + 1 for a, e in zip(inverted[1].annotations[0].selection.bbox(), [20, 20, 80, 80]))  # noqa: E501
     # Verify that training doesn't crash.
