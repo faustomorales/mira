@@ -17,34 +17,37 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Transfer Learning" href="transferlearning.html" />
     <link rel="prev" title="Training on COCO 2014" href="coco2014.html" /> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -58,7 +61,7 @@
             
             
               <div class="version">
-                0.1a15.post.dev19
+                0.2.post.dev1
               </div>
             
           
@@ -187,32 +190,32 @@
   <div class="section" id="training-a-text-detection-model">
 <h1>Training a text detection model<a class="headerlink" href="#training-a-text-detection-model" title="Permalink to this headline">¶</a></h1>
 <p>This is a work-in-progress.</p>
-<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span><span class="k">from</span> <span class="n">mira</span> <span class="n">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">detectors</span><span class="p">,</span> <span class="n">datasets</span>
-<span class="k">from</span> <span class="n">imgaug</span> <span class="n">import</span> <span class="n">augmenters</span> <span class="k">as</span> <span class="n">iaa</span>
+<div class="highlight-guess notranslate"><div class="highlight"><pre><span></span>from mira import core, detectors, datasets
+from imgaug import augmenters as iaa
 
-<span class="n">training</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">.</span><span class="n">load_icdar2015</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">)</span>
-<span class="n">validation</span> <span class="o">=</span> <span class="n">datasets</span><span class="p">.</span><span class="n">load_icdar2015</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+training = datasets.load_icdar2015(subset=&#39;train&#39;)
+validation = datasets.load_icdar2015(subset=&#39;test&#39;)
 
-<span class="n">augmenter</span> <span class="o">=</span> <span class="n">iaa</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
-    <span class="n">iaa</span><span class="p">.</span><span class="n">CropToFixedSize</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
-<span class="p">)</span>
+augmenter = iaa.Sequential(
+    iaa.CropToFixedSize(width=512, height=512)
+)
 
-<span class="n">detector</span> <span class="o">=</span> <span class="n">detectors</span><span class="p">.</span><span class="n">EASTTextDetector</span><span class="p">(</span>
-    <span class="n">pretrained_top</span><span class="o">=</span><span class="k">True</span><span class="p">,</span>
-    <span class="n">annotation_config</span><span class="o">=</span><span class="n">training</span><span class="p">.</span><span class="n">annotation_config</span>
-<span class="p">)</span>
+detector = detectors.EASTTextDetector(
+    pretrained_top=True,
+    annotation_config=training.annotation_config
+)
 
-<span class="n">detector</span><span class="p">.</span><span class="n">freeze_backbone</span><span class="p">()</span>
+detector.freeze_backbone()
 
-<span class="n">detector</span><span class="p">.</span><span class="n">train</span><span class="p">(</span>
-    <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span>
-    <span class="n">validation</span><span class="o">=</span><span class="n">validation</span><span class="p">,</span>
-    <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-    <span class="n">augmenter</span><span class="o">=</span><span class="n">augmenter</span><span class="p">,</span>
-    <span class="n">train_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-<span class="p">)</span>
+detector.train(
+    training=training,
+    validation=validation,
+    batch_size=1,
+    steps_per_epoch=50,
+    epochs=100,
+    augmenter=augmenter,
+    train_shape=(128, 128, 3)
+)
 </pre></div>
 </div>
 </div>
@@ -228,7 +231,7 @@
         <a href="transferlearning.html" class="btn btn-neutral float-right" title="Transfer Learning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="coco2014.html" class="btn btn-neutral" title="Training on COCO 2014" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="coco2014.html" class="btn btn-neutral float-left" title="Training on COCO 2014" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -254,27 +257,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

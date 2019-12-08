@@ -17,32 +17,34 @@
   
 
   
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
-
-  
-  <script src="../../../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -56,7 +58,7 @@
             
             
               <div class="version">
-                0.1a15.post.dev19
+                0.2.post.dev1
               </div>
             
           
@@ -189,10 +191,10 @@
 <span class="kn">import</span> <span class="nn">typing</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">core</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">core</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>  <span class="c1"># pylint: disable=invalid-name</span>
 
@@ -233,7 +235,7 @@
     <span class="c1"># We may not have any regions!</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">regions_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">bad_filenames</span> <span class="o">=</span> <span class="n">regions_df</span><span class="p">[</span>
-            <span class="n">regions_df</span><span class="p">[</span><span class="n">f</span><span class="s1">&#39;region_attributes.</span><span class="si">{label_key}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
+            <span class="n">regions_df</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;region_attributes.</span><span class="si">{label_key}</span><span class="s1">&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span>
         <span class="p">][</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">bad_filenames</span> <span class="o">=</span> <span class="p">[]</span>
@@ -271,7 +273,7 @@
                                 <span class="p">]</span>
                             <span class="p">]</span>
                         <span class="p">),</span>
-                        <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="n">f</span><span class="s1">&#39;region_attributes.</span><span class="si">{label_key}</span><span class="s1">&#39;</span><span class="p">]]</span>
+                        <span class="n">category</span><span class="o">=</span><span class="n">annotation_config</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;region_attributes.</span><span class="si">{label_key}</span><span class="s1">&#39;</span><span class="p">]]</span>
                     <span class="p">)</span>
                     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">regions_df</span><span class="p">[</span><span class="n">regions_df</span><span class="o">.</span><span class="n">filename</span> <span class="o">==</span> <span class="n">filename</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()</span>
                 <span class="p">]</span>
@@ -297,13 +299,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Make sure the directory does not exist.</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">export_dir</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{export_dir}</span><span class="s1"> already exists.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{export_dir}</span><span class="s1"> already exists.&#39;</span><span class="p">)</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">export_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">filenames</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">filenames</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="p">),</span> \
             <span class="s1">&#39;Length of filenames must be equal to length of collection&#39;</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">scene</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;{uuid.uuid4()}.jpg&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
+        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">scene</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;{uuid.uuid4()}.jpg&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">filenames</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">filenames</span><span class="p">),</span> <span class="s1">&#39;Filenames must be unique.&#39;</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">[(</span><span class="n">filename</span><span class="p">,</span> <span class="n">scene</span><span class="p">)</span> <span class="k">for</span> <span class="n">scene</span><span class="p">,</span> <span class="n">filename</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">filenames</span><span class="p">)]</span>
     <span class="n">metadata_keys</span> <span class="o">=</span> <span class="p">[]</span>
@@ -317,7 +319,7 @@
         <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">data</span>
     <span class="p">]</span>
     <span class="n">sc_bboxes</span> <span class="o">=</span> <span class="p">[[</span><span class="n">ann</span><span class="o">.</span><span class="n">selection</span><span class="o">.</span><span class="n">xywh</span><span class="p">()</span> <span class="k">for</span> <span class="n">ann</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">annotations</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">collection</span><span class="p">]</span>
-    <span class="n">img_metadata_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="s1">&#39;</span><span class="si">{filename}{size}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+    <span class="n">img_metadata_keys</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{filename}{size}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">filename</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
     <span class="n">img_metadata_values</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">{</span>
             <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
@@ -432,27 +434,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../../_static/language_data.js"></script>
-        <script type="text/javascript" src="https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

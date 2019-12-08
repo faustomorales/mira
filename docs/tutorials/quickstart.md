@@ -5,7 +5,7 @@ To see logs, use the `logging` API. The logs can be
 useful for keeping track of what is happening behind
 the scenes.
 
-```
+```python
 import logging
 logging.basicConfig()
 logging.getLogger().setLevel('INFO')
@@ -13,7 +13,7 @@ logging.getLogger().setLevel('INFO')
 
 ## Browsing image data
 
-```
+```python
 from mira import datasets
 coco = datasets.load_coco2017(subset='val')
 coco[26].annotated().show()
@@ -30,7 +30,7 @@ it pretty easy to build augmentation pipelines
 and mira uses them to transform images as well
 as annotations.
 
-```
+```python
 from mira import datasets
 from imgaug import augmenters as iaa
 
@@ -65,7 +65,7 @@ The example below shows how easy it is to
 do object detection using the common API
 for detectors.
 
-```
+```python
 from mira import datasets, detectors
 import matplotlib.pyplot as plt
 

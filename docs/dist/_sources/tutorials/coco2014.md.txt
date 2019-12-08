@@ -2,7 +2,7 @@
 
 Start by downloading all of the COCO images. If you haven't already, install `gsutil`, which will make downloading the images a snap.
 
-```
+```shell
 curl https://sdk.cloud.google.com | bash
 mkdir coco
 cd coco
@@ -13,14 +13,14 @@ gsutil -m rsync gs://images.cocodataset.org/test2014 images
 ```
 
 Now download the annotations. The following will create an `annotations` folder inside of your `coco` folder.
-```
+```shell
 curl -LO  http://images.cocodataset.org/annotations/annotations_trainval2014.zip -o annotations_trainval2014.zip
 unzip annotations_trainval2014.zip
 ```
 
 Let's load the dataset.
 
-```
+```python
 from mira import datasets
 
 training = datasets.load_coco(
@@ -35,7 +35,7 @@ validation = datasets.load_coco(
 
 And now we can train a detector.
 
-```
+```python
 from mira import detectors
 
 detector = detectors.YOLOv3(
