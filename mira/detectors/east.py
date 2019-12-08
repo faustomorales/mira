@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name,missing-function-docstring,missing-module-docstring
 from typing import Tuple, List
 import logging
 
@@ -19,43 +20,35 @@ class ScaleShift(layers.Layer):
         out = in * gamma + beta,
 
     'gamma' and 'beta' are the learned weights and biases.
-
-    Args:
-        weights: Initialization weights.
-            List of 2 Numpy arrays, with shapes:
-            `[(input_shape,), (input_shape,)]`
     """
-    def __init__(self, weights=None, **kwargs):
-        self.initial_weights = weights
-        super(ScaleShift, self).__init__(**kwargs)
 
+    # pylint: disable=attribute-defined-outside-init
     def build(self, input_shape):
-        shape = (int(input_shape[-1]),)
+        shape = (int(input_shape[-1]), )
+        self.gamma = self.add_weight(name='{}_gamma'.format(self.name),
+                                     shape=shape,
+                                     initializer='ones',
+                                     trainable=True)
+        self.beta = self.add_weight(name='{}_beta'.format(self.name),
+                                    shape=shape,
+                                    initializer='zeros',
+                                    trainable=True)
+        super().build(input_shape)
 
-        # Tensorflow >= 1.0.0 compatibility
-        self._gamma = K.variable(np.ones(shape), name='{}_gamma'.format(self.name))  # noqa: E501
-        self._beta = K.variable(np.zeros(shape), name='{}_beta'.format(self.name))  # noqa: E501
-        self._trainable_weights = [self._gamma, self._beta]
-
-        if self.initial_weights is not None:
-            self.set_weights(self.initial_weights)
-            del self.initial_weights
-
+    # pylint: disable=unused-argument
     def call(self, x, mask=None):
-        return self._gamma * x + self._beta
+        return self.gamma * x + self.beta
 
 
-def inception(
-    x,
-    f1x1: int,
-    f3x3: Tuple[int, int],
-    f5x5: Tuple[int, int, int],
-    fOut: int,
-    prefix: str,
-    fPool: int=None,
-    stride: int=1,
-    outputBn=False
-):
+def inception(x,
+              f1x1: int,
+              f3x3: Tuple[int, int],
+              f5x5: Tuple[int, int, int],
+              fOut: int,
+              prefix: str,
+              fPool: int = None,
+              stride: int = 1,
+              outputBn=False):
     """Make Inception layer according to the description in Figure 1
     in https://arxiv.org/pdf/1608.08021.pdf.
 
@@ -63,64 +56,100 @@ def inception(
     assert stride == 1 or fPool is not None, \
         'If stride != 1, fPool must be provided'
     assert (
-        fOut == x.get_shape().as_list()[-1] or
-        stride != 1
+        fOut == x.get_shape().as_list()[-1] or stride != 1
     ), 'The number of input filters must equal output filters when stride is 1.'  # noqa: E501
-    x = layers.BatchNormalization(name=prefix+'/incep/bn')(x)
-    x = layers.Activation('relu', name=prefix+'/incep/relu')(x)
+    x = layers.BatchNormalization(name=prefix + '/incep/bn')(x)
+    x = layers.Activation('relu', name=prefix + '/incep/relu')(x)
 
-    x1x1 = layers.Conv2D(f1x1, 1, strides=stride, name=prefix+'/incep/0/conv', use_bias=False)(x)  # noqa: E501
-    x1x1 = layers.BatchNormalization(name=prefix+'/incep/0/bn')(x1x1)
-    x1x1 = layers.Activation('relu', name=prefix+'/incep/0/relu')(x1x1)
+    x1x1 = layers.Conv2D(f1x1,
+                         1,
+                         strides=stride,
+                         name=prefix + '/incep/0/conv',
+                         use_bias=False)(x)  # noqa: E501
+    x1x1 = layers.BatchNormalization(name=prefix + '/incep/0/bn')(x1x1)
+    x1x1 = layers.Activation('relu', name=prefix + '/incep/0/relu')(x1x1)
 
-    x3x3 = layers.Conv2D(f3x3[0], 1, strides=stride, name=prefix+'/incep/1_reduce/conv', use_bias=False)(x)  # noqa: E501
-    x3x3 = layers.BatchNormalization(name=prefix+'/incep/1_reduce/bn')(x3x3)
-    x3x3 = layers.Activation('relu', name=prefix+'/incep/1_reduce/relu')(x3x3)
-    x3x3 = layers.Conv2D(f3x3[0], 3, name=prefix+'/incep/1_0/conv', padding='same', use_bias=False)(x3x3)  # noqa: E501
-    x3x3 = layers.BatchNormalization(name=prefix+'/incep/1_0/bn')(x3x3)
-    x3x3 = layers.Activation('relu', name=prefix+'/incep/1_0/relu')(x3x3)
+    x3x3 = layers.Conv2D(f3x3[0],
+                         1,
+                         strides=stride,
+                         name=prefix + '/incep/1_reduce/conv',
+                         use_bias=False)(x)  # noqa: E501
+    x3x3 = layers.BatchNormalization(name=prefix + '/incep/1_reduce/bn')(x3x3)
+    x3x3 = layers.Activation('relu',
+                             name=prefix + '/incep/1_reduce/relu')(x3x3)
+    x3x3 = layers.Conv2D(f3x3[0],
+                         3,
+                         name=prefix + '/incep/1_0/conv',
+                         padding='same',
+                         use_bias=False)(x3x3)  # noqa: E501
+    x3x3 = layers.BatchNormalization(name=prefix + '/incep/1_0/bn')(x3x3)
+    x3x3 = layers.Activation('relu', name=prefix + '/incep/1_0/relu')(x3x3)
 
-    x5x5 = layers.Conv2D(f5x5[0], 1, strides=stride, name=prefix+'/incep/2_reduce/conv', use_bias=False)(x)  # noqa: E501
-    x5x5 = layers.BatchNormalization(name=prefix+'/incep/2_reduce/bn')(x5x5)
-    x5x5 = layers.Activation('relu', name=prefix+'/incep/2_reduce/relu')(x5x5)
-    x5x5 = layers.Conv2D(f5x5[1], 3, name=prefix+'/incep/2_0/conv', padding='same', use_bias=False)(x5x5)  # noqa: E501
-    x5x5 = layers.BatchNormalization(name=prefix+'/incep/2_0/bn')(x5x5)
-    x5x5 = layers.Activation('relu', name=prefix+'/incep/2_0/relu')(x5x5)
-    x5x5 = layers.Conv2D(f5x5[2], 3, name=prefix+'/incep/2_1/conv', padding='same', use_bias=False)(x5x5)  # noqa: E501
-    x5x5 = layers.BatchNormalization(name=prefix+'/incep/2_1/bn')(x5x5)
-    x5x5 = layers.Activation('relu', name=prefix+'/incep/2_1/relu')(x5x5)
+    x5x5 = layers.Conv2D(f5x5[0],
+                         1,
+                         strides=stride,
+                         name=prefix + '/incep/2_reduce/conv',
+                         use_bias=False)(x)  # noqa: E501
+    x5x5 = layers.BatchNormalization(name=prefix + '/incep/2_reduce/bn')(x5x5)
+    x5x5 = layers.Activation('relu',
+                             name=prefix + '/incep/2_reduce/relu')(x5x5)
+    x5x5 = layers.Conv2D(f5x5[1],
+                         3,
+                         name=prefix + '/incep/2_0/conv',
+                         padding='same',
+                         use_bias=False)(x5x5)  # noqa: E501
+    x5x5 = layers.BatchNormalization(name=prefix + '/incep/2_0/bn')(x5x5)
+    x5x5 = layers.Activation('relu', name=prefix + '/incep/2_0/relu')(x5x5)
+    x5x5 = layers.Conv2D(f5x5[2],
+                         3,
+                         name=prefix + '/incep/2_1/conv',
+                         padding='same',
+                         use_bias=False)(x5x5)  # noqa: E501
+    x5x5 = layers.BatchNormalization(name=prefix + '/incep/2_1/bn')(x5x5)
+    x5x5 = layers.Activation('relu', name=prefix + '/incep/2_1/relu')(x5x5)
 
     if stride == 2:
-        xPool = layers.MaxPooling2D(3, strides=2, name=prefix+'/incep/pool', padding='same')(x)  # noqa: E501
-        xPool = layers.Conv2D(fPool, 1, name=prefix+'/incep/poolproj/conv', use_bias=False)(xPool)  # noqa: E501
-        xPool = layers.BatchNormalization(name=prefix+'/incep/poolproj/bn')(xPool)  # noqa: E501
-        xPool = layers.Activation('relu', name=prefix+'/incep/poolproj/relu')(xPool)  # noqa: E501
+        xPool = layers.MaxPooling2D(3,
+                                    strides=2,
+                                    name=prefix + '/incep/pool',
+                                    padding='same')(x)  # noqa: E501
+        xPool = layers.Conv2D(fPool,
+                              1,
+                              name=prefix + '/incep/poolproj/conv',
+                              use_bias=False)(xPool)  # noqa: E501
+        xPool = layers.BatchNormalization(name=prefix + '/incep/poolproj/bn')(
+            xPool)  # noqa: E501
+        xPool = layers.Activation('relu', name=prefix +
+                                  '/incep/poolproj/relu')(xPool)  # noqa: E501
         outs = [x1x1, x3x3, x5x5, xPool]
     elif stride == 1:
         outs = [x1x1, x3x3, x5x5]
     else:
         raise NotImplementedError
 
-    y = layers.Concatenate(name=prefix+'/incep/concat')(outs)
-    y = layers.Conv2D(fOut, 1, name=prefix+'/out/conv')(y)
+    y = layers.Concatenate(name=prefix + '/incep/concat')(outs)
+    y = layers.Conv2D(fOut, 1, name=prefix + '/out/conv')(y)
 
     xRes = x
     if stride != 1:
-        xRes = layers.Conv2D(
-            fOut, 1, strides=stride, name=prefix+'/proj'
-        )(xRes)
-    y = layers.Add(name=prefix+'/add')([y, xRes])
+        xRes = layers.Conv2D(fOut, 1, strides=stride,
+                             name=prefix + '/proj')(xRes)
+    y = layers.Add(name=prefix + '/add')([y, xRes])
     if outputBn:
-        y = layers.BatchNormalization(name=prefix+'/last_bn')(y)
-        y = layers.Activation('relu', name=prefix+'/last_relu')(y)
+        y = layers.BatchNormalization(name=prefix + '/last_bn')(y)
+        y = layers.Activation('relu', name=prefix + '/last_relu')(y)
     return y
 
 
-def crelu(
-    x, k: int, fcReLU: int, prefix: str, stride: int=1,
-    fIn: int=None, fOut: int=None, residual: bool=True,
-    input_bn=True
-):
+def crelu(x,
+          k: int,
+          fcReLU: int,
+          prefix: str,
+          stride: int = 1,
+          fIn: int = None,
+          fOut: int = None,
+          residual: bool = True,
+          input_bn=True):
     """Make c.ReLU according to the description in Figure 1 in
     https://arxiv.org/pdf/1608.08021.pdf.
 
@@ -141,31 +170,35 @@ def crelu(
     """
     xRes = x
     if input_bn:
-        x = layers.BatchNormalization(name=prefix+'/1/bn')(x)
-        x = layers.Activation('relu', name=prefix+'/1/relu')(x)
+        x = layers.BatchNormalization(name=prefix + '/1/bn')(x)
+        x = layers.Activation('relu', name=prefix + '/1/relu')(x)
     if fIn is not None:
-        x = layers.Conv2D(fIn, 1, name=prefix+'/1/conv')(x)
-        x = layers.BatchNormalization(name=prefix+'/2/bn')(x)
-        x = layers.Activation('relu', name=prefix+'/2/relu')(x)
-    convolution = layers.Conv2D(
-        fcReLU, (k, k), strides=stride,
-        padding='same', use_bias=False, name=prefix+'/2/conv'
-    )(x)
-    batchnorm = layers.BatchNormalization(
-        name=prefix+'/3/bn', center=False, scale=False
-    )(convolution)
-    negation = layers.Lambda(lambda x: -1*x, name=prefix+'/3/neg')(batchnorm)
-    concatenation = layers.Concatenate(name=prefix+'/3/concat')(
-        [batchnorm, negation]
-    )
-    scaleshift = ScaleShift(name=prefix+'3/scale')(concatenation)
-    x = layers.Activation('relu', name=prefix+'/3/relu')(scaleshift)
+        x = layers.Conv2D(fIn, 1, name=prefix + '/1/conv')(x)
+        x = layers.BatchNormalization(name=prefix + '/2/bn')(x)
+        x = layers.Activation('relu', name=prefix + '/2/relu')(x)
+    convolution = layers.Conv2D(fcReLU, (k, k),
+                                strides=stride,
+                                padding='same',
+                                use_bias=False,
+                                name=prefix + '/2/conv')(x)
+    batchnorm = layers.BatchNormalization(name=prefix + '/3/bn',
+                                          center=False,
+                                          scale=False)(convolution)
+    negation = layers.Lambda(lambda x: -1 * x,
+                             name=prefix + '/3/neg')(batchnorm)
+    concatenation = layers.Concatenate(name=prefix +
+                                       '/3/concat')([batchnorm, negation])
+    scaleshift = ScaleShift(name=prefix + '3/scale')(concatenation)
+    x = layers.Activation('relu', name=prefix + '/3/relu')(scaleshift)
     if fOut is not None:
-        x = layers.Conv2D(fOut, 1, name=prefix+'/3/conv')(x)
+        x = layers.Conv2D(fOut, 1, name=prefix + '/3/conv')(x)
         if residual:
             if stride != 1 or fOut != xRes.get_shape().as_list()[-1]:
-                xRes = layers.Conv2D(fOut, 1, strides=stride, name=prefix+'/proj')(xRes)  # noqa: E501
-            x = layers.Add(name=prefix+'/add')([x, xRes])
+                xRes = layers.Conv2D(fOut,
+                                     1,
+                                     strides=stride,
+                                     name=prefix + '/proj')(xRes)  # noqa: E501
+            x = layers.Add(name=prefix + '/add')([x, xRes])
     return x
 
 
@@ -176,7 +209,8 @@ def build_backbone(input_shape=(1056, 640, 3)):
     """
     input_layer = layers.Input(input_shape)
     conv1_1 = crelu(input_layer, 7, 16, 'conv1_1', 2, residual=False)
-    pool1_1 = layers.MaxPooling2D(3, 2, name='pool1_1', padding='same')(conv1_1)  # noqa: E501
+    pool1_1 = layers.MaxPooling2D(3, 2, name='pool1_1',
+                                  padding='same')(conv1_1)  # noqa: E501
     conv2_1 = crelu(pool1_1, 3, 24, 'conv2_1', fIn=24, fOut=64, input_bn=False)
     conv2_2 = crelu(conv2_1, 3, 24, 'conv2_2', fIn=24, fOut=64)
     conv2_3 = crelu(conv2_2, 3, 24, 'conv2_3', fIn=24, fOut=64)
@@ -184,16 +218,28 @@ def build_backbone(input_shape=(1056, 640, 3)):
     conv3_2 = crelu(conv3_1, 3, 48, 'conv3_2', fIn=48, fOut=128)
     conv3_3 = crelu(conv3_2, 3, 48, 'conv3_3', fIn=48, fOut=128)
     conv3_4 = crelu(conv3_3, 3, 48, 'conv3_4', fIn=48, fOut=128)
-    conv4_1 = inception(conv3_4, 64, (48, 128), (24, 48, 48), 256, 'conv4_1', 128, 2)  # noqa: E501
+    conv4_1 = inception(conv3_4, 64, (48, 128), (24, 48, 48), 256, 'conv4_1',
+                        128, 2)  # noqa: E501
     conv4_2 = inception(conv4_1, 64, (64, 128), (24, 48, 48), 256, 'conv4_2')
     conv4_3 = inception(conv4_2, 64, (64, 128), (24, 48, 48), 256, 'conv4_3')
     conv4_4 = inception(conv4_3, 64, (64, 128), (24, 48, 48), 256, 'conv4_4')
-    conv5_1 = inception(conv4_4, 64, (96, 192), (32, 64, 64), 384, 'conv5_1', 128, 2)  # noqa: E501
+    conv5_1 = inception(conv4_4, 64, (96, 192), (32, 64, 64), 384, 'conv5_1',
+                        128, 2)  # noqa: E501
     conv5_2 = inception(conv5_1, 64, (96, 192), (32, 64, 64), 384, 'conv5_2')
     conv5_3 = inception(conv5_2, 64, (96, 192), (32, 64, 64), 384, 'conv5_3')
-    conv5_4 = inception(conv5_3, 64, (96, 192), (32, 64, 64), 384, 'conv5_4', outputBn=True)  # noqa: E501
-    downscale = layers.MaxPooling2D(3, strides=2, name='downscale', padding='same')(conv3_4)  # noqa: E501
-    upscale = layers.UpSampling2D(size=2, data_format='channels_last', interpolation='bilinear', name='upscale')(conv5_4)  # noqa: E501
+    conv5_4 = inception(conv5_3,
+                        64, (96, 192), (32, 64, 64),
+                        384,
+                        'conv5_4',
+                        outputBn=True)  # noqa: E501
+    downscale = layers.MaxPooling2D(3,
+                                    strides=2,
+                                    name='downscale',
+                                    padding='same')(conv3_4)  # noqa: E501
+    upscale = layers.UpSampling2D(size=2,
+                                  data_format='channels_last',
+                                  interpolation='bilinear',
+                                  name='upscale')(conv5_4)  # noqa: E501
     concat = layers.Concatenate(name='concat')([downscale, conv4_4, upscale])
     convf = layers.Conv2D(512, 1, name='convf')(concat)
     model = models.Model(inputs=input_layer, outputs=convf)
@@ -223,40 +269,57 @@ def build_model(backbone):
     """
     input_layer = backbone.input
     endpoint_names = reversed([
-        'conv3_1/1/relu',
-        'conv4_1/incep/relu',
-        'conv5_1/incep/relu',
+        'conv3_1/1/relu', 'conv4_1/incep/relu', 'conv5_1/incep/relu',
         'conv5_4/last_relu'
     ])
     endpoints = [backbone.get_layer(name) for name in endpoint_names]
     num_outputs = [None, 128, 64, 32]
     x = None
-    for i, (filters, endpoint) in enumerate(zip(num_outputs, endpoints)):  # noqa: E501
+    for i, (filters, endpoint) in enumerate(zip(num_outputs,
+                                                endpoints)):  # noqa: E501
         if filters is not None:
             x = layers.Concatenate()([x, endpoint.output])
-            x = layers.Conv2D(filters, (1, 1), padding='same', kernel_regularizer=regularizers.l2(1e-5))(x)  # noqa: E501
-            x = layers.BatchNormalization(momentum=0.997, epsilon=1e-5, scale=True)(x)  # noqa: E501
+            x = layers.Conv2D(filters, (1, 1),
+                              padding='same',
+                              kernel_regularizer=regularizers.l2(1e-5))(
+                                  x)  # noqa: E501
+            x = layers.BatchNormalization(momentum=0.997,
+                                          epsilon=1e-5,
+                                          scale=True)(x)  # noqa: E501
             x = layers.Activation('relu')(x)
-            x = layers.Conv2D(filters, (3, 3), padding='same', kernel_regularizer=regularizers.l2(1e-5))(x)  # noqa: E501
-            x = layers.BatchNormalization(momentum=0.997, epsilon=1e-5, scale=True)(x)  # noqa: E501
+            x = layers.Conv2D(filters, (3, 3),
+                              padding='same',
+                              kernel_regularizer=regularizers.l2(1e-5))(
+                                  x)  # noqa: E501
+            x = layers.BatchNormalization(momentum=0.997,
+                                          epsilon=1e-5,
+                                          scale=True)(x)  # noqa: E501
             x = layers.Activation('relu')(x)
         else:
             x = endpoint.output
         if i < 3:
-            x = layers.UpSampling2D(
-                size=(2, 2),
-                interpolation='bilinear',
-                name='resize_{0}'.format(i+1)
-            )(x)
-    x = layers.Conv2D(32, (3, 3), padding='same', kernel_regularizer=regularizers.l2(1e-5))(x)  # noqa: E501
+            x = layers.UpSampling2D(size=(2, 2),
+                                    interpolation='bilinear',
+                                    name='resize_{0}'.format(i + 1))(x)
+    x = layers.Conv2D(32, (3, 3),
+                      padding='same',
+                      kernel_regularizer=regularizers.l2(1e-5))(
+                          x)  # noqa: E501
     x = layers.BatchNormalization(momentum=0.997, epsilon=1e-5, scale=True)(x)
     x = layers.Activation('relu')(x)
 
-    pred_score_map = layers.Conv2D(1, (1, 1), activation='sigmoid', name='pred_score_map')(x)  # noqa: E501
-    rbox_geo_map = layers.Conv2D(4, (1, 1), activation='sigmoid', name='rbox_geo_map')(x)  # noqa: E501
-    angle_map = layers.Conv2D(1, (1, 1), activation='sigmoid', name='rbox_angle_map')(x)  # noqa: E501
+    pred_score_map = layers.Conv2D(1, (1, 1),
+                                   activation='sigmoid',
+                                   name='pred_score_map')(x)  # noqa: E501
+    rbox_geo_map = layers.Conv2D(4, (1, 1),
+                                 activation='sigmoid',
+                                 name='rbox_geo_map')(x)  # noqa: E501
+    angle_map = layers.Conv2D(1, (1, 1),
+                              activation='sigmoid',
+                              name='rbox_angle_map')(x)  # noqa: E501
     angle_map = layers.Lambda(lambda x: (x - 0.5) * np.pi / 2)(angle_map)
-    pred_geo_map = layers.Concatenate(axis=3, name='pred_geo_map')([rbox_geo_map, angle_map])  # noqa: E501
+    pred_geo_map = layers.Concatenate(
+        axis=3, name='pred_geo_map')([rbox_geo_map, angle_map])  # noqa: E501
     outputs = layers.Concatenate(axis=3)([pred_score_map, pred_geo_map])
     return models.Model(inputs=[input_layer], outputs=outputs)
 
@@ -265,20 +328,28 @@ def loss(y_true, y_pred):
     # Compute score loss
     st, sp = [y[:, :, :, 0] for y in [y_true, y_pred]]  # noqa: E501
     beta = 1 - K.mean(st)
-    score_loss = -(beta*st*K.log(sp + K.epsilon()) + (1-beta)*(1-st)*K.log(1. - sp + K.epsilon()))  # noqa: E501
+    score_loss = -(beta * st * K.log(sp + K.epsilon()) + (1 - beta) *
+                   (1 - st) * K.log(1. - sp + K.epsilon()))  # noqa: E501
 
     # Compute geo loss
-    d1p, d2p, d3p, d4p = [y_pred[:, :, :, i:i+1] for i in range(1, 5)]
-    d1t, d2t, d3t, d4t = [y_true[:, :, :, i:i+1] for i in range(1, 5)]
+    d1p, d2p, d3p, d4p = [y_pred[:, :, :, i:i + 1] for i in range(1, 5)]
+    d1t, d2t, d3t, d4t = [y_true[:, :, :, i:i + 1] for i in range(1, 5)]
     thetap, thetat = [y[:, :, :, 5] for y in [y_pred, y_true]]
-    wi = K.min(K.concatenate([d2p, d2t], axis=3), axis=3) + K.min(K.concatenate([d4p, d4t], axis=3), axis=3)  # noqa: E501
-    hi = K.min(K.concatenate([d1p, d1t], axis=3), axis=3) + K.min(K.concatenate([d3p, d3t], axis=3), axis=3)  # noqa: E501
-    intersection = wi*hi
-    union = ((d2p + d4p)*(d1p + d3p) + (d2t + d4t)*(d1t + d3t))[:, :, :, 0] - intersection + K.epsilon()  # noqa: E501
-    laabb = K.switch(K.equal(st, 1), -K.log((intersection / union) + K.epsilon()), K.zeros_like(intersection))  # noqa: E501
-    ltheta = K.switch(K.equal(st, 1), K.abs(1 - K.cos(thetap - thetat)), K.zeros_like(thetap))  # noqa: E501
-    geo_loss = laabb + 10*ltheta
-    return score_loss + 1*geo_loss
+    wi = K.min(K.concatenate([d2p, d2t], axis=3), axis=3) + K.min(
+        K.concatenate([d4p, d4t], axis=3), axis=3)  # noqa: E501
+    hi = K.min(K.concatenate([d1p, d1t], axis=3), axis=3) + K.min(
+        K.concatenate([d3p, d3t], axis=3), axis=3)  # noqa: E501
+    intersection = wi * hi
+    union = (
+        (d2p + d4p) * (d1p + d3p) + (d2t + d4t) *
+        (d1t + d3t))[:, :, :, 0] - intersection + K.epsilon()  # noqa: E501
+    laabb = K.switch(K.equal(st, 1),
+                     -K.log((intersection / union) + K.epsilon()),
+                     K.zeros_like(intersection))  # noqa: E501
+    ltheta = K.switch(K.equal(st, 1), K.abs(1 - K.cos(thetap - thetat)),
+                      K.zeros_like(thetap))  # noqa: E501
+    geo_loss = laabb + 10 * ltheta
+    return score_loss + 1 * geo_loss
 
 
 class EAST(Detector):
@@ -299,14 +370,12 @@ class EAST(Detector):
         model: The underlying model
         backbone: The backbone for the model (i.e., ResNet50)
     """
-    def __init__(
-        self,
-        annotation_config: core.AnnotationConfiguration=None,
-        input_shape: Tuple[int, int]=(None, None, 3),
-        pretrained_backbone: bool=False,
-        pretrained_top: bool=False,
-        text_category='text'
-    ):
+    def __init__(self,
+                 annotation_config: core.AnnotationConfiguration = None,
+                 input_shape: Tuple[int, int] = (None, None, 3),
+                 pretrained_backbone: bool = False,
+                 pretrained_top: bool = False,
+                 text_category='text'):
         if annotation_config is None:
             annotation_config = core.AnnotationConfiguration(['text'])
         assert text_category in annotation_config, \
@@ -314,10 +383,8 @@ class EAST(Detector):
         assert len(input_shape) == 3, \
             'Input shape must have shape (h, w, n_channels).'
         if pretrained_top and pretrained_backbone:
-            log.warning(
-                'pretrained_top makes pretrained_backbone '
-                'redundant. Disabling pretrained_backbone.'
-            )
+            log.warning('pretrained_top makes pretrained_backbone '
+                        'redundant. Disabling pretrained_backbone.')
             pretrained_backbone = False
         self.annotation_config = annotation_config
         self.text_category = self.annotation_config[text_category]
@@ -328,13 +395,7 @@ class EAST(Detector):
             raise NotImplementedError('Pretrained weights not yet available.')
         self.compile()
 
-    def invert_targets(
-        self,
-        y,
-        images,
-        threshold=0.8,
-        **nms_kwargs
-    ):
+    def invert_targets(self, y, images, threshold=0.8, **nms_kwargs):
         scenes = []
         for yi, image in zip(y, images):
             scores = yi[:, :, 0:1]
@@ -352,7 +413,7 @@ class EAST(Detector):
             # the model output map resolution is 1 / 4 of
             # input resolution). The values are (xIn, yIn)
             # and the list is sorted in order of ascending yIn.
-            origin = xy_out*4
+            origin = xy_out * 4
 
             # (N, 5): List of adjustments to the raw boxes
             # where the values are (d_top, d_right,
@@ -368,58 +429,46 @@ class EAST(Detector):
             if len(boxes) == 0:
                 annotations = []
             else:
-                for i, (xc, yc), (dt, dr, db, dl, theta) in zip(
-                    range(N),
-                    origin,
-                    geometry
-                ):
-                    theta *= 180/np.pi
+                for i, (xc, yc), (dt, dr, db, dl,
+                                  theta) in zip(range(N), origin, geometry):
+                    theta *= 180 / np.pi
                     # Assume x1, y1
                     X = np.array([
-                        [0, -dt - db],        # p1 (bottom right)
+                        [0, -dt - db],  # p1 (bottom right)
                         [dr + dl, -dt - db],  # p2 (top right)
-                        [dr + dl, 0],         # p3 (top left)
-                        [0, 0],               # p4 (bottom left)
-                        [dl, -db]             # p5 (anchor offset)
+                        [dr + dl, 0],  # p3 (top left)
+                        [0, 0],  # p4 (bottom left)
+                        [dl, -db]  # p5 (anchor offset)
                     ])
                     # According to paper, rotation is about the
                     # bottom left corner, corresponding to x1, y2.
-                    M = cv2.getRotationMatrix2D(
-                        center=(0, 0),
-                        angle=theta,
-                        scale=1
-                    )
+                    # pylint: disable=no-member
+                    M = cv2.getRotationMatrix2D(center=(0, 0),
+                                                angle=theta,
+                                                scale=1)
                     X = cv2.transform(np.array([X]), M)[0]
                     X[4, 0] = xc - X[4, 0]
                     X[4, 1] = yc - X[4, 1]
                     X[:4, :] += X[4]
                     boxes[i, :8] = X[:4].reshape(-1)
-                nmsIdx = nms.polygons(
-                    polys=boxes[:, :8].reshape(-1, 4, 2),
-                    scores=boxes[:, 8],
-                    **nms_kwargs
-                )
+                nmsIdx = nms.polygons(polys=boxes[:, :8].reshape(-1, 4, 2),
+                                      scores=boxes[:, 8],
+                                      **nms_kwargs)
                 boxes = boxes[nmsIdx]
                 annotations = [
                     core.Annotation(
                         category=self.text_category,
-                        selection=core.Selection(points=box[:8].reshape((4, 2))),  # noqa: E501
-                        score=box[-1]
-                    ) for box in boxes
+                        selection=core.Selection(
+                            points=box[:8].reshape((4, 2))),  # noqa: E501
+                        score=box[-1]) for box in boxes
                 ]
             scenes.append(
-                core.Scene(
-                    annotation_config=self.annotation_config,
-                    annotations=annotations,
-                    image=image
-                )
-            )
+                core.Scene(annotation_config=self.annotation_config,
+                           annotations=annotations,
+                           image=image))
         return scenes
 
-    def compute_targets(
-        self,
-        collection: core.SceneCollection
-    ):
+    def compute_targets(self, collection: core.SceneCollection):
         # y has shape (B, H // 4, W // 4, 6)
         # The entries are score, dt, dr, db, dl, theta
         ys = []
@@ -431,35 +480,33 @@ class EAST(Detector):
             xy = np.concatenate([
                 np.tile(cx, len(cy))[:, np.newaxis],
                 np.repeat(cy, len(cx))[:, np.newaxis]
-            ], axis=1)
+            ],
+                                axis=1)
             scores = np.zeros((len(xy), 1))
             geometry = np.zeros((len(xy), 5))
 
             for ann in scene.annotations:
                 if ann.category != self.text_category:
                     continue
-                ((xtl, ytl), (xtr, ytr), (xbr, ybr), (xbl, ybl)), theta = ann.selection.rbox()  # noqa; E501
+                ((xtl, ytl), (xtr, ytr), (xbr, ybr),
+                 (xbl, ybl)), theta = ann.selection.rbox()  # noqa; E501
                 positive = ann.selection.contains_points(xy)
                 origin = xy[positive]
 
                 # Horizontal distance
-                lh = np.sqrt((ybr - ybl) ** 2 + (xbr - xbl) ** 2)
+                lh = np.sqrt((ybr - ybl)**2 + (xbr - xbl)**2)
 
                 # Vertical distance
-                lv = np.sqrt((ytl - ybl) ** 2 + (xtl - xbl) ** 2)
+                lv = np.sqrt((ytl - ybl)**2 + (xtl - xbl)**2)
 
-                dt = abs(
-                    (ytr - ytl)*origin[:, 0] -
-                    (xtr - xtl)*origin[:, 1] +
-                    xtr*ytl - ytr*xtl
-                ) / lh
+                dt = abs((ytr - ytl) * origin[:, 0] -
+                         (xtr - xtl) * origin[:, 1] + xtr * ytl -
+                         ytr * xtl) / lh
                 db = lv - dt
 
-                dr = abs(
-                    (ytr - ybr)*origin[:, 0] -
-                    (xtr - xbr)*origin[:, 1] +
-                    xtr*ybr - ytr*xbr
-                ) / lv
+                dr = abs((ytr - ybr) * origin[:, 0] -
+                         (xtr - xbr) * origin[:, 1] + xtr * ybr -
+                         ytr * xbr) / lv
                 dl = lh - dr
                 scores[positive] = 1
 
@@ -478,10 +525,9 @@ class EAST(Detector):
 
             # Only include shrunken boxes
             margin = 0.15
-            exclude = (
-                (dlr <= margin) | (dlr >= 1-margin) |
-                (dtr <= margin) | (dtr >= 1-margin)
-            ) & (scores[:, 0] == 1)
+            exclude = ((dlr <= margin) | (dlr >= 1 - margin) |
+                       (dtr <= margin) |
+                       (dtr >= 1 - margin)) & (scores[:, 0] == 1)
             scores[exclude] = 0
 
             y1i = scores.reshape((len(cy), len(cx), 1))
@@ -494,16 +540,9 @@ class EAST(Detector):
             [all(s % 32 == 0 for s in image.shape[:2]) for image in images]
         ), \
             'Input shapes must all be multiples of 32.'
-        assert all(
-            image.shape[0] == image.shape[1] for image in images
-        ), 'All images must be square.'
-        return np.float32([
-            image.scaled(-1, 1)
-            for image in images
-        ])
+        assert all(image.shape[0] == image.shape[1]
+                   for image in images), 'All images must be square.'
+        return np.float32([image.scaled(-1, 1) for image in images])
 
     def compile(self):
-        self.model.compile(
-            loss=loss,
-            optimizer=optimizers.Adam()
-        )
+        self.model.compile(loss=loss, optimizer=optimizers.Adam())
