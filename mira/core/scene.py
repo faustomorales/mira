@@ -40,13 +40,12 @@ class Scene:
             If `False`, image is loaded from the file path or URL whenever
             the image is requested.
     """
-
     def __init__(self,
                  annotation_config: AnnotationConfiguration,
                  annotations: List[Annotation],
                  image: Union[Image, np.ndarray, str],
                  metadata: dict = None,
-                 cache: bool = True):
+                 cache: bool = False):
         assert isinstance(image, np.ndarray) or isinstance(image, str), \
             'Image must be string or ndarray, not ' + str(type(image))
         if isinstance(image, np.ndarray):
@@ -194,22 +193,20 @@ class Scene:
         if labels:
             for ann in self.annotations:
                 x1, y1, _, _ = ann.selection.bbox()
-                ax.annotate(
-                    s=ann.category.name,
-                    xy=(x1, y1),
-                    fontsize=fontsize,
-                    backgroundcolor=(1, 1, 1, 0.5))
+                ax.annotate(s=ann.category.name,
+                            xy=(x1, y1),
+                            fontsize=fontsize,
+                            backgroundcolor=(1, 1, 1, 0.5))
         ax.set_xlim(0, img_raw.width)
         ax.set_ylim(img_raw.height, 0)
         fig.canvas.draw()
         raw = io.BytesIO()
-        fig.savefig(
-            raw,
-            dpi=dpi,
-            frameon=True,
-            pad_inches=0,
-            transparent=False,
-            bbox_inches='tight')
+        fig.savefig(raw,
+                    dpi=dpi,
+                    frameon=True,
+                    pad_inches=0,
+                    transparent=False,
+                    bbox_inches='tight')
         plt.close(fig)
         plt.ion()
         raw.seek(0)
@@ -228,7 +225,8 @@ class Scene:
             image=self.image.resize(scale),
             annotations=[ann.resize(scale) for ann in self.annotations])
 
-    def augment(self, augmenter: iaa.Augmenter = None,
+    def augment(self,
+                augmenter: iaa.Augmenter = None,
                 threshold: float = 0.25) -> 'Scene':
         """Obtain an augmented version of the scene using the given augmenter.
 
@@ -270,7 +268,6 @@ class SceneCollection:
             underlying scenes.
         scenes: The list of scenes.
     """
-
     def __init__(self,
                  scenes: List[Scene],
                  annotation_config: AnnotationConfiguration = None):
@@ -313,9 +310,8 @@ class SceneCollection:
     def uniform(self):
         """Specifies whether all scenes in the collection are
         of the same size. Note: This will trigger an image load."""
-        return np.unique(
-            np.array([s.image.shape for s in self.scenes]),
-            axis=0).shape[0] == 1  # noqa: E501
+        return np.unique(np.array([s.image.shape for s in self.scenes]),
+                         axis=0).shape[0] == 1  # noqa: E501
 
     @property
     def consistent(self):
@@ -335,8 +331,9 @@ class SceneCollection:
         All arguments passed to `Scene.augment`"""
         return self.assign(scenes=[s.augment(**kwargs) for s in self.scenes])
 
-    def train_test_split(self, *args, **kwargs
-                         ) -> Tuple['SceneCollection', 'SceneCollection']:
+    def train_test_split(
+            self, *args,
+            **kwargs) -> Tuple['SceneCollection', 'SceneCollection']:
         """Obtain new scene collections, split into train
         and test. All arguments passed to
         `sklearn.model_selection.train_test_split
@@ -432,8 +429,9 @@ class SceneCollection:
         sample = [self.scenes[i] for i in sample_indices]
         thumbnails = [scene.annotated() for scene in sample]
         thumbnails = [t.fit(width=width, height=height)[0] for t in thumbnails]
-        thumbnail = Image.new(
-            width=ncols * width, height=nrows * height, channels=3)
+        thumbnail = Image.new(width=ncols * width,
+                              height=nrows * height,
+                              channels=3)
         for rowIdx in range(nrows):
             for colIdx in range(ncols):
                 if len(thumbnails) == 0:
@@ -473,6 +471,7 @@ class SceneCollection:
             np.unpackbits(hasher.compute(s.image)[0])
             for s in tqdm(other, desc='Computing hashes for other')
         ])
-        distance_matrix = spatial.distance.cdist(
-            XA=hashes_x, XB=hashes_y, metric='hamming')
+        distance_matrix = spatial.distance.cdist(XA=hashes_x,
+                                                 XB=hashes_y,
+                                                 metric='hamming')
         return distance_matrix
