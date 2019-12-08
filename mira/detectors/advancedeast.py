@@ -3,8 +3,8 @@ from os import path
 import logging
 import itertools
 
-from keras import applications, layers, models, optimizers
-from keras import backend as K
+from tensorflow.keras import applications, layers, models, optimizers
+from tensorflow.keras import backend as K
 import numpy as np
 import cv2
 

@@ -10,6 +10,6 @@ Check out [the docs](http://faustomorales.github.io/mira).
 
 ##  Installation
 
-```
+```shell
 pip install mira
 ```

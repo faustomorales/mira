@@ -6,8 +6,8 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
-from keras import backend as K
-from keras import regularizers, layers, models, optimizers
+from tensorflow.keras import backend as K
+from tensorflow.keras import regularizers, layers, models, optimizers
 
 from .detector import Detector
 from ..utils import compute_overlap
@@ -308,7 +308,7 @@ def make_loss(num_classes):
         have shape (batchSize, y_steps, x_steps, n_features). This
         loss function is used for each output separately.
         """
-        num_anchor_seeds = int(y_pred.shape[-1].value / num_features)
+        num_anchor_seeds = int(y_pred.shape[-1] / num_features)
         loss_objectness = 0
         loss_coords = 0
         loss_labels = 0

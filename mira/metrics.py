@@ -4,8 +4,8 @@ from typing import List, Tuple
 
 import numpy as np
 
-from ..utils import compute_overlap
-from ..core import SceneCollection
+from .utils import compute_overlap
+from .core import SceneCollection
 
 
 def precision_recall_curve(true_collection: SceneCollection,

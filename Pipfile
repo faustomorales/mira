@@ -5,20 +5,20 @@ verify_ssl = true
 
 [dev-packages]
 coverage = "*"
-ipython = "==7.3.*"
-jupyterlab = "==0.35.*"
-pylint = "==2.3.0"
+ipython = "*"
+jupyterlab = "*"
 pytest = "*"
 pytest-cov = "*"
-yapf = "==0.25.0"
-sphinx-autodoc-typehints = "==1.6.0"
-sphinx-autobuild = "==0.7.1"
-sphinx = "==1.8.3"
-m2r = "==0.2.1"
-sphinx_rtd_theme = "==0.4.2"
-sphinxcontrib-mermaid = "==0.3.1"
+pylint = "*"
+yapf = "*"
+sphinx-autodoc-typehints = "*"
+sphinx-autobuild = "*"
+sphinx = "*"
+m2r = "*"
+sphinx_rtd_theme = "*"
+sphinxcontrib-mermaid = "*"
 
 [packages]
-tensorflow = "==1.13.1"
+tensorflow = "*"
 mira = {editable = true,path = "."}
 opencv-contrib-python = "*"

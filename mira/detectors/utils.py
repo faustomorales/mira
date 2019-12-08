@@ -5,10 +5,10 @@ from collections import defaultdict
 from functools import reduce
 
 import numpy as np
-from keras import backend as K
-from keras import layers as keras_layers
-from keras.models import Model
-from keras.regularizers import l2
+from tensorflow.keras import backend as K
+from tensorflow.keras import layers as keras_layers
+from tensorflow.keras.models import Model
+from tensorflow.keras.regularizers import l2
 
 log = logging.getLogger(__name__)
 

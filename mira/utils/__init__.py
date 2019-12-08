@@ -13,13 +13,8 @@ import six
 import numpy as np
 from tqdm import tqdm
 
-try:
-    from keras_retinanet.utils.compute_overlap import compute_overlap  # noqa: F401, E501
-except ValueError:
-    # Avoids crashing documentation due to numpy
-    # warning.
-    def compute_overlap():
-        pass
+
+from .compute_overlap import compute_overlap
 
 
 log = logging.getLogger(__name__)

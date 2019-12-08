@@ -7,22 +7,25 @@ IMAGE_NAME = mira
 VOLUME_NAME = $(IMAGE_NAME)_venv
 VOLUMES = -v $(PWD):/usr/src -v $(VOLUME_NAME):/usr/src/.venv --rm
 JUPYTER_OPTIONS := --ip=0.0.0.0 --port=$(NOTEBOOK_PORT) --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+TEST_SCOPE ?= tests/
+IN_DOCKER = docker run -it $(DOCKER_ARGS)
 
 .PHONY: build
 build:
 	docker build --rm --force-rm -t $(IMAGE_NAME) .
 	@-docker volume rm $(VOLUME_NAME)
 init:
-	PIPENV_VENV_IN_PROJECT=true pipenv install --dev --skip-lock
+	@-mkdir .venv
+	pipenv install --dev --skip-lock
 lab-server:
-	docker run -it $(DOCKER_ARGS) -p $(NOTEBOOK_PORT):$(NOTEBOOK_PORT) $(IMAGE_NAME) pipenv run jupyter lab $(JUPYTER_OPTIONS)
+	$(IN_DOCKER) -p $(NOTEBOOK_PORT):$(NOTEBOOK_PORT) $(IMAGE_NAME) pipenv run jupyter lab $(JUPYTER_OPTIONS)
 documentation-server:
-	docker run -it $(DOCKER_ARGS)-p $(DOCUMENTATION_PORT):$(DOCUMENTATION_PORT) $(IMAGE_NAME) pipenv run sphinx-autobuild -b html "docs" "docs/_build/html" --host 0.0.0.0 --port $(DOCUMENTATION_PORT) $(O)
+	$(IN_DOCKER) -p $(DOCUMENTATION_PORT):$(DOCUMENTATION_PORT) $(IMAGE_NAME) pipenv run sphinx-autobuild -b html "docs" "docs/_build/html" --host 0.0.0.0 --port $(DOCUMENTATION_PORT) $(O)
 .PHONY: tests
 test:
-	docker run -it $(DOCKER_ARGS) $(IMAGE_NAME) pipenv run pytest
+	$(IN_DOCKER) $(IMAGE_NAME) pipenv run pytest $(TEST_SCOPE)
 .PHONY: docs
 docs:
-	docker run -it $(DOCKER_ARGS) $(IMAGE_NAME) pipenv run sphinx-build -b html "docs" "docs/dist"
+	$(IN_DOCKER) $(IMAGE_NAME) pipenv run sphinx-build -b html "docs" "docs/dist"
 bash:
-	docker run -it $(DOCKER_ARGS) $(IMAGE_NAME) bash
+	$(IN_DOCKER) $(IMAGE_NAME) bash

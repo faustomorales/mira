@@ -2,10 +2,10 @@ from typing import Tuple, List
 from os import path
 import logging
 
-from keras_retinanet import losses as rn_losses
-from keras_retinanet.models import backbone as rn_backbone
-from keras_retinanet.utils import anchors as rn_anchors
-from keras import layers, optimizers
+from .keras_retinanet import losses as rn_losses
+from .keras_retinanet.models import backbone as rn_backbone
+from .keras_retinanet.utils import anchors as rn_anchors
+from tensorflow.keras import layers, optimizers
 import numpy as np
 import cv2
 
@@ -191,7 +191,7 @@ class RetinaNet(Detector):
                 'regression': rn_losses.smooth_l1(),
                 'classification': rn_losses.focal()
             },
-            optimizer=optimizers.adam(lr=1e-5, clipnorm=0.001))
+            optimizer=optimizers.Adam(lr=1e-5, clipnorm=0.001))
 
     def freeze_backbone(self):
         output_names = [

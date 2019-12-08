@@ -1,8 +1,8 @@
 from typing import Tuple, List
 import logging
 
-from keras import layers, regularizers, models, optimizers
-from keras import backend as K
+from tensorflow.keras import layers, regularizers, models, optimizers
+from tensorflow.keras import backend as K
 from nms import nms
 import numpy as np
 import cv2
