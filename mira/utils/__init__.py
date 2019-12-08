@@ -13,9 +13,7 @@ import six
 import numpy as np
 from tqdm import tqdm
 
-
 from .compute_overlap import compute_overlap
-
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +40,8 @@ class ProgressFileObject(io.FileIO):  # noqa: E302
         io.FileIO.__init__(self, path, *args, **kwargs)
 
     def read(self, size=-1):
-        self.progbar.update(size)
+        if size > 0:
+            self.progbar.update(size)
         return io.FileIO.read(self, size)
 
     def close(self):
@@ -51,10 +50,10 @@ class ProgressFileObject(io.FileIO):  # noqa: E302
 
 
 def _extract_archive(  # noqa: E302
-        file_path,
-        path='.',
-        archive_format='auto',
-        extract_check_fn=None):
+    file_path,
+    path='.',
+    archive_format='auto',
+    extract_check_fn=None):
     """Extracts an archive if it matches tar, tar.gz, tar.bz, or zip formats.
 
     # Arguments
@@ -82,11 +81,13 @@ def _extract_archive(  # noqa: E302
             # Implement progress bar for tar files,
             # per https://stackoverflow.com/questions/3667865/python-tarfile-progress-output  # pylint: disable=line-too-long
             # open_fn = tarfile.open
-            open_fn = lambda fp: tarfile.open(fileobj=ProgressFileObject(fp))  # noqa: E731,E501
+            open_fn = lambda fp: tarfile.open(fileobj=ProgressFileObject(fp)
+                                              )  # noqa: E731,E501
             is_match_fn = tarfile.is_tarfile
         if archive_type == 'zip':
             # open_fn = zipfile.ZipFile
-            open_fn = lambda fp: zipfile.ZipFile(file=ProgressFileObject(fp))  # noqa: E731,E501
+            open_fn = lambda fp: zipfile.ZipFile(file=ProgressFileObject(fp)
+                                                 )  # noqa: E731,E501
             is_match_fn = zipfile.is_zipfile
 
         if is_match_fn(file_path):
@@ -192,8 +193,9 @@ def get_file(origin,
             if ProgressTracker.progbar is None:
                 if total_size == -1:
                     total_size = None
-                ProgressTracker.progbar = tqdm(
-                    total=total_size, desc='Downloading data from ' + origin)
+                ProgressTracker.progbar = tqdm(total=total_size,
+                                               desc='Downloading data from ' +
+                                               origin)
             else:
                 ProgressTracker.progbar.update(block_size)
 
@@ -216,11 +218,10 @@ def get_file(origin,
         extract_target = os.path.join(
             datadir,
             os.path.split(fpath)[1].split(os.extsep)[0])
-        extract_result = _extract_archive(
-            file_path=fpath,
-            path=extract_target,
-            archive_format=archive_format,
-            extract_check_fn=extract_check_fn)
+        extract_result = _extract_archive(file_path=fpath,
+                                          path=extract_target,
+                                          archive_format=archive_format,
+                                          extract_check_fn=extract_check_fn)
         if extract_result:
             fpath = extract_target
 
