@@ -17,7 +17,6 @@ class AnnotationCategory:
         name: The name of the annotation category
 
     """
-
     def __init__(self, name: str):
         self._name = name
 
@@ -36,7 +35,6 @@ class AnnotationConfiguration:
     Args:
         names: The list of class names
     """
-
     def __init__(self, names: List[str]):
         names = [s.lower() for s in names]
         if len(names) != len(set(names)):
@@ -108,17 +106,19 @@ class Annotation:
         selection: The selection associated with the annotation
         category: The category of the annotation
         score: A score for the annotation
+        metadata: Metadata to store as part of the annotation
     """
-
     def __init__(self,
                  selection: Selection,
                  category: AnnotationCategory,
-                 score: float = None):
+                 score: float = None,
+                 metadata: dict = None):
         if category is None:
             raise ValueError('A category object must be specified.')
         self.selection = selection
         self.category = category
         self.score = score
+        self.metadata = metadata or {}
 
     def assign(self, **kwargs) -> 'Annotation':
         """Get a new Annotation with only the supplied
@@ -126,7 +126,8 @@ class Annotation:
         defaults = {
             'selection': self.selection,
             'category': self.category,
-            'score': self.score
+            'score': self.score,
+            'metadata': self.metadata
         }
         kwargs = {**defaults, **kwargs}
         return Annotation(**kwargs)

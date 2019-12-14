@@ -70,10 +70,9 @@ def load_voc2012(subset='train') -> SceneCollection:
         path.join(annotation_dir, '{0}.xml'.format(sid)) for sid in sids
         if len(sid.strip()) > 0
     ]
-    return load_voc(
-        filepaths=filepaths,
-        annotation_config=AnnotationConfiguration.VOC,
-        image_dir=image_dir)
+    return load_voc(filepaths=filepaths,
+                    annotation_config=AnnotationConfiguration.VOC,
+                    image_dir=image_dir)
 
 
 def load_shapes(
@@ -106,10 +105,12 @@ def load_shapes(
         image = Image.new(width=width, height=height, channels=3, cval=255)
         object_count = np.random.randint(*object_count_bounds)
         ws = np.random.randint(*object_width_bounds, size=object_count)
-        xs = np.random.randint(
-            low=0, high=width - object_width_bounds[-1], size=object_count)
-        ys = np.random.randint(
-            low=0, high=height - object_width_bounds[-1], size=object_count)
+        xs = np.random.randint(low=0,
+                               high=width - object_width_bounds[-1],
+                               size=object_count)
+        ys = np.random.randint(low=0,
+                               high=height - object_width_bounds[-1],
+                               size=object_count)
         shapes = np.random.choice(['RECTANGLE', 'CIRCLE'], size=object_count)
         colors = np.random.choice(['RED', 'BLUE', 'GREEN'], size=object_count)
         lookup = {
@@ -136,13 +137,12 @@ def load_shapes(
                     thickness=-1,
                     color=lookup[color])
             annotations.append(
-                Annotation(
-                    selection=Selection([[x, y], [x + w, y + w]]),
-                    category=annotation_config[' '.join([color, shape])]))
-        return Scene(
-            annotations=annotations,
-            image=image,
-            annotation_config=annotation_config)
+                Annotation(selection=Selection([[x, y], [x + w, y + w]]),
+                           category=annotation_config[' '.join([color,
+                                                                shape])]))
+        return Scene(annotations=annotations,
+                     image=image,
+                     annotation_config=annotation_config)
 
     scenes = [make_scene() for n in range(n_scenes)]
     return SceneCollection(scenes=scenes, annotation_config=annotation_config)
@@ -169,25 +169,27 @@ def load_oxfordiiitpets(breed=True) -> SceneCollection:
         hash_algorithm='sha256',
         extract=True,
         archive_format='tar',
-        extract_check_fn=
-        lambda directory: len(glob(path.join(directory, 'images', '*.jpg'))) == 7390
-    )
+        extract_check_fn=lambda directory: len(
+            glob(path.join(directory, 'images', '*.jpg'))) == 7390)
     annotations_dir = utils.get_file(
-        origin='http://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz',
-        file_hash='52425fb6de5c424942b7626b428656fcbd798db970a937df61750c0f1d358e91',
+        origin=
+        'http://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz',
+        file_hash=
+        '52425fb6de5c424942b7626b428656fcbd798db970a937df61750c0f1d358e91',
         cache_subdir=path.join('datasets', 'oxfordiiitpets'),
         hash_algorithm='sha256',
         extract=True,
         archive_format='tar',
-        extract_check_fn=lambda directory: len(glob(path.join(directory, 'annotations', 'xmls', '*.xml'))) == 3686
-    )
-    filepaths = glob(
-        path.join(annotations_dir, 'annotations', 'xmls', '*.xml'))
+        extract_check_fn=lambda directory: len(
+            glob(path.join(directory, 'annotations', 'xmls', '*.xml'))
+        ) == 3686)
+    filepaths = glob(path.join(annotations_dir, 'annotations', 'xmls',
+                               '*.xml'))
     image_dir = path.join(image_dir, 'images')
-    collection = load_voc(
-        filepaths=filepaths,
-        annotation_config=AnnotationConfiguration(['dog', 'cat']),
-        image_dir=image_dir)
+    collection = load_voc(filepaths=filepaths,
+                          annotation_config=AnnotationConfiguration(
+                              ['dog', 'cat']),
+                          image_dir=image_dir)
     if not breed:
         return collection
     assert all(len(s.annotations) in [1, 2] for s in collection.scenes), \
@@ -197,21 +199,20 @@ def load_oxfordiiitpets(breed=True) -> SceneCollection:
         for f in filepaths
     ]
     annotation_config = AnnotationConfiguration(sorted(set(labels)))
-    return SceneCollection(
-        scenes=[
-            scene.assign(
-                annotations=[
-                    a.assign(category=annotation_config[label])
-                    for a in scene.annotations
-                ],
-                annotation_config=annotation_config)
-            for scene, label in zip(collection.scenes, labels)
+    return SceneCollection(scenes=[
+        scene.assign(annotations=[
+            a.assign(category=annotation_config[label])
+            for a in scene.annotations
         ],
-        annotation_config=annotation_config)
+                     annotation_config=annotation_config)
+        for scene, label in zip(collection.scenes, labels)
+    ],
+                           annotation_config=annotation_config)
 
 
 def load_icdar2015(subset: str = 'train',
-                   text_category: str = 'text') -> SceneCollection:
+                   text_category: str = 'text',
+                   include_do_not_care=False) -> SceneCollection:
     """Loads dataset from 2015 Robust Reading Competition.
     More details available at http://rrc.cvc.uab.es/?ch=4&com=introduction
 
@@ -222,6 +223,8 @@ def load_icdar2015(subset: str = 'train',
             training set. If `test` only the test set.
         text_category: The category name to use for the
             annotation configuration.
+        include_do_not_care: Whether to include "do not care"
+            areas in the annotations.
 
     Returns:
         A scene collection containing the ICDAR 2015 dataset
@@ -238,29 +241,33 @@ def load_icdar2015(subset: str = 'train',
         elements = box.split(',')
         x1, y1, x2, y2, x3, y3, x4, y4 = map(int, elements[:8])
         text = ','.join(elements[8:])  # pylint: disable=unused-variable
-        return Annotation(
-            selection=Selection(
-                np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])),
-            category=annotation_config[text_category])
+        return Annotation(selection=Selection(
+            np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])),
+                          category=annotation_config[text_category],
+                          metadata={
+                              'text': text if text != '###' else None,
+                              'do_not_care': text == '###'
+                          })
 
     def scene_from_files(annotation_file, image_file):
         with open(annotation_file, 'r', encoding='utf-8-sig') as f:
             annotations = [
                 annotation_from_box(box) for box in f.read().split('\n')[:-1]
             ]
-        return Scene(
-            image=image_file,
-            annotations=annotations,
-            annotation_config=annotation_config)
+        if not include_do_not_care:
+            annotations = [
+                ann for ann in annotations if not ann.metadata['do_not_care']
+            ]
+        return Scene(image=image_file,
+                     annotations=annotations,
+                     annotation_config=annotation_config)
 
     def scenes_from_directories(annotations_dir, images_dir):
         pattern = re.compile(r'img_([0-9]+).')
-        image_files = sorted(
-            glob(path.join(images_dir, '*.jpg')),
-            key=lambda x: pattern.findall(x)[0])
-        annotation_files = sorted(
-            glob(path.join(annotations_dir, '*.txt')),
-            key=lambda x: pattern.findall(x)[0])
+        image_files = sorted(glob(path.join(images_dir, '*.jpg')),
+                             key=lambda x: pattern.findall(x)[0])
+        annotation_files = sorted(glob(path.join(annotations_dir, '*.txt')),
+                                  key=lambda x: pattern.findall(x)[0])
         assert len(image_files) == len(annotation_files), \
             'An error occurred loading the dataset.'
         scenes = []
@@ -281,8 +288,8 @@ def load_icdar2015(subset: str = 'train',
             hash_algorithm='sha256',
             extract=True,
             archive_format='zip',
-            extract_check_fn=
-            lambda directory: len(glob(path.join(directory, '*.jpg'))) == 1000)
+            extract_check_fn=lambda directory: len(
+                glob(path.join(directory, '*.jpg'))) == 1000)
         annotations_dir = utils.get_file(
             origin=
             'https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_localization_transcription_gt.zip',
@@ -292,8 +299,8 @@ def load_icdar2015(subset: str = 'train',
             hash_algorithm='sha256',
             extract=True,
             archive_format='zip',
-            extract_check_fn=
-            lambda directory: len(glob(path.join(directory, '*.txt'))) == 1000)
+            extract_check_fn=lambda directory: len(
+                glob(path.join(directory, '*.txt'))) == 1000)
         scenes += scenes_from_directories(annotations_dir, images_dir)
     if subset in ['test', 'traintest']:
         images_dir = utils.get_file(
@@ -305,8 +312,8 @@ def load_icdar2015(subset: str = 'train',
             hash_algorithm='sha256',
             extract=True,
             archive_format='zip',
-            extract_check_fn=
-            lambda directory: len(glob(path.join(directory, '*.jpg'))) == 500)
+            extract_check_fn=lambda directory: len(
+                glob(path.join(directory, '*.jpg'))) == 500)
         annotations_dir = utils.get_file(
             origin=
             'https://storage.googleapis.com/miradata/datasets/rrc2015/Challenge4_Test_Task1_GT.zip',
@@ -316,7 +323,7 @@ def load_icdar2015(subset: str = 'train',
             hash_algorithm='sha256',
             extract=True,
             archive_format='zip',
-            extract_check_fn=
-            lambda directory: len(glob(path.join(directory, '*.txt'))) == 500)
+            extract_check_fn=lambda directory: len(
+                glob(path.join(directory, '*.txt'))) == 500)
         scenes += scenes_from_directories(annotations_dir, images_dir)
     return SceneCollection(annotation_config=annotation_config, scenes=scenes)
