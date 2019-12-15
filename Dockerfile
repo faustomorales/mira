@@ -13,5 +13,7 @@ RUN pip install pipenv
 WORKDIR /usr/src
 COPY ./setup* ./
 COPY ./Pipfile* ./
-COPY versioneer* ./
-RUN PIPENV_VENV_IN_PROJECT=true pipenv install --dev --skip-lock
+COPY ./versioneer* ./
+COPY ./Makefile Makefile
+COPY ./mira/utils ./mira/utils
+RUN make init
