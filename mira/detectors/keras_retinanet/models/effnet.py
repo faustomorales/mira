@@ -19,7 +19,7 @@ from tensorflow.keras.utils import get_file
 
 from . import retinanet
 from . import Backbone
-import efficientnet.keras as efn
+import efficientnet.tfkeras as efn
 
 
 class EfficientNetBackbone(Backbone):

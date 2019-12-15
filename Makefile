@@ -5,7 +5,8 @@ DOCUMENTATION_PORT = 5001
 DOCKER_ARGS = $(VOLUMES) -w $(WORKDIR) --rm 
 IMAGE_NAME = mira
 VOLUME_NAME = $(IMAGE_NAME)_venv
-VOLUMES = -v $(PWD):/usr/src -v $(VOLUME_NAME):/usr/src/.venv --rm
+EXTENSIONS_VOLUME_NAME = $(IMAGE_NAME)_extensions
+VOLUMES = -v $(PWD):/usr/src -v $(VOLUME_NAME):/usr/src/.venv -v $(EXTENSIONS_VOLUME_NAME):/usr/src/mira/utils --rm
 JUPYTER_OPTIONS := --ip=0.0.0.0 --port=$(NOTEBOOK_PORT) --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
 TEST_SCOPE ?= tests/
 IN_DOCKER = docker run -it $(DOCKER_ARGS)
@@ -14,6 +15,7 @@ IN_DOCKER = docker run -it $(DOCKER_ARGS)
 build:
 	docker build --rm --force-rm -t $(IMAGE_NAME) .
 	@-docker volume rm $(VOLUME_NAME)
+	@-docker volume rm $(EXTENSIONS_VOLUME_NAME)
 init:
 	@-mkdir .venv
 	pipenv install --dev --skip-lock
