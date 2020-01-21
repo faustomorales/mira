@@ -183,26 +183,10 @@ def get_file(origin,
         download = True
 
     if download:
-
-        class ProgressTracker(object):
-            # Maintain progbar for the lifetime of download.
-            # This design was chosen for Python 2.7 compatibility.
-            progbar = None
-
-        def dl_progress(count, block_size, total_size):
-            if ProgressTracker.progbar is None:
-                if total_size == -1:
-                    total_size = None
-                ProgressTracker.progbar = tqdm(total=total_size,
-                                               desc='Downloading data from ' +
-                                               origin)
-            else:
-                ProgressTracker.progbar.update(block_size)
-
         error_msg = 'URL fetch failure on {} : {} -- {}'
         try:
             try:
-                urllib.request.urlretrieve(origin, fpath, dl_progress)
+                urllib.request.urlretrieve(origin, fpath)
             except urllib.error.HTTPError as e:  # pylint: disable=invalid-name
                 raise Exception(error_msg.format(origin, e.code, e.msg))
             except urllib.error.URLError as e:  # pylint: disable=invalid-name
@@ -211,9 +195,6 @@ def get_file(origin,
             if os.path.exists(fpath):
                 os.remove(fpath)
             raise
-        ProgressTracker.progbar.close()
-        ProgressTracker.progbar = None
-
     if extract:
         extract_target = os.path.join(
             datadir,
