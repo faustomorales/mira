@@ -13,8 +13,10 @@ from ..core import (SceneCollection, Annotation, Image)
 class Detector(ABC):
     model = None
 
-    def detect(self, image: Union[Image, np.ndarray],
-               threshold: float = 0.5) -> List[Annotation]:
+    def detect(self,
+               image: Union[Image, np.ndarray],
+               threshold: float = 0.5,
+               **kwargs) -> List[Annotation]:
         """Run detection for a given image.
 
         Args:
@@ -27,8 +29,10 @@ class Detector(ABC):
         image, scale = self._scale_to_model_size(image)
         X = self.compute_inputs([image])
         y = self.model.predict(X)
-        annotations = self.invert_targets(
-            y, images=[image], threshold=threshold)[0].annotations
+        annotations = self.invert_targets(y,
+                                          images=[image],
+                                          threshold=threshold,
+                                          **kwargs)[0].annotations
         return [a.resize(1 / scale) for a in annotations]
 
     def detect_batch(self,
@@ -79,8 +83,9 @@ class Detector(ABC):
         pass
 
     @abstractmethod
-    def compute_targets(self, collection: SceneCollection
-                        ) -> Union[List[np.ndarray], np.ndarray]:
+    def compute_targets(
+        self, collection: SceneCollection
+    ) -> Union[List[np.ndarray], np.ndarray]:
         """Compute the expected outputs for a model. *You
         usually should not need this method*. For training,
         use `detector.train()`. For detection, use
@@ -166,17 +171,16 @@ class Detector(ABC):
             assert all(s is not None for s in train_shape), \
                 'train_shape must be provided for this model.'
         if 'steps_per_epoch' not in kwargs:
-            kwargs['steps_per_epoch'] = int(len(training)//batch_size)
+            kwargs['steps_per_epoch'] = int(len(training) // batch_size)
         if validation is not None and 'validation_steps' not in kwargs:
-            kwargs['validation_steps'] = int(len(validation)//batch_size)
+            kwargs['validation_steps'] = int(len(validation) // batch_size)
         if 'epochs' not in kwargs:
             kwargs['epochs'] = 1000
-        training_generator = self.batch_generator(
-            collection=training,
-            batch_size=batch_size,
-            augmenter=augmenter,
-            shuffle=True,
-            train_shape=train_shape)
+        training_generator = self.batch_generator(collection=training,
+                                                  batch_size=batch_size,
+                                                  augmenter=augmenter,
+                                                  shuffle=True,
+                                                  train_shape=train_shape)
         if validation is None:
             history = training_model.fit_generator(
                 generator=training_generator, **kwargs)
@@ -186,9 +190,8 @@ class Detector(ABC):
                 batch_size=batch_size,
                 augmenter=None,
                 train_shape=train_shape,
-                shuffle=False
-            )
-            kwargs['validation_steps'] = int(len(validation)//batch_size)
+                shuffle=False)
+            kwargs['validation_steps'] = int(len(validation) // batch_size)
             history = training_model.fit_generator(
                 generator=training_generator,
                 validation_data=validation_generator,
@@ -211,7 +214,6 @@ class Detector(ABC):
             s.assign(annotations=self.detect(s.image, threshold=0))
             for s in collection
         ])
-        return metrics.mAP(
-            true_collection=collection,
-            pred_collection=pred,
-            iou_threshold=iou_threshold)
+        return metrics.mAP(true_collection=collection,
+                           pred_collection=pred,
+                           iou_threshold=iou_threshold)
