@@ -522,7 +522,7 @@ class YOLOv3(Detector):
             ))
         return scenes
 
-    def compile(self):
+    def compile(self, optimizer=None):
         # Each anchor group has four times as many anchors as the prior one
         n = len(self.anchor_groups)
         total = sum(4**i for i in range(n))
@@ -532,7 +532,7 @@ class YOLOv3(Detector):
                 num_classes=len(self.annotation_config)
             ),
             loss_weights=weights,
-            optimizer=optimizers.Adam()
+            optimizer=optimizer or optimizers.Adam()
         )
 
     def compute_inputs(self, images: List[core.Image]):
