@@ -1,4 +1,4 @@
-# mira
+# mira [![CircleCI](https://circleci.com/gh/faustomorales/mira.svg?style=shield)](https://circleci.com/gh/faustomorales/mira) [![Documentation Status](https://readthedocs.org/projects/mira-python/badge/?version=latest)](https://mira-python.readthedocs.io/en/latest/?badge=latest)
 
 mira provides tooling for simple object detection projects. The package spans three areas of focus.
 
