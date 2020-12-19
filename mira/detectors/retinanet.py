@@ -20,10 +20,9 @@ pretrained = {
         'hash':
         '6518ad56a0cca4d1bd8cbba268dd4e299c7633efe7d15902d5acbb0ba180027c',  # noqa: E501
         'url':
-        'https://storage.googleapis.com/miradata/weights/retinanet/resnet50_coco_best_v2.1.0.h5'  # noqa: E501
+        'https://github.com/faustomorales/mira/releases/download/file-storage/resnet50_coco_best_v2.1.0.h5'  # noqa: E501
     }
 }
-
 
 class RetinaNet(Detector):
     """A detector wrapping RetinaNet. All the heavy lifting is done by the

@@ -11,6 +11,7 @@ from .. import core, utils
 from .detector import Detector
 
 log = logging.getLogger(__name__)
+BASE_URL = "https://github.com/faustomorales/mira/releases/download/file-storage"
 
 """ MTCNN
 This intends to replicate the MTCNN architecture that comes with FaceNet. It
@@ -57,19 +58,19 @@ WEIGHTS_CONFIG = {
         "hash":
         "3285cf7a3de2651c5784cb9e32013f5919aae95fd1ed1bc371dd9691affb39af",  # noqa: E501
         "url":
-        "https://storage.googleapis.com/miradata/weights/mtcnn/det1.npy",
+        "{0}/mtcnn_det1.npy".format(BASE_URL),
     },
     "rnet": {
         "hash":
         "716b8b83e42476791c9096f14dbb09fefc88bf5c7ec876b1683f9acd52b3f39c",  # noqa: E501
         "url":
-        "https://storage.googleapis.com/miradata/weights/mtcnn/det2.npy",
+        "{0}/mtcnn_det2.npy".format(BASE_URL),
     },
     "onet": {
         "hash":
         "396ead803d85d3443307ff8f45fb6aed2536579b415a4f4d4cb8f93ea6b1476a",  # noqa: E501
         "url":
-        "https://storage.googleapis.com/miradata/weights/mtcnn/det3.npy",
+        "{0}/mtcnn_det3.npy".format(BASE_URL),
     },
 }
 

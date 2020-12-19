@@ -18,6 +18,7 @@ from .voc import load_voc
 
 log = logging.getLogger(__name__)
 
+BASE_URL = "https://github.com/faustomorales/mira/releases/download/file-storage"
 
 def load_voc2012(subset='train') -> SceneCollection:
     """PASCAL VOC 2012
@@ -281,7 +282,7 @@ def load_icdar2015(subset: str = 'train',
     if subset in ['train', 'traintest']:
         images_dir = utils.get_file(
             origin=
-            'https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_images.zip',
+            '{0}/rrc2015_ch4_training_images.zip'.format(BASE_URL),
             file_hash=
             '07e2d816dab67df4cd509641b1e1e8c720d3b15873a65b6dc9c1aa6a4de3d2c6',
             cache_subdir=path.join('datasets', 'rrc2015'),
@@ -292,7 +293,7 @@ def load_icdar2015(subset: str = 'train',
                 glob(path.join(directory, '*.jpg'))) == 1000)
         annotations_dir = utils.get_file(
             origin=
-            'https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_localization_transcription_gt.zip',
+            '{0}/rrc2015_ch4_training_localization_transcription_gt.zip'.format(BASE_URL),
             file_hash=
             'b9f2f0343d016a326bcafe3c28e0ddbda18b3a1e4a8a595784ba9dc3e305d754',
             cache_subdir=path.join('datasets', 'rrc2015'),
@@ -305,7 +306,7 @@ def load_icdar2015(subset: str = 'train',
     if subset in ['test', 'traintest']:
         images_dir = utils.get_file(
             origin=
-            'https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_test_images.zip',
+            '{0}/rrc2015_ch4_test_images.zip'.format(BASE_URL),
             file_hash=
             'ecfb2488333372b7381b14ccb5ac2127de88fb935f6759fe89e5c041b0e87358',
             cache_subdir=path.join('datasets', 'rrc2015'),
@@ -316,7 +317,7 @@ def load_icdar2015(subset: str = 'train',
                 glob(path.join(directory, '*.jpg'))) == 500)
         annotations_dir = utils.get_file(
             origin=
-            'https://storage.googleapis.com/miradata/datasets/rrc2015/Challenge4_Test_Task1_GT.zip',
+            '{0}_rrc2015/Challenge4_Test_Task1_GT.zip'.format(BASE_URL),
             file_hash=
             '8f434c410cfcf680b8421e3c22abf31b9297d8e255c3b13acc2890fddc6db6b0',
             cache_subdir=path.join('datasets', 'rrc2015'),

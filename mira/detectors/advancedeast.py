@@ -133,7 +133,7 @@ class AdvancedEAST(Detector):
         self.model = build_model(self.backbone)
         if pretrained_top:
             weights_path = utils.get_file(
-                origin='https://storage.googleapis.com/miradata/weights/advancedeast/east_model_weights_3T736.h5',  # noqa; E501
+                origin='{0}/east_model_weights_3T736.h5'.format(BASE_URL),  # noqa; E501
                 file_hash='1a5ef4e304cd71358fcfd4403859c38735738eed2961ea9b34484c7e4199d4f6',  # noqa; E501
                 cache_subdir=path.join('weights', 'advancedeast'),
                 hash_algorithm='sha256',
