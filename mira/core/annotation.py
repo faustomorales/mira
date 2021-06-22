@@ -1,6 +1,5 @@
 import logging
 from typing import List
-from pkg_resources import resource_string
 
 import numpy as np
 
@@ -17,6 +16,7 @@ class AnnotationCategory:
         name: The name of the annotation category
 
     """
+
     def __init__(self, name: str):
         self._name = name
 
@@ -25,6 +25,7 @@ class AnnotationCategory:
 
     @property
     def name(self):
+        """The name of the category."""
         return self._name
 
 
@@ -35,46 +36,43 @@ class AnnotationConfiguration:
     Args:
         names: The list of class names
     """
+
     def __init__(self, names: List[str]):
         names = [s.lower() for s in names]
         if len(names) != len(set(names)):
-            raise ValueError('All class names must be unique '
-                             '(case-insensitive).')
+            raise ValueError("All class names must be unique " "(case-insensitive).")
         self._types = [AnnotationCategory(name=name) for name in names]
 
     def __getitem__(self, key):
-        if type(key) == np.int64:
+        if isinstance(key, np.int64):
             key = int(key)
-        if type(key) == int:
+        if isinstance(key, int):
             if key >= len(self):
-                raise ValueError('Index {0} is out of bounds '.format(key) +
-                                 '(only have {0} entries)'.format(len(self)))
+                raise ValueError(
+                    "Index {0} is out of bounds ".format(key)
+                    + "(only have {0} entries)".format(len(self))
+                )
             return self.types[key]
-        elif type(key) == str:
+        if isinstance(key, str):
             key = key.lower()
             val = next((e for e in self._types if e.name == key), None)
             if val is None:
-                raise ValueError(
-                    'Did not find {0} in configuration'.format(key))
+                raise ValueError("Did not find {0} in configuration".format(key))
             return val
-        else:
-            raise ValueError(
-                f'Key must be int or str, not {key} of type {str(type(key))}')
+        raise ValueError(f"Key must be int or str, not {key} of type {str(type(key))}")
 
     def __iter__(self):
         return iter(self._types)
 
     def __contains__(self, key):
-        if type(key) == str:
+        if isinstance(key, str):
             return any(e.name == key for e in self._types)
-        elif type(key) == AnnotationCategory:
+        if isinstance(key, AnnotationCategory):
             return any(e == key for e in self._types)
-        else:
-            raise ValueError('Key must be str or AnnotationCategory, not '
-                             '' + str(type(key)))
+        raise ValueError("Key must be str or AnnotationCategory, not " + str(type(key)))
 
     def __eq__(self, other):
-        if type(other) != type(self):
+        if not isinstance(other, type(self)):
             return False
         if len(other) != len(self):
             return False
@@ -85,18 +83,12 @@ class AnnotationConfiguration:
 
     @property
     def types(self):
+        """Get the list of types."""
         return self._types
 
     def index(self, category):
+        """Get the index for a category."""
         return next(i for i, cat in enumerate(self) if cat == category)
-
-
-AnnotationConfiguration.COCO = AnnotationConfiguration(
-    resource_string(__name__,
-                    'assets/coco_classes.txt').decode('utf-8').split('\n'))
-AnnotationConfiguration.VOC = AnnotationConfiguration(
-    resource_string(__name__,
-                    'assets/voc_classes.txt').decode('utf-8').split('\n'))
 
 
 class Annotation:
@@ -108,40 +100,43 @@ class Annotation:
         score: A score for the annotation
         metadata: Metadata to store as part of the annotation
     """
-    def __init__(self,
-                 selection: Selection,
-                 category: AnnotationCategory,
-                 score: float = None,
-                 metadata: dict = None):
+
+    def __init__(
+        self,
+        selection: Selection,
+        category: AnnotationCategory,
+        score: float = None,
+        metadata: dict = None,
+    ):
         if category is None:
-            raise ValueError('A category object must be specified.')
+            raise ValueError("A category object must be specified.")
         self.selection = selection
         self.category = category
         self.score = score
         self.metadata = metadata or {}
 
-    def assign(self, **kwargs) -> 'Annotation':
+    def assign(self, **kwargs) -> "Annotation":
         """Get a new Annotation with only the supplied
         keyword arguments changed."""
         defaults = {
-            'selection': self.selection,
-            'category': self.category,
-            'score': self.score,
-            'metadata': self.metadata
+            "selection": self.selection,
+            "category": self.category,
+            "score": self.score,
+            "metadata": self.metadata,
         }
         kwargs = {**defaults, **kwargs}
         return Annotation(**kwargs)
 
-    def convert(self, annotation_config) -> 'Annotation':
+    def convert(self, annotation_config) -> "Annotation":
+        """Convert an annotation to match another annotation config."""
         name = self.category.name
         if name in annotation_config:
-            return self.assign(category=annotation_config[name], )
-        else:
-            log.warning('{0} is not in the new annotation '
-                        'configuration.'.format(name))
-            return None
+            return self.assign(
+                category=annotation_config[name],
+            )
+        raise ValueError("%s is not in the new annotation configuration.")
 
-    def resize(self, scale) -> 'Annotation':
+    def resize(self, scale) -> "Annotation":
         """Get a new annotation with the given
         uniform scaling."""
         return self.assign(selection=self.selection.resize(scale=scale))
@@ -149,4 +144,4 @@ class Annotation:
     def __eq__(self, other):
         self_bbox = self.selection.bbox()
         other_bbox = other.selection.bbox()
-        return (self_bbox == other_bbox and self.category == other.category)
+        return self_bbox == other_bbox and self.category == other.category

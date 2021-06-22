@@ -8,7 +8,7 @@ mira provides tooling for simple object detection projects. The package spans th
 
 Check out [the docs](https://mira-python.readthedocs.io/en/latest/).
 
-##  Installation
+## Installation
 
 ```shell
 pip install mira

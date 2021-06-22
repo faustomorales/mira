@@ -1,7 +1,7 @@
-class Object():
+class Object:
     def __init__(self, *args, **kwargs):
-        self.__name__ = ''
-        self.__qualname__ = ''
+        self.__name__ = ""
+        self.__qualname__ = ""
         self.__annotations__ = {}
 
     def __getattr__(self, item):
@@ -14,4 +14,4 @@ class Object():
         return Object()
 
     def __mro_entries__(self, _):
-        return (Object(), )
+        return (Object(),)

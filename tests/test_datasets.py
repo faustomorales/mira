@@ -77,30 +77,17 @@ TEST_VOC_XML_STRING = """
 def test_voc():
     """Test VOC loading operations."""
     with tempfile.TemporaryDirectory() as tempdir:
-        fpath_xml = os.path.join(tempdir, 'test_voc.xml')
-        with open(fpath_xml, 'w') as f:  # pylint: disable=invalid-name
+        fpath_xml = os.path.join(tempdir, "test_voc.xml")
+        with open(fpath_xml, "w") as f:  # pylint: disable=invalid-name
             f.write(TEST_VOC_XML_STRING)
-        fpath_jpg = os.path.join(tempdir, 'test_voc.jpg')
-        core.Image.new(width=486, height=500, channels=3).save(fpath_jpg)
+        fpath_jpg = os.path.join(tempdir, "test_voc.jpg")
+        core.utils.save(
+            core.utils.get_blank_image(width=486, height=500, n_channels=3), fpath_jpg
+        )
 
         original = datasets.load_voc(
             filepaths=[fpath_xml],
-            annotation_config=core.AnnotationConfiguration(['person']),
-            image_dir=tempdir)
+            annotation_config=core.AnnotationConfiguration(["person"]),
+            image_dir=tempdir,
+        )
         assert len(original[0].annotations) == 1
-
-
-def test_via():
-    """Test VIA loading and saving operations."""
-    collection = datasets.via.load_via('tests/assets/via_project.json')
-    with tempfile.TemporaryDirectory() as tempdir:
-        savedir = os.path.join(tempdir, 'export')
-        datasets.via.save_via(collection, savedir)
-        collection_recovered = datasets.via.load_via(
-            os.path.join(savedir, 'via.json'))
-        assert len(collection_recovered) == 1
-        assert len(collection_recovered[0].annotations) == 1
-        bbox1 = collection[0].annotations[0].selection.bbox()
-        bbox2 = collection_recovered[0].annotations[0].selection.bbox()
-        print(bbox1, bbox2)
-        assert all(v1 == v2 for v1, v2 in zip(bbox1, bbox2))

@@ -1,0 +1,81 @@
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.coverage.run]
+omit = ["mira/thirdparty/*"]
+
+[tool.poetry]
+authors = ["Fausto Morales <faustomorales@gmail.com>"]
+classifiers = [
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+description = "A package for simplifying object detection"
+homepage = "https://github.com/faustomorales/mira"
+license = "MIT"
+name = "mira"
+readme = "README.md"
+repository = "https://github.com/faustomorales/mira"
+# Placeholder for poetry-dynamic-versioning
+version = "0.0.0"
+
+# See https://python-poetry.org/docs/versions/ for allowed version specification formats
+[tool.poetry.dependencies]
+python = "^3.6.2"
+pandas = "*"
+numpy = "*"
+scikit-learn = "*"
+tqdm = "*"
+validators = "*"
+imgaug = "*"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+coverage = {version = "*", extras = ["toml"]}
+mypy = "*"
+pytest = "^6.1"
+pylint = "*"
+pytest-cov = "*"
+opencv-python = "*"
+tensorflow = [
+    { version = '*', platform = 'linux' },  # Installing TensorFlow on MacOS and Windows varies too much.
+]
+jupyterlab = "^3.0.16"
+types-pkg-resources = "^0.1.3"
+types-six = "^0.1.7"
+
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "semver"
+
+[tool.pytest.ini_options]
+addopts = "--cov=mira --cov-report=term-missing"
+filterwarnings = [
+    "ignore:the imp module is deprecated in favour of importlib;:DeprecationWarning",
+    "ignore:Could not import the lzma module. Your installed Python is incomplete.:UserWarning"
+]
+
+[tool.pylint.master]
+init-hook="import mira.pylint; mira.pylint.patch(['mira/thirdparty'])"
+
+[tool.pylint.messages_control]
+disable = [
+    "line-too-long",
+    "missing-module-docstring",
+    "invalid-name",
+    "attribute-defined-outside-init",
+    "too-many-locals",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-statements"
+]
+extension-pkg-whitelist = [
+    "cv2"
+]

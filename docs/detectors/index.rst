@@ -10,7 +10,3 @@ There are currently four implemented architectures.
 
 .. toctree::
    yolov3
-   retinanet
-   east
-   advancedeast
-   mtcnn

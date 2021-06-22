@@ -1,33 +1,58 @@
-# You can set these variables from the command line.
-WORKDIR = /usr/src
-NOTEBOOK_PORT = 5000
-DOCUMENTATION_PORT = 5001
-DOCKER_ARGS = $(VOLUMES) -w $(WORKDIR) --rm 
-IMAGE_NAME = mira
-VOLUME_NAME = $(IMAGE_NAME)_venv
-EXTENSIONS_VOLUME_NAME = $(IMAGE_NAME)_extensions
-VOLUMES = -v $(PWD):/usr/src -v $(VOLUME_NAME):/usr/src/.venv -v $(EXTENSIONS_VOLUME_NAME):/usr/src/mira/utils --rm
-JUPYTER_OPTIONS := --ip=0.0.0.0 --port=$(NOTEBOOK_PORT) --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
-TEST_SCOPE ?= tests/
-IN_DOCKER = docker run -it $(DOCKER_ARGS)
-
-.PHONY: build
-build:
-	docker build --rm --force-rm -t $(IMAGE_NAME) .
-	@-docker volume rm $(VOLUME_NAME)
-	@-docker volume rm $(EXTENSIONS_VOLUME_NAME)
-init:
-	@-mkdir .venv
-	pipenv install --dev --skip-lock
-lab-server:
-	$(IN_DOCKER) -p $(NOTEBOOK_PORT):$(NOTEBOOK_PORT) $(IMAGE_NAME) pipenv run jupyter lab $(JUPYTER_OPTIONS)
-documentation-server:
-	$(IN_DOCKER) -p $(DOCUMENTATION_PORT):$(DOCUMENTATION_PORT) $(IMAGE_NAME) pipenv run sphinx-autobuild -b html "docs" "docs/_build/html" --host 0.0.0.0 --port $(DOCUMENTATION_PORT) $(O)
-.PHONY: tests
-test:
-	$(IN_DOCKER) $(IMAGE_NAME) pipenv run pytest $(TEST_SCOPE)
 .PHONY: docs
-docs:
-	$(IN_DOCKER) $(IMAGE_NAME) pipenv run sphinx-build -b html "docs" "docs/dist"
-bash:
-	$(IN_DOCKER) $(IMAGE_NAME) bash
+
+PKG_NAME:=mira
+
+# Select specific Python tests to run using pytest selectors
+# e.g., make test TEST_SCOPE='-m "not_integration" tests/api/'
+TEST_SCOPE?=tests/
+
+# Prefix for running commands on the host vs in Docker (e.g., dev vs CI)
+EXEC:=poetry run
+SPHINX_AUTO_EXTRA:=
+
+
+help:
+# http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+	@grep -E '^[a-zA-Z0-9_%/-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@echo
+	@echo "Tips"
+	@echo "----"
+	@echo '- Run `make shell` to activate the project virtualenv in your shell'
+	@echo '  e.g., make test TEST_SCOPE="-m not_integration tests/api/"'
+
+init:  ## Initialize the development environment.
+	pip install poetry-dynamic-versioning
+	poetry install
+
+format-check: ## Make black check source formatting
+	@$(EXEC) black --diff --check .
+
+format: ## Make black unabashedly format source code
+	@$(EXEC) black .
+
+package: ## Make a local build of the Python package, source dist and wheel
+	@mkdir -p dist
+	@$(EXEC) poetry build
+
+test: ## Make pytest run tests
+	@$(EXEC) pytest -vxrs $(TEST_SCOPE)
+
+type-check: ## Make mypy check types
+	@$(EXEC) mypy $(PKG_NAME) tests
+
+lint-check: ## Make pylint lint the package
+	@$(EXEC) pylint --rcfile pyproject.toml --jobs 0 $(PKG_NAME)
+
+lab: ## Start a jupyter lab instance
+	@$(EXEC) jupyter lab
+
+shell:  ## Jump into poetry shell.
+	poetry shell
+
+docs: ## Make a local HTML doc server that updates on changes to from Sphinx source
+	@$(EXEC) pip install -r docs/requirements.txt
+	@$(EXEC) sphinx-autobuild -b html docs docs/build/html $(SPHINX_AUTO_EXTRA)
+
+update-efficient-det:
+	@-rm -rf automl
+	git clone https://github.com/google/automl.git

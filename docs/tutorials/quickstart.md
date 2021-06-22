@@ -1,6 +1,7 @@
 # Quickstart
 
 ## Logging
+
 To see logs, use the `logging` API. The logs can be
 useful for keeping track of what is happening behind
 the scenes.
@@ -19,11 +20,11 @@ coco = datasets.load_coco2017(subset='val')
 coco[26].annotated().show()
 ```
 
-.. image:: ../_static/example_browsing.png
-    :alt: basic image
-
+.. image:: ../\_static/example_browsing.png
+:alt: basic image
 
 ## Augmentation
+
 Augmentation can be kind of a pain for
 object detection sometimes. But `imgaug` makes
 it pretty easy to build augmentation pipelines
@@ -55,9 +56,8 @@ scene.annotated().show(ax=ax_original)
 scene.augment(augmenter).annotated().show(ax=ax_augmenter)
 ```
 
-.. image:: ../_static/example_augmentation.png
-    :alt: augmented image
-
+.. image:: ../\_static/example_augmentation.png
+:alt: augmented image
 
 ## Basic object detection
 
@@ -79,14 +79,6 @@ detector_yolo = detectors.YOLOv3(
     input_shape=(256, 256, 3),
     pretrained_top=True,
     size='tiny'
-)
-
-# Load RetinaNet with pretrained layers.
-# It also uses COCO labels.
-detector_rn = detectors.RetinaNet(
-    input_shape=(256, 256, 3),
-    pretrained_top=True,
-    backbone_name='resnet50'
 )
 
 # Pick an example scene
@@ -116,5 +108,5 @@ _ = predicted_rn.annotated().show(ax=ax_rn)
 _ = predicted_yolo.annotated().show(ax=ax_yolo)
 ```
 
-.. image:: ../_static/example_simple_od.png
-    :alt: annotated image
+.. image:: ../\_static/example_simple_od.png
+:alt: annotated image

@@ -1,1 +1,0 @@
-This is a copy of https://github.com/fizyr/keras-retinanet but adapted to use tf.keras.
