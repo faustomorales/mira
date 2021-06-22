@@ -1,0 +1,3 @@
+[submodule "mira/thirdparty/automl"]
+	path = mira/thirdparty/automl
+	url = https://github.com/google/automl.git
