@@ -50,8 +50,6 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras import regularizers, layers, models, optimizers
 
 from .detector import Detector
 from .. import core, datasets
@@ -98,17 +96,17 @@ YOLO_FILE_CONFIG = {
 }
 
 
-@wraps(layers.Conv2D)
+@wraps(tf.keras.layers.Conv2D)
 def DarknetConv2D(*args, **kwargs):
     """Wrapper to set Darknet parameters for Convolution2D.
-    All arguments passed to `layers.Conv2D`"""
+    All arguments passed to `tf.keras.layers.Conv2D`"""
 
     defaults = {
-        "kernel_regularizer": regularizers.l2(5e-4),
+        "kernel_regularizer": tf.keras.regularizers.l2(5e-4),
         "padding": "valid" if kwargs.get("strides") == (2, 2) else "same",
     }
     kwargs = {**defaults, **kwargs}
-    return layers.Conv2D(*args, **kwargs)
+    return tf.keras.layers.Conv2D(*args, **kwargs)
 
 
 def DarknetConv2D_BN_Leaky(*args, **kwargs):
@@ -119,8 +117,8 @@ def DarknetConv2D_BN_Leaky(*args, **kwargs):
 
     def make_layer(x):
         x = DarknetConv2D(*args, **kwargs)(x)
-        x = layers.BatchNormalization()(x)
-        x = layers.LeakyReLU(alpha=0.1)(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.LeakyReLU(alpha=0.1)(x)
         return x
 
     return make_layer
@@ -136,7 +134,7 @@ def resblock_body(x, num_filters, num_blocks, name):
         num_blocks: Number of blocks to add
     """
     # Darknet uses left and top padding instead of 'same' mode
-    x = layers.ZeroPadding2D(((1, 0), (1, 0)))(x)
+    x = tf.keras.layers.ZeroPadding2D(((1, 0), (1, 0)))(x)
     x = DarknetConv2D_BN_Leaky(
         filters=num_filters,
         kernel_size=(3, 3),
@@ -154,7 +152,7 @@ def resblock_body(x, num_filters, num_blocks, name):
             kernel_size=(3, 3),
             name=name + "_block{0}_3x3_c2d_bn_leaky".format(i),
         )(y)
-        x = layers.Add(name=name + "_block{0}_add".format(i))([x, y])
+        x = tf.keras.layers.Add(name=name + "_block{0}_add".format(i))([x, y])
     return x
 
 
@@ -186,24 +184,36 @@ def get_backbone(inputs, size):
     assert size in ["tiny", "full"], "Size must be `tiny` or `full`"
     if size == "tiny":
         x = DarknetConv2D_BN_Leaky(filters=16, kernel_size=(3, 3))(inputs)
-        x = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="same")(x)
+        x = tf.keras.layers.MaxPooling2D(
+            pool_size=(2, 2), strides=(2, 2), padding="same"
+        )(x)
         x = DarknetConv2D_BN_Leaky(filters=32, kernel_size=(3, 3))(x)
-        x = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="same")(x)
+        x = tf.keras.layers.MaxPooling2D(
+            pool_size=(2, 2), strides=(2, 2), padding="same"
+        )(x)
         x = DarknetConv2D_BN_Leaky(filters=64, kernel_size=(3, 3))(x)
-        x = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="same")(x)
+        x = tf.keras.layers.MaxPooling2D(
+            pool_size=(2, 2), strides=(2, 2), padding="same"
+        )(x)
         x = DarknetConv2D_BN_Leaky(filters=128, kernel_size=(3, 3))(x)
-        x = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="same")(x)
+        x = tf.keras.layers.MaxPooling2D(
+            pool_size=(2, 2), strides=(2, 2), padding="same"
+        )(x)
         x = DarknetConv2D_BN_Leaky(filters=256, kernel_size=(3, 3))(x)
 
-        x1 = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="same")(x)
+        x1 = tf.keras.layers.MaxPooling2D(
+            pool_size=(2, 2), strides=(2, 2), padding="same"
+        )(x)
         x1 = DarknetConv2D_BN_Leaky(filters=512, kernel_size=(3, 3))(x1)
-        x1 = layers.MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding="same")(x1)
+        x1 = tf.keras.layers.MaxPooling2D(
+            pool_size=(2, 2), strides=(1, 1), padding="same"
+        )(x1)
         x1 = DarknetConv2D_BN_Leaky(filters=1024, kernel_size=(3, 3))(x1)
         x1 = DarknetConv2D_BN_Leaky(filters=256, kernel_size=(1, 1))(x1)
 
         x2 = DarknetConv2D_BN_Leaky(filters=128, kernel_size=(1, 1))(x1)
-        x2 = layers.UpSampling2D(2)(x2)
-        x2 = layers.Concatenate()([x2, x])
+        x2 = tf.keras.layers.UpSampling2D(2)(x2)
+        x2 = tf.keras.layers.Concatenate()([x2, x])
         x2 = DarknetConv2D_BN_Leaky(filters=256, kernel_size=(3, 3))(x2)
 
         x1 = DarknetConv2D_BN_Leaky(filters=512, kernel_size=(3, 3))(x1)
@@ -219,19 +229,19 @@ def get_backbone(inputs, size):
         x1, x1i = make_input_layer(rb5, 512, name="x1")
 
         x2 = DarknetConv2D_BN_Leaky(filters=256, kernel_size=(1, 1))(x1i)
-        x2 = layers.UpSampling2D(2, name="upsampling_x2")(x2)
+        x2 = tf.keras.layers.UpSampling2D(2, name="upsampling_x2")(x2)
 
-        x2 = layers.Concatenate()([x2, rb4])
+        x2 = tf.keras.layers.Concatenate()([x2, rb4])
         x2, x2i = make_input_layer(x2, 256, name="x2")
 
         x3 = DarknetConv2D_BN_Leaky(filters=128, kernel_size=(1, 1))(x2i)
-        x3 = layers.UpSampling2D(2, name="upsampling_x3")(x3)
+        x3 = tf.keras.layers.UpSampling2D(2, name="upsampling_x3")(x3)
 
-        x3 = layers.Concatenate()([x3, rb3])
+        x3 = tf.keras.layers.Concatenate()([x3, rb3])
         x3, _ = make_input_layer(x3, 128, name="x3")
         outputs = [x1, x2, x3]
 
-    return models.Model(inputs, outputs)
+    return tf.keras.models.Model(inputs, outputs)
 
 
 def get_top(backbone, num_anchors_per_output, num_classes):
@@ -257,24 +267,30 @@ def get_top(backbone, num_anchors_per_output, num_classes):
             csj = csi + num_classes
 
             def apply_activation(y):
-                return layers.Concatenate()(
+                return tf.keras.layers.Concatenate()(
                     [
-                        layers.Activation("sigmoid")(y[..., txsi : txsi + 1]),
-                        layers.Activation("sigmoid")(y[..., tysi : tysi + 1]),
-                        layers.Activation("exponential")(y[..., twei : twei + 1]),
-                        layers.Activation("exponential")(y[..., thei : thei + 1]),
-                        layers.Activation("sigmoid")(y[..., si : si + 1]),
+                        tf.keras.layers.Activation("sigmoid")(y[..., txsi : txsi + 1]),
+                        tf.keras.layers.Activation("sigmoid")(y[..., tysi : tysi + 1]),
+                        tf.keras.layers.Activation("exponential")(
+                            y[..., twei : twei + 1]
+                        ),
+                        tf.keras.layers.Activation("exponential")(
+                            y[..., thei : thei + 1]
+                        ),
+                        tf.keras.layers.Activation("sigmoid")(y[..., si : si + 1]),
                         # As per section 2.2 of the paper, we use independent
                         # logits for each class, instead of softmax.
-                        layers.Activation("sigmoid")(y[..., csi:csj]),
+                        tf.keras.layers.Activation("sigmoid")(y[..., csi:csj]),
                     ]
                 )
 
-            group = layers.Lambda(apply_activation)(y)
+            group = tf.keras.layers.Lambda(apply_activation)(y)
             concatenate.append(group)
-        y = layers.Concatenate(name="anchor_group_{0}".format(i + 1))(concatenate)
+        y = tf.keras.layers.Concatenate(name="anchor_group_{0}".format(i + 1))(
+            concatenate
+        )
         outputs.append(y)
-    return models.Model(backbone.inputs, outputs)
+    return tf.keras.models.Model(backbone.inputs, outputs)
 
 
 def anchors_for_shape(input_shape, anchor_groups, strides):
@@ -345,23 +361,25 @@ def make_loss(num_classes):
 
             # Calculate objectness loss, which applies to
             # all non-ignore anchors
-            indices = tf.where(K.not_equal(object_state_true, -1))
+            indices = tf.where(tf.keras.backend.not_equal(object_state_true, -1))
             true = tf.gather_nd(object_state_true, indices)
             pred = tf.gather_nd(object_state_pred, indices)
-            loss_objectness += K.sum(K.square(true - pred))
+            loss_objectness += tf.keras.backend.sum(
+                tf.keras.backend.square(true - pred)
+            )
 
             # Calculate coordinate loss which applies only
             # to positive anchors
-            indices = tf.where(K.equal(object_state_true, 1))
+            indices = tf.where(tf.keras.backend.equal(object_state_true, 1))
             true = tf.gather_nd(coords_true, indices)
             pred = tf.gather_nd(coords_pred, indices)
-            loss_coords += K.sum(K.square(true - pred))
+            loss_coords += tf.keras.backend.sum(tf.keras.backend.square(true - pred))
 
             # Calculate classification loss, which applies
             # only to positive anchors. Indices same as above.
             true = tf.gather_nd(labels_true, indices)
             pred = tf.gather_nd(labels_pred, indices)
-            loss_labels += K.sum(K.square(true - pred))
+            loss_labels += tf.keras.backend.sum(tf.keras.backend.square(true - pred))
 
         # Calculate total loss
         return loss_objectness + loss_coords + loss_labels
@@ -424,7 +442,9 @@ class YOLOv3(Detector):
         self.anchor_groups = YOLO_ANCHOR_GROUPS[size]
         self.annotation_config = annotation_config
         self.size = size
-        self.backbone = get_backbone(inputs=layers.Input(input_shape), size=size)
+        self.backbone = get_backbone(
+            inputs=tf.keras.layers.Input(input_shape), size=size
+        )
         self.model = get_top(
             backbone=self.backbone,
             num_classes=len(annotation_config),
@@ -533,7 +553,7 @@ class YOLOv3(Detector):
         self.model.compile(
             loss=make_loss(num_classes=len(self.annotation_config)),
             loss_weights=weights,
-            optimizer=optimizers.Adam(),
+            optimizer=tf.keras.optimizers.Adam(),
         )
 
     def compute_inputs(self, images: typing.List[np.ndarray]):
@@ -671,7 +691,9 @@ class YOLOv3(Detector):
             else:
                 log.info("Found existing converted weights.")
             log.info("Creating notop and complete weight files.")
-            backbone = get_backbone(inputs=layers.Input((None, None, 3)), size=size)
+            backbone = get_backbone(
+                inputs=tf.keras.layers.Input((None, None, 3)), size=size
+            )
             base_model = get_top(
                 backbone=backbone,
                 num_anchors_per_output=len(YOLO_ANCHOR_GROUPS[size][0]),
