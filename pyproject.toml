@@ -33,6 +33,7 @@ scikit-learn = "*"
 tqdm = "*"
 validators = "*"
 imgaug = "*"
+neural_structured_learning = "*"
 
 [tool.poetry.dev-dependencies]
 black = "*"
