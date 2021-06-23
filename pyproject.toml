@@ -32,7 +32,6 @@ numpy = "*"
 scikit-learn = "*"
 tqdm = "*"
 validators = "*"
-absl = "*"
 imgaug = "*"
 
 [tool.poetry.dev-dependencies]
