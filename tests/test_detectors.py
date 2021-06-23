@@ -1,3 +1,5 @@
+import pytest
+
 from mira import detectors, core
 
 input_shape = (224, 224, 3)
@@ -29,14 +31,18 @@ collection = core.SceneCollection(
 )
 
 
-def test_yolo():
-    yolo = detectors.YOLOv3(
-        pretrained_backbone=False, annotation_config=annotation_config
-    )
-    inverted = yolo.invert_targets(
-        y=yolo.compute_targets(collection, input_shape=input_shape),
+@pytest.mark.parametrize("detector_class", [detectors.YOLOv3, detectors.EfficientDet])
+def test_basics(detector_class):
+    detector = detector_class(
+        pretrained_backbone=False,
+        annotation_config=annotation_config,
         input_shape=input_shape,
-        nms_threshold=1.0,
+    )
+    inverted = detector.invert_targets(
+        y=detector.compute_targets(
+            collection.annotation_groups, input_shape=input_shape
+        ),
+        input_shape=input_shape,
     )
     assert all(
         e - 1 <= a < e + 1
@@ -47,4 +53,4 @@ def test_yolo():
         for a, e in zip(inverted[1][0].selection.bbox(), [20, 20, 80, 80])
     )
     # Verify that training doesn't crash.
-    history = yolo.train(training=collection, epochs=2, train_shape=input_shape)
+    detector.train(training=collection, epochs=2, train_shape=input_shape)

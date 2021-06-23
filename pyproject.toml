@@ -59,11 +59,15 @@ style = "semver"
 addopts = "--cov=mira --cov-report=term-missing"
 filterwarnings = [
     "ignore:the imp module is deprecated in favour of importlib;:DeprecationWarning",
-    "ignore:Could not import the lzma module. Your installed Python is incomplete.:UserWarning"
+    "ignore:Could not import the lzma module. Your installed Python is incomplete.:UserWarning",
+    "ignore:`layer.updates` will be removed in a future version.:UserWarning"
 ]
 
 [tool.pylint.master]
 init-hook="import mira.pylint; mira.pylint.patch(['mira/thirdparty'])"
+
+[tool.pylint.similarities]
+min-similarity-lines=10
 
 [tool.pylint.messages_control]
 disable = [
@@ -74,7 +78,8 @@ disable = [
     "too-many-locals",
     "too-many-arguments",
     "too-many-branches",
-    "too-many-statements"
+    "too-many-statements",
+    "duplicate-code"
 ]
 extension-pkg-whitelist = [
     "cv2"

@@ -1,4 +1,6 @@
 # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+import os
+import logging
 import tensorflow as tf
 import numpy as np
 
@@ -16,7 +18,9 @@ from ..thirdparty.automl.efficientdet import (
 
 from .. import core as mc
 from .detector import Detector
+from ..utils import get_file
 
+log = logging.getLogger(__name__)
 
 # pylint: disable=too-many-ancestors,bad-super-call,abstract-method
 class EfficientDetNetTrain(train_lib.EfficientDetNetTrain):
@@ -27,7 +31,7 @@ class EfficientDetNetTrain(train_lib.EfficientDetNetTrain):
         super(train_lib.EfficientDetNetTrain, self).__init__(*args, **kwargs)
 
 
-def build_config(annotation_config, model_name="efficientdet-d0"):
+def build_config(annotation_config, model_name="efficientdet-d0", input_shape=None):
     """Build a Google Automl config dict from an annotation
     configuration.
 
@@ -38,10 +42,15 @@ def build_config(annotation_config, model_name="efficientdet-d0"):
     """
     # Parse and override hparams
     config = hparams_config.get_detection_config(model_name)
-    config.num_classes = len(annotation_config)
+    config.num_classes = len(annotation_config) + 1
     # Parse image size in case it is in string format.
     config.img_summary_steps = None
-    config.image_size = utils.parse_image_size(config.image_size)
+    config.image_size = (
+        input_shape[:2]
+        if input_shape is not None
+        else utils.parse_image_size(config.image_size)
+    )
+    config.input_shape = input_shape or (*config.image_size, 3)
     config.steps_per_execution = 1
     config.batch_size = 2
     config.steps_per_epoch = 120000 // 64
@@ -70,8 +79,7 @@ def ckpt_to_weights(model, ckpt_path_or_file, decay=0.9998):
             key = v.name.split(":")[0]
         else:
             key = util_keras.average_name(ema, ema_vars[ref])
-        if key not in shape_map:
-            continue
+        assert key in shape_map, f"Missing {key}."
         assert (
             shape_map[key] == v.shape
         ), f"{key} has shape {v.shape} in model but {shape_map[key]} in weights."
@@ -80,9 +88,9 @@ def ckpt_to_weights(model, ckpt_path_or_file, decay=0.9998):
     return weights
 
 
-def build_model(config, input_shape=None, **kwargs) -> tf.keras.Model:
+def build_model(config, **kwargs) -> tf.keras.Model:
     """Build a training model using a Google AutoML config dict."""
-    input_shape = input_shape or (*config.image_size, 3)
+    input_shape = config.input_shape
     assert all(
         s is not None for s in input_shape
     ), "You must specify a fixed input shape (e.g., (512, 512, 3))."
@@ -92,20 +100,23 @@ def build_model(config, input_shape=None, **kwargs) -> tf.keras.Model:
     return model
 
 
-def convert_ckpt_to_h5(model_name):
-    """Convert the CKPT format to vanilla Keras h5. Must be run
-    on the first model built in the session. That limitation is why we
-    do the conversion in the first place.
+def convert_ckpt_to_h5(model_name, ckpt_dir, h5_path, notop_h5_path):
+    """Convert the Google weights in CKPT format to
+    vanilla Keras h5. Must be run on the first model built in the session.
 
     Args:
         model_name: The name of the model (e.g., "efficientdet-d0")
+        ckpt_dir: The directory for the checkpoint.
+        h5_path: Where to save the full model weights.
+        notop_h5_path: Where to save the backbone weights.
     """
-    config = hparams_config.get_detection_config(model_name)
+    config = build_config(GoogleCocoAnnotationConfiguration, model_name)
     model = build_model(config)
 
     # This has to run on the first model build to work.
-    model.set_weights(ckpt_to_weights(model=model, ckpt_path_or_file=model_name))
-    model.save_weights(f"{model_name}.h5")
+    model.set_weights(ckpt_to_weights(model=model, ckpt_path_or_file=ckpt_dir))
+    model.save_weights(h5_path)
+    model.layers[0].save_weights(notop_h5_path)
 
 
 def pluck_and_concatenate(vectors, key):
@@ -119,9 +130,92 @@ def pluck_and_concatenate(vectors, key):
 GoogleCocoAnnotationConfiguration = mc.AnnotationConfiguration(
     [
         label_util.coco.get(idx, f"placeholder_{idx}")
-        for idx in range(max(label_util.coco))
+        for idx in range(1, max(label_util.coco))
     ]
 )
+
+WEIGHT_FILES = {
+    "efficientdet-d0": {
+        "top": {
+            "hash": "0856fd2984caaff61c89b77d0d309cc756f71d9519644ba16daadc90c26ae491",
+            "fname": "efficientdet-d0.h5",
+        },
+        "notop": {
+            "hash": "83a64d8c0d2196aa4986bcc27fdc3f9ae235e31bd50975e88ea384cf0e50186c",
+            "fname": "efficientdet-d0_notop.h5",
+        },
+    },
+    "efficientdet-d1": {
+        "top": {
+            "hash": "8eb2128040b4e6637961391449d5d990cd6826ac5023fc971314e4d323048a5a",
+            "fname": "efficientdet-d1.h5",
+        },
+        "notop": {
+            "hash": "d55acfb94904fbc8de4e930a174d082caffc104dce4dcffb098a7ae1a73ed97c",
+            "fname": "efficientdet-d1_notop.h5",
+        },
+    },
+    "efficientdet-d2": {
+        "top": {
+            "hash": "86161d4844156e301c0039e2cde0a99511f2a392a71fdc1113b0947987358cd3",
+            "fname": "efficientdet-d2.h5",
+        },
+        "notop": {
+            "hash": "6674a4d374031c8f7fe5fc02c150f29561dcda40d8df362c40457e121ad67b9d",
+            "fname": "efficientdet-d2_notop.h5",
+        },
+    },
+    "efficientdet-d3": {
+        "top": {
+            "hash": "a42f5ee641600f8eeba1d3017b298db35dff95e60edfcdabd59588fa39ede370",
+            "fname": "efficientdet-d3.h5",
+        },
+        "notop": {
+            "hash": "0494719bdfc59b336aade8ddacd1c96045532725a0fa681287a0f288c91e34c2",
+            "fname": "efficientdet-d3_notop.h5",
+        },
+    },
+    "efficientdet-d4": {
+        "top": {
+            "hash": "4657d2fdee14d522be6615f06a523f37d48b6649c81b407b3ecd1a48393b14e1",
+            "fname": "efficientdet-d4.h5",
+        },
+        "notop": {
+            "hash": "48aaf3dd96e266845098b9ff643ff460208b89b9a5058c3b210668953fb82454",
+            "fname": "efficientdet-d4_notop.h5",
+        },
+    },
+    "efficientdet-d5": {
+        "top": {
+            "hash": "5790b57f4285c54640110907134d7a95599169d4626f42baa9285125fd5fa9b8",
+            "fname": "efficientdet-d5.h5",
+        },
+        "notop": {
+            "hash": "8d50a54773b842ebdb3dd7f13007510655b468813e0f3ee1df190ec3d10aa54c",
+            "fname": "efficientdet-d5_notop.h5",
+        },
+    },
+    "efficientdet-d6": {
+        "top": {
+            "hash": "9801979880eb07b188f1308ae704dcec3596e1205690954e404761f52a991da9",
+            "fname": "efficientdet-d6.h5",
+        },
+        "notop": {
+            "hash": "3d3eb5eb0d7baadb3869597c4a221bc559bc61150be2539931dae26f9f1d4d62",
+            "fname": "efficientdet-d6_notop.h5",
+        },
+    },
+    "efficientdet-d7": {
+        "top": {
+            "hash": "32621a72f97dbd8f286aae80f8af47a179996b651bc3b88ae7a494c3593366a9",
+            "fname": "efficientdet-d7.h5",
+        },
+        "notop": {
+            "hash": "86ff51bfb941c1a649ca6a9c67f59369dbc7cf883298dea062ec2841b6f07a2d",
+            "fname": "efficientdet-d7_notop.h5",
+        },
+    },
+}
 
 
 class EfficientDet(Detector):
@@ -129,6 +223,24 @@ class EfficientDet(Detector):
     `EfficientDet <https://arxiv.org/abs/1911.09070>`_
     using the
     `official repository <https://github.com/google/automl/tree/master/efficientdet>`_.
+
+    The pretrained weights were converted from the checkpoints in the official repository
+    using the following code. You have to restart the Python session each time in order to ensure the layer
+    names generated by Keras match those in the checkpoint.
+
+
+    .. code-block:: python
+
+        import os
+        import mira.detectors.efficientdet as mde
+
+        model_name = "efficientdet-d7"
+        mde.convert_ckpt_to_h5(
+            model_name,
+            ckpt_dir=os.path.expanduser(os.path.join("~", "downloads", model_name)),
+            h5_path=os.path.expanduser(os.path.join("~", "downloads", f"{model_name}.h5")),
+            notop_h5_path=os.path.expanduser(os.path.join("~", "downloads", f"{model_name}_notop.h5"))
+        )
 
     Args:
         annotation_config: The annotation configuration to use for detection
@@ -149,14 +261,26 @@ class EfficientDet(Detector):
 
     def __init__(
         self,
-        annotation_config,
+        annotation_config=GoogleCocoAnnotationConfiguration,
         size: str = "efficientdet-d0",
         input_shape=None,
+        pretrained_backbone: bool = True,
+        pretrained_top: bool = False,
         **kwargs,
     ):
+        assert (
+            not pretrained_top or annotation_config == GoogleCocoAnnotationConfiguration
+        ), (
+            "pretrained_top requires annotation configuration "
+            "to be mira.detectors.efficientdet.GoogleCocoAnnotationConfiguration"
+        )
         self.annotation_config = annotation_config
-        self.config = build_config(annotation_config=annotation_config, model_name=size)
-        self.model = build_model(config=self.config, input_shape=input_shape, **kwargs)
+        self.config = build_config(
+            annotation_config=annotation_config,
+            model_name=size,
+            input_shape=input_shape,
+        )
+        self.model = build_model(config=self.config, **kwargs)
         self.backbone = self.model.layers[0]
         # self.model = build_model(self.training_model, config=self.config)
         self.anchor_labeler = anchors.AnchorLabeler(
@@ -170,6 +294,26 @@ class EfficientDet(Detector):
             ),
             self.config.num_classes,
         )
+        if pretrained_backbone and pretrained_top:
+            log.warning(
+                "pretrained_top makes pretrained_backbone "
+                "redundant. Disabling pretrained_backbone."
+            )
+            pretrained_backbone = False
+        if pretrained_backbone or pretrained_top:
+            config = WEIGHT_FILES[size]["top" if pretrained_top else "notop"]
+            weights_path = get_file(
+                fname=config["fname"],
+                origin=f"https://github.com/faustomorales/mira/releases/download/file-storage/{config['fname']}",
+                file_hash=config["hash"],
+                cache_subdir=os.path.join("weights", "efficientdet"),
+                hash_algorithm="sha256",
+            )
+            if pretrained_backbone:
+                self.backbone.load_weights(weights_path)
+            if pretrained_top:
+                self.model.load_weights(weights_path)
+        self.compile()
 
     def compile(self):
         self.model.compile(
@@ -254,7 +398,7 @@ class EfficientDet(Detector):
             [
                 mc.Annotation(
                     selection=mc.Selection([[x1, y1], [x2, y2]]),
-                    category=self.annotation_config[int(c)],
+                    category=self.annotation_config[int(c) - 1],
                     score=s,
                 )
                 for (y1, x1, y2, x2), c, s in zip(
@@ -275,20 +419,24 @@ class EfficientDet(Detector):
         # ), "You must override compute inputs for non-RGB images."
         return (np.float32(images) - self.config.mean_rgb) / self.config.stddev_rgb
 
-    def compute_targets(self, collection, input_shape):
+    def compute_targets(self, annotation_groups, input_shape=None):
         """Compute target labels from a SceneCollection."""
-        batch_size = len(collection)
+        input_shape = input_shape or self.model.input_shape[1:]
+        batch_size = len(annotation_groups)
         cls_targets = []
         box_targets = []
         num_positives = []
-        for scene in collection:
+        for annotation_group in annotation_groups:
             # We re-order the columns because
             # `label_anchors` expects [y0, x0, y1, x1]
             bboxes = tf.convert_to_tensor(
-                scene.bboxes()[:, [1, 0, 3, 2, 4]], dtype=tf.float32
+                self.annotation_config.bboxes_from_group(annotation_group)[
+                    :, [1, 0, 3, 2, 4]
+                ],
+                dtype=tf.float32,
             )
             boxes = bboxes[:, :-1]
-            classes = bboxes[:, -1:]
+            classes = bboxes[:, -1:] + 1
             (
                 cls_targets_current,
                 box_targets_current,

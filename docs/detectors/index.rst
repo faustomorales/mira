@@ -10,3 +10,4 @@ There are currently four implemented architectures.
 
 .. toctree::
    yolov3
+   efficientdet
