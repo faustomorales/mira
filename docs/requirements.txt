@@ -1,8 +1,10 @@
-sphinx-autodoc-typehints==1.10.3
-sphinx-autobuild==0.7.1
-sphinx==2.2.1
-sphinx_rtd_theme==0.4.3
-m2r==0.2.1
+sphinx-autodoc-typehints==1.12.0
+sphinx-autobuild==2021.3.14
+sphinx==3.5.4
+sphinx_rtd_theme==0.5.2
+m2r2==0.2.7
 opencv-contrib-python-headless
 tqdm
 sphinxcontrib-mermaid
+tensorflow==2.5.0
+tensorflow-addons==0.13.0

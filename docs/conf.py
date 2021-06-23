@@ -47,14 +47,14 @@ version = mira.__version__
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx_autodoc_typehints",
     "sphinx.ext.todo",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
     "sphinxcontrib.mermaid",
-    "m2r",
+    "sphinx_autodoc_typehints",
+    "m2r2",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
