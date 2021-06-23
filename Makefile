@@ -21,16 +21,17 @@ help:
 	@echo '  e.g., make test TEST_SCOPE="-m not_integration tests/api/"'
 
 init:  ## Initialize the development environment.
-	pip install poetry-dynamic-versioning
+	pip install poetry-dynamic-versioning poetry
 	poetry install
 
 format-check: ## Make black check source formatting
-	@$(EXEC) black --diff --check .
+	@$(EXEC) black --diff --exclude mira/thirdparty --check .
 
 format: ## Make black unabashedly format source code
-	@$(EXEC) black .
+	@$(EXEC) black --exclude mira/thirdparty .
 
 package: ## Make a local build of the Python package, source dist and wheel
+	@rm -rf dist
 	@mkdir -p dist
 	@$(EXEC) poetry build
 
