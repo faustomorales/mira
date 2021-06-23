@@ -81,21 +81,23 @@ detector_yolo = detectors.YOLOv3(
     size='tiny'
 )
 
+detector_ed = detectors.EfficientDet(pretrained_top=True)
+
 # Pick an example scene
 scene = dataset[5]
 
 # Set up side-by-side plots
-fig, (ax_rn, ax_yolo) = plt.subplots(ncols=2, figsize=(10, 5))
-ax_rn.set_title('RetinaNet')
+fig, (ax_ed, ax_yolo) = plt.subplots(ncols=2, figsize=(10, 5))
+ax_ed.set_title('EfficientDet')
 ax_yolo.set_title('YOLOv3')
 
 # We get predicted scenes from each detector. Detectors return
 # lists of annotations for a given image. So we can just replace
 # (assign) those new annotations to the scene to get a new scene
 # reflecting the detector's prediction.
-predicted_rn = scene.assign(
-    annotations=detector_rn.detect(scene.image),
-    annotation_config=detector_rn.annotation_config
+predicted_ed = scene.assign(
+    annotations=detector_ed.detect(scene.image),
+    annotation_config=detector_ed.annotation_config
 )
 predicted_yolo = scene.assign(
     annotations=detector_yolo.detect(scene.image, threshold=0.4),
@@ -104,7 +106,7 @@ predicted_yolo = scene.assign(
 
 # Plot both predictions. The calls to annotation() get us
 # an image with the bounding boxes drawn.
-_ = predicted_rn.annotated().show(ax=ax_rn)
+_ = predicted_ed.annotated().show(ax=ax_ed)
 _ = predicted_yolo.annotated().show(ax=ax_yolo)
 ```
 

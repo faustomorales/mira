@@ -1,7 +1,6 @@
 # Tutorials
 
 .. toctree::
-   quickstart
-   coco2014
-   textdetection
-   transferlearning
+quickstart
+coco2014
+transferlearning
