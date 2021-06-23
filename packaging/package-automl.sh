@@ -17,4 +17,9 @@ do
 done
 sed $SEDOPTION "s/\[bs, width, height, -1\]/[-1, width, height, self.config.num_classes * self.config.num_scales * len(self.config.aspect_ratios)]/g" mira/thirdparty/automl/efficientdet/keras/train_lib.py
 sed $SEDOPTION "s/\[bs, width, height, -1, self.config.num_classes\]/[-1, width, height, self.config.num_scales * len(self.config.aspect_ratios), self.config.num_classes]/g" mira/thirdparty/automl/efficientdet/keras/train_lib.py
+sed $SEDOPTION "s/import yaml//g" mira/thirdparty/automl/efficientdet/*.py
+sed $SEDOPTION "s/import yaml//g" mira/thirdparty/automl/efficientdet/*/*.py
+sed $SEDOPTION "s/import yaml//g" mira/thirdparty/automl/efficientnetv2/*.py
+sed $SEDOPTION "s/import tensorflow_hub as hub//g" mira/thirdparty/automl/efficientdet/*/*.py
+sed $SEDOPTION "s/import neural_structured_learning as nsl//g" mira/thirdparty/automl/efficientdet/*/*.py
 touch mira/thirdparty/automl/__init__.py
