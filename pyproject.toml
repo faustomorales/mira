@@ -34,6 +34,7 @@ tqdm = "*"
 validators = "*"
 imgaug = "*"
 neural_structured_learning = "*"
+tensorflow_addons = "*"
 
 [tool.poetry.dev-dependencies]
 black = "*"
