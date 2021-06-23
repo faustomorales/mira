@@ -436,7 +436,7 @@ class YOLOv3(Detector):
             or annotation_config == datasets.COCOAnnotationConfiguration
         ), (
             "pretrained_top requires annotation configuration "
-            "to be AnnotationConfiguration.COCO"
+            "to be mira.datasets.COCOAnnotationConfiguration"
         )
         self.strides = [32, 16] if size == "tiny" else [32, 16, 8]
         self.anchor_groups = YOLO_ANCHOR_GROUPS[size]
@@ -559,7 +559,7 @@ class YOLOv3(Detector):
     def compute_inputs(self, images: typing.List[np.ndarray]):
         return np.float32([core.utils.scaled(image, 0, 1) for image in images])
 
-    def compute_targets(self, collection: core.SceneCollection, input_shape):
+    def compute_targets(self, annotation_groups, input_shape):
         """Preprocess true boxes to training input format
 
         Args:
@@ -579,8 +579,8 @@ class YOLOv3(Detector):
         results: typing.List[typing.List[np.ndarray]] = [[] for group in anchors]
         anchors_xywh = np.concatenate([a.reshape(-1, 6) for a in anchors], axis=0)
         anchors_xyxy = convert_anchors(anchors_xywh)
-        for scene in collection.scenes:
-            annotations = scene.bboxes()
+        for annotation_group in annotation_groups:
+            annotations = self.annotation_config.bboxes_from_group(annotation_group)
             y_true = np.zeros((len(anchors_xyxy), 4 + 1 + len(self.annotation_config)))
             if len(annotations) > 0:
                 overlaps = core.utils.compute_iou(

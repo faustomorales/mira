@@ -7,6 +7,7 @@ from os import path
 import logging
 import math
 import io
+import os
 
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -245,12 +246,7 @@ class Scene:
         from the annotation configuration."""
         # We reshape in order to avoid indexing problems when
         # there are no annotations.
-        return np.array(
-            [
-                list(a.selection.bbox()) + [self.annotation_config.index(a.category)]
-                for a in self.annotations
-            ],
-        ).reshape(-1, 5)
+        return self.annotation_config.bboxes_from_group(self.annotations)
 
     def fit(self, width, height):
         """Obtain a new scene fitted to the given width and height.
@@ -419,6 +415,11 @@ class SceneCollection:
         return self._annotation_config
 
     @property
+    def annotation_groups(self):
+        """The groups of annotations in the collection."""
+        return [s.annotations for s in self.scenes]
+
+    @property
     def uniform(self):
         """Specifies whether all scenes in the collection are
         of the same size. Note: This will trigger an image load."""
@@ -443,6 +444,49 @@ class SceneCollection:
         """Obtained an augmented version of the given collection.
         All arguments passed to `Scene.augment`"""
         return self.assign(scenes=[s.augment(**kwargs) for s in self.scenes])
+
+    def to_tfrecords(self, output_prefix, n_scenes_per_shard=1):
+        """Write scene collection as a series of TfRecord files.
+
+        Args:
+            output_prefix: The prefix for the .tfrecord files (e.g.,
+                my_directory/my_training_dataset).
+            n_scenes_per_shard: The number of scenes to store in each file.
+        """
+        if os.path.dirname(output_prefix):
+            os.makedirs(os.path.dirname(output_prefix), exist_ok=True)
+        n_shards = math.ceil(len(self) / n_scenes_per_shard)
+        for shard, start in enumerate(range(0, len(self), n_scenes_per_shard)):
+            with tf.io.TFRecordWriter(
+                f"{output_prefix}-{shard + 1}-of-{n_shards}.tfrecord"
+            ) as writer:
+                for scene in [
+                    self[idx]
+                    for idx in range(start, min(start + n_scenes_per_shard, len(self)))
+                ]:
+                    writer.write(scene.to_example().SerializeToString())
+
+    @classmethod
+    def from_tfrecord_pattern(cls, pattern, annotation_config):
+        """Load a scene collection from TfRecord files.
+
+        Args:
+            pattern: The file pattern for the TfRecord files (e.g.,
+                my_directory/my_training_dataset*.tfrecord)
+            annotation_config: The annotation configuration to use
+                when loading the examples.
+        """
+        return cls(
+            scenes=[
+                Scene.from_example(record, annotation_config=annotation_config)
+                for record in (
+                    tf.data.Dataset.list_files(pattern).interleave(
+                        tf.data.TFRecordDataset
+                    )
+                )
+            ],
+            annotation_config=annotation_config,
+        )
 
     def train_test_split(
         self, *args, **kwargs
@@ -531,7 +575,7 @@ class SceneCollection:
         """
         if n > len(self.scenes):
             log.warning(
-                "Collection only has %s scenes but " "you requested %s thumbnails.",
+                "Collection only has %s scenes but you requested %s thumbnails.",
                 len(self.scenes),
                 n,
             )

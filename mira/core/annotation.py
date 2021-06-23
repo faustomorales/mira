@@ -1,5 +1,5 @@
 import logging
-from typing import List
+import typing
 
 import numpy as np
 
@@ -27,68 +27,6 @@ class AnnotationCategory:
     def name(self):
         """The name of the category."""
         return self._name
-
-
-class AnnotationConfiguration:
-    """A class defining a list of annotation
-    types for an object detection class.
-
-    Args:
-        names: The list of class names
-    """
-
-    def __init__(self, names: List[str]):
-        names = [s.lower() for s in names]
-        if len(names) != len(set(names)):
-            raise ValueError("All class names must be unique " "(case-insensitive).")
-        self._types = [AnnotationCategory(name=name) for name in names]
-
-    def __getitem__(self, key):
-        if isinstance(key, np.int64):
-            key = int(key)
-        if isinstance(key, int):
-            if key >= len(self):
-                raise ValueError(
-                    "Index {0} is out of bounds ".format(key)
-                    + "(only have {0} entries)".format(len(self))
-                )
-            return self.types[key]
-        if isinstance(key, str):
-            key = key.lower()
-            val = next((e for e in self._types if e.name == key), None)
-            if val is None:
-                raise ValueError("Did not find {0} in configuration".format(key))
-            return val
-        raise ValueError(f"Key must be int or str, not {key} of type {str(type(key))}")
-
-    def __iter__(self):
-        return iter(self._types)
-
-    def __contains__(self, key):
-        if isinstance(key, str):
-            return any(e.name == key for e in self._types)
-        if isinstance(key, AnnotationCategory):
-            return any(e == key for e in self._types)
-        raise ValueError("Key must be str or AnnotationCategory, not " + str(type(key)))
-
-    def __eq__(self, other):
-        if not isinstance(other, type(self)):
-            return False
-        if len(other) != len(self):
-            return False
-        return all(o == s for s, o in zip(self, other))
-
-    def __len__(self):
-        return len(self._types)
-
-    @property
-    def types(self):
-        """Get the list of types."""
-        return self._types
-
-    def index(self, category):
-        """Get the index for a category."""
-        return next(i for i, cat in enumerate(self) if cat == category)
 
 
 class Annotation:
@@ -145,3 +83,73 @@ class Annotation:
         self_bbox = self.selection.bbox()
         other_bbox = other.selection.bbox()
         return self_bbox == other_bbox and self.category == other.category
+
+
+class AnnotationConfiguration:
+    """A class defining a list of annotation
+    types for an object detection class.
+
+    Args:
+        names: The list of class names
+    """
+
+    def __init__(self, names: typing.List[str]):
+        names = [s.lower() for s in names]
+        if len(names) != len(set(names)):
+            raise ValueError("All class names must be unique " "(case-insensitive).")
+        self._types = [AnnotationCategory(name=name) for name in names]
+
+    def bboxes_from_group(self, annotations: typing.List[Annotation]):
+        """Obtain an array of shape (N, 5) where the columns are
+        x1, y1, x2, y2, class_index where class_index is determined
+        from the annotation configuration."""
+        return np.array(
+            [list(a.selection.bbox()) + [self.index(a.category)] for a in annotations],
+        ).reshape(-1, 5)
+
+    def __getitem__(self, key):
+        if isinstance(key, np.int64):
+            key = int(key)
+        if isinstance(key, int):
+            if key >= len(self):
+                raise ValueError(
+                    "Index {0} is out of bounds ".format(key)
+                    + "(only have {0} entries)".format(len(self))
+                )
+            return self.types[key]
+        if isinstance(key, str):
+            key = key.lower()
+            val = next((e for e in self._types if e.name == key), None)
+            if val is None:
+                raise ValueError("Did not find {0} in configuration".format(key))
+            return val
+        raise ValueError(f"Key must be int or str, not {key} of type {str(type(key))}")
+
+    def __iter__(self):
+        return iter(self._types)
+
+    def __contains__(self, key):
+        if isinstance(key, str):
+            return any(e.name == key for e in self._types)
+        if isinstance(key, AnnotationCategory):
+            return any(e == key for e in self._types)
+        raise ValueError("Key must be str or AnnotationCategory, not " + str(type(key)))
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+        if len(other) != len(self):
+            return False
+        return all(o == s for s, o in zip(self, other))
+
+    def __len__(self):
+        return len(self._types)
+
+    @property
+    def types(self):
+        """Get the list of types."""
+        return self._types
+
+    def index(self, category):
+        """Get the index for a category."""
+        return next(i for i, cat in enumerate(self) if cat == category)

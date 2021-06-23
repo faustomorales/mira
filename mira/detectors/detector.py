@@ -8,7 +8,7 @@ import imgaug as ia
 import numpy as np
 
 from .. import metrics
-from ..core import SceneCollection, Annotation, AnnotationConfiguration, utils
+from ..core import Scene, SceneCollection, Annotation, AnnotationConfiguration, utils
 
 
 def tensorspec_from_data(data: typing.Union[dict, np.ndarray, list, tuple]):
@@ -46,7 +46,7 @@ class Detector(ABC):
         threshold: float = 0.5,
         **kwargs,
     ) -> typing.List[typing.List[Annotation]]:
-        """Compute a scene collection from model output."""
+        """Compute a list of annotation groups from model output."""
 
     def detect(
         self, image: np.ndarray, threshold: float = 0.5, **kwargs
@@ -122,7 +122,7 @@ class Detector(ABC):
     @abstractmethod
     def compute_targets(
         self,
-        collection: SceneCollection,
+        annotation_groups: typing.List[typing.List[Annotation]],
         input_shape: typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, int]],
     ) -> typing.Union[typing.List[np.ndarray], np.ndarray]:
         """Compute the expected outputs for a model. *You
@@ -131,8 +131,7 @@ class Detector(ABC):
         `detector.detect()`.
 
         Args:
-            collection: The scene collection for which the
-                outputs should be calculated.
+            annotation_groups: A list of lists of annotation groups.
             input_shape: The assumed image input shape.
 
         Returns:
@@ -157,36 +156,98 @@ class Detector(ABC):
         images = collection.images
         return (
             self.compute_inputs(images),
-            self.compute_targets(collection, images[0].shape),
+            self.compute_targets(collection.annotation_groups, images[0].shape),
         )
 
     def batch_generator(
         self,
-        collection: SceneCollection,
+        collection: typing.Union[SceneCollection, str],
         train_shape: typing.Tuple[int, int, int],
         batch_size: int = 1,
         augmenter: ia.augmenters.Augmenter = None,
         shuffle=True,
     ):
-        """Create a batch generator from a collection."""
-        index = np.arange(len(collection)).tolist()
-        for idx in itertools.cycle(range(0, len(collection), batch_size)):
-            if idx == 0 and shuffle:
-                random.shuffle(index)
-            sample = (
-                collection.assign(
-                    scenes=[collection[i] for i in index[idx : idx + batch_size]]
+        """Create a batch generator from a collection or TFRecords pattern."""
+        if isinstance(collection, SceneCollection):
+            index = np.arange(len(collection)).tolist()
+            for idx in itertools.cycle(range(0, len(collection), batch_size)):
+                if idx == 0 and shuffle:
+                    random.shuffle(index)
+                sample = (
+                    collection.assign(
+                        scenes=[collection[i] for i in index[idx : idx + batch_size]]
+                    )
+                    .augment(augmenter=augmenter)
+                    .fit(height=train_shape[0], width=train_shape[1])[0]
                 )
-                .augment(augmenter=augmenter)
-                .fit(height=train_shape[0], width=train_shape[1])[0]
+                yield self.compute_Xy(sample)
+        elif isinstance(collection, str):
+            dataset = tf.data.Dataset.list_files(collection).interleave(
+                tf.data.TFRecordDataset
             )
-            X, y = self.compute_Xy(sample)
-            yield X, y
+            if shuffle:
+                dataset = dataset.shuffle(64)
+            dataset = dataset.prefetch(batch_size).batch(batch_size).repeat()
+            for records in dataset:
+                sample = (
+                    SceneCollection(
+                        scenes=[
+                            Scene.from_example(
+                                record, annotation_config=self.annotation_config
+                            )
+                            for record in records
+                        ],
+                        annotation_config=self.annotation_config,
+                    )
+                    .augment(augmenter=augmenter)
+                    .fit(height=train_shape[0], width=train_shape[1])[0]
+                )
+                yield self.compute_Xy(collection=sample)
+        else:
+            raise NotImplementedError(f"Unknown collection type: {type(collection)}")
+
+    def dataset_from_collection(
+        self,
+        collection: typing.Union[SceneCollection, str],
+        batch_size: int,
+        augmenter: ia.augmenters.Augmenter,
+        train_shape: typing.Tuple[int, int, int] = None,
+        shuffle: bool = False,
+    ) -> tf.data.Dataset:
+        """Create a tf.Dataset generating targets for this
+        detector from a scene collection or TFRecords string."""
+        if isinstance(collection, SceneCollection):
+            assert (
+                collection.annotation_config == self.annotation_config
+            ), "The collection configuration clashes with detector"
+            assert (
+                collection.consistent
+            ), "The collection has inconsistent annotation configuration"
+        if train_shape is None:
+            train_shape = getattr(self, "training_model", self.model).input_shape[1:]
+            assert all(
+                s is not None for s in train_shape
+            ), "train_shape must be provided for this model."
+
+        batch_generator = self.batch_generator(
+            collection=collection,
+            batch_size=batch_size,
+            augmenter=augmenter,
+            shuffle=shuffle,
+            train_shape=train_shape,
+        )
+        output_signature = tuple(
+            tensorspec_from_data(data) for data in next(batch_generator)
+        )
+        return tf.data.Dataset.from_generator(
+            lambda: batch_generator,
+            output_signature=output_signature,
+        )
 
     def train(
         self,
-        training: SceneCollection,
-        validation: SceneCollection = None,
+        training: typing.Union[SceneCollection, str],
+        validation: typing.Union[SceneCollection, str] = None,
         batch_size: int = 1,
         augmenter: ia.augmenters.Augmenter = None,
         train_shape: typing.Tuple[int, int, int] = None,
@@ -201,68 +262,36 @@ class Detector(ABC):
             batch_size: The batch size to use for training
             augmenter: The augmenter for generating samples
         """
-        assert (
-            training.annotation_config == self.annotation_config
-        ), "The training set configuration clashes with detector"
-        assert (
-            validation is None or validation.annotation_config == self.annotation_config
-        ), "The validation set configuration clashes with detector"
-        assert (
-            training.consistent
-        ), "The training set has inconsistent annotation configuration"
-        assert (
-            validation is None or validation.consistent
-        ), "The validation set has inconsistent annotation configuration"
-        if hasattr(self, "training_model"):
-            assert self.training_model is not None
-            training_model = self.training_model  # pylint: disable=no-member
-        else:
-            training_model = self.model
-        if train_shape is None:
-            train_shape = training_model.input_shape[1:]
-            assert all(
-                s is not None for s in train_shape
-            ), "train_shape must be provided for this model."
+        training_model = getattr(self, "training_model", self.model)
+
         if "steps_per_epoch" not in kwargs:
+            assert not isinstance(
+                training, str
+            ), "You must set steps_per_epoch if a dataset pattern is used."
             kwargs["steps_per_epoch"] = int(len(training) // batch_size)
         if validation is not None and "validation_steps" not in kwargs:
+            assert not isinstance(
+                validation, str
+            ), "You must set validation_steps if a dataset pattern is used."
             kwargs["validation_steps"] = int(len(validation) // batch_size)
         if "epochs" not in kwargs:
             kwargs["epochs"] = 1000
-        training_generator = self.batch_generator(
-            collection=training,
+        training_dataset = self.dataset_from_collection(
+            training,
             batch_size=batch_size,
             augmenter=augmenter,
-            shuffle=True,
             train_shape=train_shape,
+            shuffle=True,
         )
-        output_signature = tuple(
-            tensorspec_from_data(data) for data in next(training_generator)
-        )
-        training_dataset = tf.data.Dataset.from_generator(
-            lambda: training_generator,
-            output_signature=output_signature,
-        )
-        if validation is None:
-            history = training_model.fit(training_dataset, **kwargs)
-        else:
-            validation_dataset = tf.data.Dataset.from_generator(
-                lambda: self.batch_generator(
-                    collection=validation,
-                    batch_size=batch_size,
-                    augmenter=None,
-                    train_shape=train_shape,
-                    shuffle=False,
-                ),
-                output_signature=output_signature,
+        if validation is not None:
+            kwargs["validation_data"] = self.dataset_from_collection(
+                validation,
+                batch_size=batch_size,
+                augmenter=None,
+                train_shape=train_shape,
+                shuffle=False,
             )
-            kwargs["validation_steps"] = int(len(validation) // batch_size)
-            history = training_model.fit(
-                training_dataset,
-                validation_data=validation_dataset,
-                **kwargs,
-            )
-        return history
+        return training_model.fit(training_dataset, **kwargs)
 
     def mAP(self, collection: SceneCollection, iou_threshold=0.5):
         """Compute the mAP metric for a given collection
