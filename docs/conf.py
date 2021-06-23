@@ -19,9 +19,9 @@
 #
 import os
 import sys
+import subprocess
 
 sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.abspath("./stubs"))
 
 import mira
 
@@ -173,6 +173,7 @@ texinfo_documents = [
 ]
 
 # -- Extension configuration -------------------------------------------------
+subprocess.call(["sh", "packaging/package-automl.sh"], cwd="..")
 
 # -- Options for todo extension ----------------------------------------------
 

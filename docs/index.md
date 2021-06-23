@@ -14,7 +14,7 @@ pip install mira
 
 
 .. toctree::
-   tutorials/index
+   tutorials
    core/index
    datasets/index
    detectors/index

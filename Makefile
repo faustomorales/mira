@@ -54,7 +54,6 @@ shell:  ## Jump into poetry shell.
 	poetry shell
 
 docs: ## Make a local HTML doc server that updates on changes to from Sphinx source
-	@$(EXEC) pip install -r docs/requirements.txt
 	@$(EXEC) sphinx-autobuild -b html docs docs/build/html $(SPHINX_AUTO_EXTRA)
 
 update-efficient-det:
