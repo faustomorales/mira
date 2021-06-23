@@ -1,3 +1,4 @@
+#!/bin/bash
 modules=(keras object_detection dataset backbone dataloader hparams_config utils efficientdet_arch nms_np det_model_fn coco_metric visualize inference iou_utils)
 for module in ${modules[@]}
 do

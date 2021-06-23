@@ -173,7 +173,7 @@ texinfo_documents = [
 ]
 
 # -- Extension configuration -------------------------------------------------
-subprocess.call(["sh", "packaging/package-automl.sh"], cwd="..")
+subprocess.call(["bash", "packaging/package-automl.sh"], cwd="..")
 
 # -- Options for todo extension ----------------------------------------------
 
