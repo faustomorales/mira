@@ -21,8 +21,17 @@ import os
 import sys
 import subprocess
 
-subprocess.call(["bash", "packaging/package-automl.sh"], cwd="..")
-
+subprocess.call(
+    [
+        "bash",
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "..",
+            "packaging/package-automl.sh",
+        ),
+    ],
+    cwd="..",
+)
 sys.path.insert(0, os.path.abspath("."))
 
 import mira
