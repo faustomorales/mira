@@ -24,5 +24,6 @@ $SED "s/from tensorflow_model_optimization.python.core.quantization.keras import
 $SED "s/from tensorflow_model_optimization.python.core.quantization.keras.default_8bit import default_8bit_quantize_configs//g" mira/thirdparty/automl/efficientdet/*/*.py
 $SED "s/import tensorflow_model_optimization as tfmot//g" $project_root/automl/efficientdet/*/*.py
 $SED "s/tfmot.sparsity.keras.prune_low_magnitude/None/g" $project_root/automl/efficientdet/*/*.py
+$SED "s/from .. import coco_metric//g" $project_root/automl/efficientdet/*/*.py
 rm $project_root/**/**/*.bak
 touch $project_root/automl/__init__.py

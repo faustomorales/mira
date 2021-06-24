@@ -174,7 +174,7 @@ class Scene:
                         bytes_list=tf.train.BytesList(
                             value=[
                                 self.annotation_config[idx].name.encode()
-                                for idx in bboxes[:, -1]
+                                for idx in bboxes[:, -1].tolist()
                             ]
                         )
                     ),
