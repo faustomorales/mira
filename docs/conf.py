@@ -21,6 +21,8 @@ import os
 import sys
 import subprocess
 
+subprocess.call(["bash", "packaging/package-automl.sh"], cwd="..")
+
 sys.path.insert(0, os.path.abspath("."))
 
 import mira
@@ -28,7 +30,7 @@ import mira
 # -- Project information -----------------------------------------------------
 
 project = "mira"
-copyright = "2019, Fausto Morales"
+copyright = "2021, Fausto Morales"
 author = "Fausto Morales"
 
 # The short X.Y version
@@ -173,7 +175,6 @@ texinfo_documents = [
 ]
 
 # -- Extension configuration -------------------------------------------------
-subprocess.call(["bash", "packaging/package-automl.sh"], cwd="..")
 
 # -- Options for todo extension ----------------------------------------------
 
