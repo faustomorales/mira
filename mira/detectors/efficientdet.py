@@ -1,20 +1,28 @@
 # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
 import os
+import types
 import logging
 import tensorflow as tf
 import numpy as np
 
-from ..thirdparty.automl.efficientdet.keras import (
-    postprocess,
-    util_keras,
-    anchors,
-    train_lib,
-    label_util,
-)
-from ..thirdparty.automl.efficientdet import (
-    hparams_config,
-    utils,
-)
+try:
+    from ..thirdparty.automl.efficientdet.keras import (
+        postprocess,
+        util_keras,
+        anchors,
+        train_lib,
+        label_util,
+    )
+    from ..thirdparty.automl.efficientdet import (
+        hparams_config,
+        utils,
+    )
+except ImportError:
+    # Do this so that the docs build since we don't
+    # get a chance to run the packaging/package-automl.sh script.
+    train_lib = types.SimpleNamespace(EfficientDetNetTrain=object)  # type: ignore
+    label_util = types.SimpleNamespace(coco={1: "1", 2: "2"})  # type: ignore
+
 
 from .. import core as mc
 from .detector import Detector
