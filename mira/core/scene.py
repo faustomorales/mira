@@ -361,7 +361,7 @@ class Scene:
             current = keypoints[startIdx:endIdx]
             selection = ann.selection.assign_keypoints(current)
             area = selection.area()
-            selection = selection.crop(width=image.width, height=image.height)
+            selection = selection.crop(width=image.shape[1], height=image.shape[0])
             if area == 0 or (selection.area() / area < threshold):
                 continue
             annotations.append(ann.assign(selection=selection))
