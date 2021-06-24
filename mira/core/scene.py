@@ -592,7 +592,9 @@ class SceneCollection:
         sample_indices = np.random.choice(len(self.scenes), n, replace=False)
         sample = [self.scenes[i] for i in sample_indices]
         thumbnails = [scene.annotated() for scene in sample]
-        thumbnails = [t.fit(width=width, height=height)[0] for t in thumbnails]
+        thumbnails = [
+            utils.fit(image=t, width=width, height=height)[0] for t in thumbnails
+        ]
         thumbnail = utils.get_blank_image(
             width=ncols * width, height=nrows * height, n_channels=3
         )
