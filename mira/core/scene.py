@@ -2,12 +2,12 @@
 
 # pylint: disable=invalid-name,len-as-condition
 
-from typing import Union, List, Tuple
-from os import path
+import os
+import json
+import typing
 import logging
 import math
 import io
-import os
 
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -44,8 +44,8 @@ class Scene:
     def __init__(
         self,
         annotation_config: AnnotationConfiguration,
-        annotations: List[Annotation],
-        image: Union[np.ndarray, str],
+        annotations: typing.List[Annotation],
+        image: typing.Union[np.ndarray, str],
         metadata: dict = None,
         cache: bool = False,
     ):
@@ -70,7 +70,7 @@ class Scene:
         if (
             validators.url(self._image)
             and isinstance(self.cache, str)
-            and path.isfile(self.cache)
+            and os.path.isfile(self.cache)
         ):
             self._image = self.cache
 
@@ -94,7 +94,7 @@ class Scene:
         return self._annotation_config
 
     @property
-    def annotations(self) -> List[Annotation]:
+    def annotations(self) -> typing.List[Annotation]:
         """Get the list of annotations"""
         return self._annotations
 
@@ -165,6 +165,11 @@ class Scene:
                     "image/object/bbox/ymax": tf.train.Feature(
                         float_list=tf.train.FloatList(value=bboxes_scaled[:, 3])
                     ),
+                    "image/metadata": tf.train.Feature(
+                        bytes_list=tf.train.BytesList(
+                            value=[json.dumps(self.metadata or {}).encode()]
+                        )
+                    ),
                     "image/object/class/text": tf.train.Feature(
                         bytes_list=tf.train.BytesList(
                             value=[
@@ -190,8 +195,8 @@ class Scene:
                 "image/object/bbox/xmax": tf.io.VarLenFeature(tf.float32),
                 "image/object/bbox/ymin": tf.io.VarLenFeature(tf.float32),
                 "image/object/bbox/ymax": tf.io.VarLenFeature(tf.float32),
-                "image/object/class/label": tf.io.VarLenFeature(tf.int64),
                 "image/object/class/text": tf.io.VarLenFeature(tf.string),
+                "image/metadata": tf.io.FixedLenFeature((), tf.string),
             },
         )
         width, height = (
@@ -204,6 +209,7 @@ class Scene:
         ), "Deserialization failed."
         return cls(
             image=image,
+            metadata=json.loads(deserialized["image/metadata"].numpy().decode("utf-8")),
             annotations=[
                 Annotation(
                     selection=Selection(
@@ -338,7 +344,7 @@ class Scene:
         if augmenter is None:
             return self
         aug = augmenter.to_deterministic()
-        keypoints: List[ia.Keypoint] = []
+        keypoints: typing.List[ia.Keypoint] = []
         keypoints_map = {}
         for i, ann in enumerate(self.annotations):
             current = ann.selection.keypoints()
@@ -372,7 +378,9 @@ class SceneCollection:
     """
 
     def __init__(
-        self, scenes: List[Scene], annotation_config: AnnotationConfiguration = None
+        self,
+        scenes: typing.List[Scene],
+        annotation_config: AnnotationConfiguration = None,
     ):
         assert len(scenes) > 0, "A scene collection must have at least one scene"
         if annotation_config is None:
@@ -490,7 +498,7 @@ class SceneCollection:
 
     def train_test_split(
         self, *args, **kwargs
-    ) -> Tuple["SceneCollection", "SceneCollection"]:
+    ) -> typing.Tuple["SceneCollection", "SceneCollection"]:
         """Obtain new scene collections, split into train
         and test. All arguments passed to
         `sklearn.model_selection.train_test_split
