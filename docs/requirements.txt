@@ -8,4 +8,3 @@ tqdm
 sphinxcontrib-mermaid
 tensorflow==2.5.0
 tensorflow-addons==0.13.0
-neural_structured_learning

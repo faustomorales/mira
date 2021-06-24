@@ -307,7 +307,7 @@ class Detector(ABC):
         """
         pred = collection.assign(
             scenes=[
-                s.assign(annotations=self.detect(s.image, threshold=0))
+                s.assign(annotations=self.detect(s.image, threshold=0.05))
                 for s in collection
             ]
         )

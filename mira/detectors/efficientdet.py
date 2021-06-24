@@ -398,6 +398,8 @@ class EfficientDet(Detector):
             [
                 mc.Annotation(
                     selection=mc.Selection([[x1, y1], [x2, y2]]),
+                    # EfficientDet is 1-indexed so we subtract
+                    # one to get back to a zero-indexed class.
                     category=self.annotation_config[int(c) - 1],
                     score=s,
                 )
@@ -414,9 +416,9 @@ class EfficientDet(Detector):
 
     def compute_inputs(self, images):
         """Compute inputs from images."""
-        # assert (
-        #     self.model.input_shape[-1] == 3
-        # ), "You must override compute inputs for non-RGB images."
+        assert (
+            self.model.input_shape[-1] == 3
+        ), "You must override compute_inputs for non-RGB images."
         return (np.float32(images) - self.config.mean_rgb) / self.config.stddev_rgb
 
     def compute_targets(self, annotation_groups, input_shape=None):
@@ -436,6 +438,9 @@ class EfficientDet(Detector):
                 dtype=tf.float32,
             )
             boxes = bboxes[:, :-1]
+            # EfficientDet uses the 0th class as
+            # background so we adjust our classes to be
+            # 1-indexed.
             classes = bboxes[:, -1:] + 1
             (
                 cls_targets_current,
