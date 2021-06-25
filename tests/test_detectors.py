@@ -13,7 +13,7 @@ collection = core.SceneCollection(
             annotations=[
                 core.Annotation(
                     category=annotation_config["foo"],
-                    selection=core.Selection([[0, 0], [50, 50]]),
+                    selection=core.Selection(0, 0, 50, 50),
                 )
             ],
         ),
@@ -23,7 +23,7 @@ collection = core.SceneCollection(
             annotations=[
                 core.Annotation(
                     category=annotation_config["bar"],
-                    selection=core.Selection([[20, 20], [80, 80]]),
+                    selection=core.Selection(20, 20, 80, 80),
                 )
             ],
         ),
@@ -46,11 +46,11 @@ def test_basics(detector_class):
     )
     assert all(
         e - 1 <= a < e + 1
-        for a, e in zip(inverted[0][0].selection.bbox(), [0, 0, 50, 50])
+        for a, e in zip(inverted[0][0].selection.x1y1x2y2(), [0, 0, 50, 50])
     )
     assert all(
         e - 1 <= a < e + 1
-        for a, e in zip(inverted[1][0].selection.bbox(), [20, 20, 80, 80])
+        for a, e in zip(inverted[1][0].selection.x1y1x2y2(), [20, 20, 80, 80])
     )
     # Verify that training doesn't crash.
     detector.train(training=collection, epochs=2, train_shape=input_shape)

@@ -16,11 +16,11 @@ def test_mAP():
         annotation_config=annotation_config,
         annotations=[
             core.Annotation(
-                selection=core.Selection([[0, 0], [10, 10]]),
+                selection=core.Selection(x1=0, y1=0, x2=10, y2=10),
                 category=annotation_config["foo"],
             ),
             core.Annotation(
-                selection=core.Selection([[40, 40], [50, 50]]),
+                selection=core.Selection(x1=40, y1=40, x2=50, y2=50),
                 category=annotation_config["baz"],
             ),
         ],
@@ -30,17 +30,17 @@ def test_mAP():
         annotation_config=annotation_config,
         annotations=[
             core.Annotation(
-                selection=core.Selection([[0, 0], [10, 10]]),
+                selection=core.Selection(x1=0, y1=0, x2=10, y2=10),
                 category=annotation_config["foo"],
                 score=0.9,
             ),
             core.Annotation(
-                selection=core.Selection([[15, 15], [30, 30]]),
+                selection=core.Selection(x1=15, y1=15, x2=30, y2=30),
                 category=annotation_config["foo"],
                 score=0.5,
             ),
             core.Annotation(
-                selection=core.Selection([[45, 45], [50, 50]]),
+                selection=core.Selection(x1=45, y1=45, x2=50, y2=50),
                 category=annotation_config["baz"],
                 score=0.8,
             ),

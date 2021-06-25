@@ -533,10 +533,7 @@ class YOLOv3(Detector):
                     annotations.append(
                         core.Annotation(
                             selection=core.Selection(
-                                points=[
-                                    (xl, yt),
-                                    (xl + w, yt + h),
-                                ]
+                                x1=xl, y1=yt, x2=xl + w, y2=yt + h
                             ),
                             category=self.annotation_config[class_index],
                             score=s,

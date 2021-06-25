@@ -2,13 +2,11 @@
 # pylint: disable=invalid-name,line-too-long
 
 import logging
-import re
 from os import path
 from itertools import product
 
 from glob import glob
 import numpy as np
-from tqdm import tqdm
 import cv2
 from pkg_resources import resource_string
 
@@ -151,7 +149,7 @@ def load_shapes(
                 )
             annotations.append(
                 core.Annotation(
-                    selection=core.Selection([[x, y], [x + w, y + w]]),
+                    selection=core.Selection(x1=x, y1=y, x2=x + w, y2=y + w),
                     category=annotation_config[" ".join([color, shape])],
                 )
             )
@@ -229,128 +227,3 @@ def load_oxfordiiitpets(breed=True) -> core.SceneCollection:
         ],
         annotation_config=annotation_config,
     )
-
-
-def load_icdar2015(
-    subset: str = "train", text_category: str = "text", include_do_not_care=False
-) -> core.SceneCollection:
-    """Loads dataset from 2015 Robust Reading Competition.
-    More details available at http://rrc.cvc.uab.es/?ch=4&com=introduction
-
-    Args:
-        subset: One of `train`, `test`, or `traintest`.
-            If `traintest`, the scene collection contains both the
-            train and test sets. If `train`, only the
-            training set. If `test` only the test set.
-        text_category: The category name to use for the
-            annotation configuration.
-        include_do_not_care: Whether to include "do not care"
-            areas in the annotations.
-
-    Returns:
-        A scene collection containing the ICDAR 2015 dataset
-        dataset.
-    """
-
-    scenes = []
-    annotation_config = core.AnnotationConfiguration([text_category])
-
-    def annotation_from_box(box):
-        # We have to do this because there are no quotes
-        # around text that contains commas in the annotation files.
-        # For an example, see gt_img_115.txt.
-        elements = box.split(",")
-        x1, y1, x2, y2, x3, y3, x4, y4 = map(int, elements[:8])
-        text = ",".join(elements[8:])  # pylint: disable=unused-variable
-        return core.Annotation(
-            selection=core.Selection(
-                np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
-            ),
-            category=annotation_config[text_category],
-            metadata={
-                "text": text if text != "###" else None,
-                "do_not_care": text == "###",
-            },
-        )
-
-    def scene_from_files(annotation_file, image_file):
-        with open(annotation_file, "r", encoding="utf-8-sig") as f:
-            annotations = [
-                annotation_from_box(box) for box in f.read().split("\n")[:-1]
-            ]
-        if not include_do_not_care:
-            annotations = [
-                ann for ann in annotations if not ann.metadata["do_not_care"]
-            ]
-        return core.Scene(
-            image=image_file,
-            annotations=annotations,
-            annotation_config=annotation_config,
-        )
-
-    def scenes_from_directories(annotations_dir, images_dir):
-        pattern = re.compile(r"img_([0-9]+).")
-        image_files = sorted(
-            glob(path.join(images_dir, "*.jpg")), key=lambda x: pattern.findall(x)[0]
-        )
-        annotation_files = sorted(
-            glob(path.join(annotations_dir, "*.txt")),
-            key=lambda x: pattern.findall(x)[0],
-        )
-        assert len(image_files) == len(
-            annotation_files
-        ), "An error occurred loading the dataset."
-        scenes = []
-        for annotation_file, image_file in tqdm(
-            zip(annotation_files, image_files),
-            desc="Creating scenes from " + annotations_dir,
-            total=len(annotation_files),
-        ):
-            scenes.append(scene_from_files(annotation_file, image_file))
-        return scenes
-
-    if subset in ["train", "traintest"]:
-        images_dir = utils.get_file(
-            origin="https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_images.zip",
-            file_hash="07e2d816dab67df4cd509641b1e1e8c720d3b15873a65b6dc9c1aa6a4de3d2c6",
-            cache_subdir=path.join("datasets", "rrc2015"),
-            hash_algorithm="sha256",
-            extract=True,
-            archive_format="zip",
-            extract_check_fn=lambda directory: len(glob(path.join(directory, "*.jpg")))
-            == 1000,
-        )
-        annotations_dir = utils.get_file(
-            origin="https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_training_localization_transcription_gt.zip",
-            file_hash="b9f2f0343d016a326bcafe3c28e0ddbda18b3a1e4a8a595784ba9dc3e305d754",
-            cache_subdir=path.join("datasets", "rrc2015"),
-            hash_algorithm="sha256",
-            extract=True,
-            archive_format="zip",
-            extract_check_fn=lambda directory: len(glob(path.join(directory, "*.txt")))
-            == 1000,
-        )
-        scenes += scenes_from_directories(annotations_dir, images_dir)
-    if subset in ["test", "traintest"]:
-        images_dir = utils.get_file(
-            origin="https://storage.googleapis.com/miradata/datasets/rrc2015/ch4_test_images.zip",
-            file_hash="ecfb2488333372b7381b14ccb5ac2127de88fb935f6759fe89e5c041b0e87358",
-            cache_subdir=path.join("datasets", "rrc2015"),
-            hash_algorithm="sha256",
-            extract=True,
-            archive_format="zip",
-            extract_check_fn=lambda directory: len(glob(path.join(directory, "*.jpg")))
-            == 500,
-        )
-        annotations_dir = utils.get_file(
-            origin="https://storage.googleapis.com/miradata/datasets/rrc2015/Challenge4_Test_Task1_GT.zip",
-            file_hash="8f434c410cfcf680b8421e3c22abf31b9297d8e255c3b13acc2890fddc6db6b0",
-            cache_subdir=path.join("datasets", "rrc2015"),
-            hash_algorithm="sha256",
-            extract=True,
-            archive_format="zip",
-            extract_check_fn=lambda directory: len(glob(path.join(directory, "*.txt")))
-            == 500,
-        )
-        scenes += scenes_from_directories(annotations_dir, images_dir)
-    return core.SceneCollection(annotation_config=annotation_config, scenes=scenes)

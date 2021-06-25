@@ -10,9 +10,7 @@ import math
 import io
 
 import tensorflow as tf
-from sklearn.model_selection import train_test_split
-from imgaug import augmenters as iaa
-import imgaug as ia
+import sklearn.model_selection as skms
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -213,7 +211,7 @@ class Scene:
             annotations=[
                 Annotation(
                     selection=Selection(
-                        [[x1 * width, y1 * height], [x2 * width, y2 * height]]
+                        x1=x1 * width, y1=y1 * height, x2=x2 * width, y2=y2 * height
                     ),
                     category=annotation_config[label.decode("utf-8")],
                 )
@@ -295,7 +293,7 @@ class Scene:
         utils.show(img, ax=ax)
         if labels:
             for ann in self.annotations:
-                x1, y1, _, _ = ann.selection.bbox()
+                x1, y1, _, _ = ann.selection.x1y1x2y2()
                 ax.annotate(
                     s=ann.category.name,
                     xy=(x1, y1),
@@ -334,7 +332,8 @@ class Scene:
         )
 
     def augment(
-        self, augmenter: iaa.Augmenter = None, threshold: float = 0.25
+        self,
+        augmenter: utils.AugmenterProtocol = None,
     ) -> "Scene":
         """Obtain an augmented version of the scene using the given augmenter.
 
@@ -343,29 +342,28 @@ class Scene:
         """
         if augmenter is None:
             return self
-        aug = augmenter.to_deterministic()
-        keypoints: typing.List[ia.Keypoint] = []
-        keypoints_map = {}
-        for i, ann in enumerate(self.annotations):
-            current = ann.selection.keypoints()
-            startIdx = len(keypoints)
-            endIdx = startIdx + len(current)
-            keypoints_map[i] = (startIdx, endIdx)
-            keypoints.extend(current)
-        keypoints = ia.KeypointsOnImage(keypoints, shape=self.image.shape)
-        image = aug.augment_images([self.image])[0]
-        keypoints = aug.augment_keypoints([keypoints])[0].keypoints
-        annotations = []
-        for i, ann in enumerate(self.annotations):
-            startIdx, endIdx = keypoints_map[i]
-            current = keypoints[startIdx:endIdx]
-            selection = ann.selection.assign_keypoints(current)
-            area = selection.area()
-            selection = selection.crop(width=image.shape[1], height=image.shape[0])
-            if area == 0 or (selection.area() / area < threshold):
-                continue
-            annotations.append(ann.assign(selection=selection))
-        return self.assign(image=image, annotations=annotations)
+        transformed = augmenter(
+            image=self.image,
+            bboxes=[ann.selection.x1y1x2y2() for ann in self.annotations],
+            categories=[ann.category.name for ann in self.annotations],
+        )
+        image = transformed["image"]
+        annotations = [
+            Annotation(
+                selection=Selection(*bbox).crop(
+                    width=image.shape[1], height=image.shape[0]
+                ),
+                category=self.annotation_config[category],
+            )
+            for bbox, category in zip(transformed["bboxes"], transformed["categories"])
+        ]
+        assert all(
+            ann.selection.area() > 0 for ann in annotations
+        ), "A bounding box exceeded image extent. Augmenters must filter invisible boxes."
+        return self.assign(
+            image=image,
+            annotations=annotations,
+        )
 
 
 class SceneCollection:
@@ -525,7 +523,7 @@ class SceneCollection:
         Returns:
             A train and test scene collection.
         """
-        train, test = train_test_split(self.scenes, *args, **kwargs)
+        train, test = skms.train_test_split(self.scenes, *args, **kwargs)
         return (self.assign(scenes=train), self.assign(scenes=test))
 
     def assign(self, **kwargs) -> "SceneCollection":

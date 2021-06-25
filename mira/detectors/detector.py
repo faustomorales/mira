@@ -4,7 +4,6 @@ import itertools
 import random
 
 import tensorflow as tf
-import imgaug as ia
 import numpy as np
 
 from .. import metrics
@@ -164,7 +163,7 @@ class Detector(ABC):
         collection: typing.Union[SceneCollection, str],
         train_shape: typing.Tuple[int, int, int],
         batch_size: int = 1,
-        augmenter: ia.augmenters.Augmenter = None,
+        augmenter: utils.AugmenterProtocol = None,
         shuffle=True,
     ):
         """Create a batch generator from a collection or TFRecords pattern."""
@@ -210,7 +209,7 @@ class Detector(ABC):
         self,
         collection: typing.Union[SceneCollection, str],
         batch_size: int,
-        augmenter: ia.augmenters.Augmenter,
+        augmenter: utils.AugmenterProtocol = None,
         train_shape: typing.Tuple[int, int, int] = None,
         shuffle: bool = False,
     ) -> tf.data.Dataset:
@@ -249,8 +248,9 @@ class Detector(ABC):
         training: typing.Union[SceneCollection, str],
         validation: typing.Union[SceneCollection, str] = None,
         batch_size: int = 1,
-        augmenter: ia.augmenters.Augmenter = None,
+        augmenter: utils.AugmenterProtocol = None,
         train_shape: typing.Tuple[int, int, int] = None,
+        augment_validation: bool = False,
         **kwargs,
     ):
         """Run training job. All additional keyword arguments
@@ -261,6 +261,11 @@ class Detector(ABC):
             validation: The collection of validation images
             batch_size: The batch size to use for training
             augmenter: The augmenter for generating samples
+            train_shape: The shape to use for training the model
+                (assuming the model does not have fixed input
+                size).
+            augment_validation: Whether to apply augmentation
+                to the validation set.
         """
         training_model = getattr(self, "training_model", self.model)
 
@@ -287,7 +292,7 @@ class Detector(ABC):
             kwargs["validation_data"] = self.dataset_from_collection(
                 validation,
                 batch_size=batch_size,
-                augmenter=None,
+                augmenter=augmenter if augment_validation else None,
                 train_shape=train_shape,
                 shuffle=False,
             )

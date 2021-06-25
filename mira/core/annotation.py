@@ -80,8 +80,8 @@ class Annotation:
         return self.assign(selection=self.selection.resize(scale=scale))
 
     def __eq__(self, other):
-        self_bbox = self.selection.bbox()
-        other_bbox = other.selection.bbox()
+        self_bbox = self.selection.x1y1x2y2()
+        other_bbox = other.selection.x1y1x2y2()
         return self_bbox == other_bbox and self.category == other.category
 
 
@@ -104,7 +104,10 @@ class AnnotationConfiguration:
         x1, y1, x2, y2, class_index where class_index is determined
         from the annotation configuration."""
         return np.array(
-            [list(a.selection.bbox()) + [self.index(a.category)] for a in annotations],
+            [
+                list(a.selection.x1y1x2y2()) + [self.index(a.category)]
+                for a in annotations
+            ],
         ).reshape(-1, 5)
 
     def __getitem__(self, key):

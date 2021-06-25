@@ -32,7 +32,6 @@ numpy = "*"
 scikit-learn = "*"
 tqdm = "*"
 validators = "*"
-imgaug = "*"
 tensorflow_addons = "*"
 
 [tool.poetry.dev-dependencies]
@@ -42,13 +41,12 @@ mypy = "*"
 pytest = "^6.1"
 pylint = "*"
 pytest-cov = "*"
-opencv-python = "*"
-tensorflow = [
-    { version = '2.5.0', platform = 'linux' },  # Installing TensorFlow on MacOS and Windows varies too much.
-]
+opencv-python-headless = "*"
+tensorflow = "2.4.1"
 jupyterlab = "^3.0.16"
 types-pkg-resources = "^0.1.3"
 types-six = "^0.1.7"
+matplotlib = "*"
 
 
 [tool.poetry-dynamic-versioning]

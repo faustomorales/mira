@@ -93,7 +93,7 @@ def load_voc(
                     int(float(bndbox.find(k).text))  # type: ignore
                     for k in ["xmin", "ymin", "xmax", "ymax"]
                 ]
-                current = Selection([[xmin, ymin], [xmax, ymax]])
+                current = Selection(x1=xmin, y1=ymin, x2=xmax, y2=ymax)
                 if selection is None:
                     selection = current
                 else:

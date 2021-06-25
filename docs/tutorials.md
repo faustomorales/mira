@@ -26,27 +26,25 @@ coco[26].annotated().show()
 ## Augmentation
 
 Augmentation can be kind of a pain for
-object detection sometimes. But `imgaug` makes
-it pretty easy to build augmentation pipelines
-and mira uses them to transform images as well
-as annotations.
+object detection sometimes. But `albumentations`
+makes it pretty easy to build augmentation pipelines
+and mira uses a protocol to specify how the augmentation
+should work. Note that, if you use `albumentations`, you
+must use the 'pascal_voc' format. Alternatively, you can use
+an arbitrary function that adheres to the `mira.core.utils.AugmenterProtocol`
+protocol.
 
 ```python
 from mira import datasets
-from imgaug import augmenters as iaa
+import albumentations as A
 
 dataset = datasets.load_voc2012(subset='val')
 scene = dataset[15]
-augmenter = iaa.Sequential([
-    iaa.Fliplr(0.5), # horizontally flip 50% of the images
-    iaa.GaussianBlur(sigma=(0, 3.0)), # blur images with a sigma of 0 to 3.0
-    iaa.Affine(
-        scale=(0.9, 1.1), # scale between 90% and 110% of original
-        translate_percent=(0.1, -0.1), # Translate +/- 10% of image size
-        rotate=(-5, 5),  # rotate -5 degrees to 5 degrees
-        cval=255
-    )
-])
+
+augmenter = A.Compose(
+    [A.HorizontalFlip(p=1), A.GaussianBlur()],
+    bbox_params=A.BboxParams(format='pascal_voc', label_fields=['categories']),
+)
 
 fig, (ax_original, ax_augmenter) = plt.subplots(ncols=2, figsize=(10, 5))
 ax_original.set_title('Original')
@@ -116,10 +114,10 @@ _ = predicted_yolo.annotated().show(ax=ax_yolo)
 ## Transfer Learning
 This example inspired by [the TensorFlow object detection tutorial](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/running_pets.md).
 
-```
+```python
+import tensorflow as tf
+import albumentations as A
 from mira import datasets, detectors
-from imgaug import augmenters as iaa
-from keras import callbacks
 
 # Load the Oxford pets datasets with a class
 # for each breed.
@@ -146,15 +144,15 @@ training, validation = trainval.train_test_split(
 )
 
 # Create an augmenter
-augmenter = iaa.Sequential([
-    iaa.Fliplr(0.5), # horizontally flip 50% of the images
-    iaa.GaussianBlur(sigma=(0, 3.0)) # blur images with a sigma of 0 to 3.0
-])
+augmenter = A.Compose(
+    [A.HorizontalFlip(p=1), A.GaussianBlur()],
+    bbox_params=A.BboxParams(format='pascal_voc', label_fields=['categories']),
+)
 
 # Make a callback to stop the training job
 # early if we plateau on the validation set.
 cbs = [
-    callbacks.EarlyStopping(
+    tf.keras.callbacks.EarlyStopping(
         monitor='val_loss',
         min_delta=0.1,
         patience=50,

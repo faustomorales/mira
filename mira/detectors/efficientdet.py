@@ -405,7 +405,7 @@ class EfficientDet(Detector):
         return [
             [
                 mc.Annotation(
-                    selection=mc.Selection([[x1, y1], [x2, y2]]),
+                    selection=mc.Selection(x1, y1, x2, y2),
                     # EfficientDet is 1-indexed so we subtract
                     # one to get back to a zero-indexed class.
                     category=self.annotation_config[int(c) - 1],

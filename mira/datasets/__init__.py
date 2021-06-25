@@ -1,7 +1,6 @@
 from .preloaded import (  # noqa: F401
     load_voc2012,
     load_oxfordiiitpets,
-    load_icdar2015,
     load_shapes,
     COCOAnnotationConfiguration,
     VOCAnnotationConfiguration,
