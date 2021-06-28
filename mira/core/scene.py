@@ -295,7 +295,7 @@ class Scene:
             for ann in self.annotations:
                 x1, y1, _, _ = ann.selection.x1y1x2y2()
                 ax.annotate(
-                    s=ann.category.name,
+                    text=ann.category.name,
                     xy=(x1, y1),
                     fontsize=fontsize,
                     backgroundcolor=(1, 1, 1, 0.5),
@@ -307,7 +307,6 @@ class Scene:
         fig.savefig(
             raw,
             dpi=dpi,
-            frameon=True,
             pad_inches=0,
             transparent=False,
             bbox_inches="tight",
@@ -357,9 +356,7 @@ class Scene:
             )
             for bbox, category in zip(transformed["bboxes"], transformed["categories"])
         ]
-        assert all(
-            ann.selection.area() > 0 for ann in annotations
-        ), "A bounding box exceeded image extent. Augmenters must filter invisible boxes."
+        annotations = [ann for ann in annotations if ann.selection.area() > 0]
         return self.assign(
             image=image,
             annotations=annotations,
