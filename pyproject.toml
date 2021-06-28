@@ -33,6 +33,7 @@ scikit-learn = "*"
 tqdm = "*"
 validators = "*"
 tensorflow_addons = "*"
+albumentations = "*"
 
 [tool.poetry.dev-dependencies]
 black = "*"
