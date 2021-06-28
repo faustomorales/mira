@@ -24,17 +24,11 @@ class RandomCropToPaddedBBox(A.DualTransform):
         self.height = height
 
     def apply(self, img, **params):
-        x_min, x_max, y_min, y_max = [
-            params[k] for k in ["x_min", "x_max", "y_min", "y_max"]
-        ]
+        x_min, y_min = [params[k] for k in ["x_min", "y_min"]]
         img_h, img_w = img.shape[:2]
-        return A.clamping_crop(
-            img,
-            x_min=x_min * img_w,
-            y_min=y_min * img_h,
-            x_max=x_max * img_w,
-            y_max=y_max * img_h,
-        )
+        x_min_i = int(min(x_min * img_w, img_w - self.width))
+        y_min_i = int(min(y_min * img_h, img_h - self.height))
+        return img[y_min_i : y_min_i + self.height, x_min_i : x_min_i + self.width]
 
     def get_params_dependent_on_targets(self, params):
         img_h, img_w = params["image"].shape[:2]
@@ -48,20 +42,16 @@ class RandomCropToPaddedBBox(A.DualTransform):
             return {
                 "x_min": x_min,
                 "y_min": y_min,
-                "x_max": x_min + box_w,
-                "y_max": y_min + box_h,
             }
         x1b, y1b, x2b, y2b = params["bboxes"][
             round(random.random() * (len(params["bboxes"]) - 1))
         ][:4]
         xcb, ycb = (x1b + x2b) / 2, (y1b + y2b) / 2
-        x_min = max(0, xcb - box_w / 2)
-        y_min = max(0, ycb - box_h / 2)
+        x_min = min(max(0, xcb - box_w / 2), 1 - box_w)
+        y_min = min(max(0, ycb - box_h / 2), 1 - box_h)
         return {
             "x_min": x_min,
             "y_min": y_min,
-            "x_max": min(x_min + box_w, 1),
-            "y_max": min(y_min + box_h, 1),
         }
 
     @property
@@ -69,11 +59,11 @@ class RandomCropToPaddedBBox(A.DualTransform):
         return ["image", "bboxes"]
 
     def apply_to_bbox(self, bbox, **params):
-        x_min, x_max, y_min, y_max, cols, rows = [
-            params[k] for k in ["x_min", "x_max", "y_min", "y_max", "cols", "rows"]
+        x_min, y_min, cols, rows = [
+            params[k] for k in ["x_min", "y_min", "cols", "rows"]
         ]
-        crop_w = x_max - x_min
-        crop_h = y_max - y_min
+        crop_w = self.width / cols
+        crop_h = self.height / rows
         scale_x = cols / self.width
         scale_y = rows / self.height
         x1, y1, x2, y2 = [
