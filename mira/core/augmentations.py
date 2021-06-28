@@ -25,7 +25,7 @@ class RandomCropToPaddedBBox(A.DualTransform):
 
     def apply(self, img, **params):
         x_min, x_max, y_min, y_max = [
-            params[k] for k in ["x_min", "x_max", "y_min", "ymax"]
+            params[k] for k in ["x_min", "x_max", "y_min", "y_max"]
         ]
         img_h, img_w = img.shape[:2]
         return A.clamping_crop(
@@ -70,7 +70,7 @@ class RandomCropToPaddedBBox(A.DualTransform):
 
     def apply_to_bbox(self, bbox, **params):
         x_min, x_max, y_min, y_max, cols, rows = [
-            params[k] for k in ["x_min", "x_max", "y_min", "ymax", "cols", "rows"]
+            params[k] for k in ["x_min", "x_max", "y_min", "y_max", "cols", "rows"]
         ]
         crop_w = x_max - x_min
         crop_h = y_max - y_min
