@@ -290,7 +290,6 @@ class EfficientDet(Detector):
         )
         self.model = build_model(config=self.config, **kwargs)
         self.backbone = self.model.layers[0]
-        # self.model = build_model(self.training_model, config=self.config)
         self.anchor_labeler = anchors.AnchorLabeler(
             anchors.Anchors(
                 self.config.min_level,
