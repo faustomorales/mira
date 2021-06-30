@@ -415,6 +415,7 @@ class EfficientDet(Detector):
                     current_classes[:length],
                     current_scores[:length],
                 )
+                if c <= len(self.annotation_config)
             ]
             for current_boxes, current_classes, current_scores, length in zip(
                 boxes, classes, scores, valid_len
