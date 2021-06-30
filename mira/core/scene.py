@@ -9,7 +9,10 @@ import logging
 import math
 import io
 
-import tensorflow as tf
+try:
+    import tensorflow as tf
+except ImportError:
+    tf = None
 import sklearn.model_selection as skms
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -126,8 +129,9 @@ class Scene:
         kwargs = {**defaults, **kwargs}
         return Scene(**kwargs)
 
-    def to_example(self) -> tf.train.Example:
+    def to_example(self):
         """Obtain a tf.Example for the scene."""
+        assert tf is not None, "TensorFlow not found."
         image = self.image
         bboxes = self.bboxes()
         bboxes_scaled = bboxes[:, :4].astype("float32") / np.array(
@@ -183,6 +187,7 @@ class Scene:
     @classmethod
     def from_example(cls, serialized, annotation_config: AnnotationConfiguration):
         """Load a scene using a serialized tf.Example representation."""
+        assert tf is not None, "TensorFlow not found."
         deserialized = tf.io.parse_single_example(
             serialized,
             features={
@@ -456,6 +461,7 @@ class SceneCollection:
                 my_directory/my_training_dataset).
             n_scenes_per_shard: The number of scenes to store in each file.
         """
+        assert tf is not None, "TensorFlow not found."
         if os.path.dirname(output_prefix):
             os.makedirs(os.path.dirname(output_prefix), exist_ok=True)
         n_shards = math.ceil(len(self) / n_scenes_per_shard)
@@ -479,6 +485,7 @@ class SceneCollection:
             annotation_config: The annotation configuration to use
                 when loading the examples.
         """
+        assert tf is not None, "TensorFlow not found."
         return cls(
             scenes=[
                 Scene.from_example(record, annotation_config=annotation_config)
