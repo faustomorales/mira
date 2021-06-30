@@ -22,6 +22,32 @@ COCOAnnotationConfiguration = core.AnnotationConfiguration(
 VOCAnnotationConfiguration = core.AnnotationConfiguration(
     resource_string(__name__, "assets/voc_classes.txt").decode("utf-8").split("\n")
 )
+COCOAnnotationConfiguration90 = core.AnnotationConfiguration(
+    resource_string(__name__, "assets/coco_classes_90.txt").decode("utf-8").split("\n")
+)
+
+
+def load_random_images():
+    """Get some random images from the internet."""
+    urls = [
+        "https://upload.wikimedia.org/wikipedia/commons/8/8d/President_Barack_Obama.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/b/b7/Atlantic_Puffin.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/1/11/Freightliner_M2_106_6x4_2014_%2814240376744%29.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/2/2c/1996_Porsche_911_993_GT2_-_Flickr_-_The_Car_Spy_%284%29.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/1/1e/Handheld_blowdryer.jpg",
+    ]
+    annotation_config = core.AnnotationConfiguration([])
+    return core.SceneCollection(
+        annotation_config=annotation_config,
+        scenes=[
+            core.Scene(
+                image=core.utils.read(url),
+                annotations=[],
+                annotation_config=annotation_config,
+            )
+            for url in urls
+        ],
+    )
 
 
 def load_voc2012(subset="train") -> core.SceneCollection:

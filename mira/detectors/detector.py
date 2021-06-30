@@ -1,41 +1,24 @@
 from abc import ABC, abstractmethod
+import types
 import typing
-import itertools
-import random
 
-import tensorflow as tf
+import torch
+import tqdm
 import numpy as np
+import timm.optim
+import timm.scheduler
 
 from .. import metrics
-from ..core import Scene, SceneCollection, Annotation, AnnotationConfiguration, utils
-
-
-def tensorspec_from_data(data: typing.Union[dict, np.ndarray, list, tuple]):
-    """Build a tf.TensorSpec from a numpy array or dict of
-    key/numpy arrays."""
-    if isinstance(data, dict):
-        return {
-            k: tf.TensorSpec(shape=(None, *v.shape[1:]), dtype=v.dtype)
-            for k, v in data.items()
-        }
-    if isinstance(data, np.ndarray):
-        return tf.TensorSpec(shape=(None, *data.shape[1:]), dtype=data.dtype)
-    if isinstance(data, (list, tuple)):
-        return tuple(tensorspec_from_data(d) for d in data)
-    raise NotImplementedError(f"Cannot convert {type(data)} to TensorSpec.")
+from ..core import SceneCollection, Annotation, AnnotationConfiguration, utils
 
 
 class Detector(ABC):
     """Abstract base class for a detector."""
 
-    model: tf.keras.models.Model
-    backbone: tf.keras.models.Model
+    model: torch.nn.Module
+    backbone: torch.nn.Module
     annotation_config: AnnotationConfiguration
-    training_model: typing.Optional[tf.keras.models.Model]
-
-    @abstractmethod
-    def compile(self):
-        """Compile the model using known configuration for loss and optimizer."""
+    training_model: typing.Optional[torch.nn.Module]
 
     @abstractmethod
     def invert_targets(
@@ -47,10 +30,8 @@ class Detector(ABC):
     ) -> typing.List[typing.List[Annotation]]:
         """Compute a list of annotation groups from model output."""
 
-    def detect(
-        self, image: np.ndarray, threshold: float = 0.5, **kwargs
-    ) -> typing.List[Annotation]:
-        """Run detection for a given image.
+    def detect(self, image: np.ndarray, **kwargs) -> typing.List[Annotation]:
+        """Run detection for a given image. All other args passed to invert_targets()
 
         Args:
             image: The image to run detection on
@@ -58,19 +39,19 @@ class Detector(ABC):
         Returns:
             A list of annotations
         """
+        self.model.eval()
         image, scale = self._scale_to_model_size(image)
-        X = self.compute_inputs([image])
-        y = self.model.predict(X)
-        annotations = self.invert_targets(
-            y, input_shape=image.shape, threshold=threshold, **kwargs
-        )[0]
+        with torch.no_grad():
+            annotations = self.invert_targets(
+                self.model(self.compute_inputs([image])), **kwargs
+            )[0]
         return [a.resize(1 / scale) for a in annotations]
 
     def detect_batch(
         self,
         images: typing.List[np.ndarray],
-        threshold: float = 0.5,
         batch_size: int = 32,
+        **kwargs,
     ) -> typing.List[typing.List[Annotation]]:
         """
         Perform object detection on a batch of images.
@@ -86,22 +67,25 @@ class Detector(ABC):
         images, scales = list(
             zip(*[self._scale_to_model_size(image) for image in images])
         )
-        X = self.compute_inputs(images)
-        y = self.model.predict(X, batch_size=batch_size)
-        annotation_groups = self.invert_targets(
-            y, input_shape=X.shape[1:], threshold=threshold
-        )
+        annotation_groups = []
+        self.model.eval()
+        for start in range(0, len(images), batch_size):
+            annotation_groups.extend(
+                self.invert_targets(
+                    self.model(
+                        self.compute_inputs(images[start : start + batch_size]),
+                    ),
+                    **kwargs,
+                )
+            )
         return [
             [a.resize(1 / scale) for a in annotations]
             for annotations, scale in zip(annotation_groups, scales)
         ]
 
     def _scale_to_model_size(self, image: np.ndarray):
-        height, width = self.model.input_shape[1:3]
-        if height is not None and width is not None:
-            image, scale = utils.fit(image=image, width=width, height=height)
-        else:
-            scale = 1
+        height, width = self.input_shape
+        image, scale = utils.fit(image=image, width=width, height=height)
         return image, scale
 
     @abstractmethod
@@ -122,7 +106,9 @@ class Detector(ABC):
     def compute_targets(
         self,
         annotation_groups: typing.List[typing.List[Annotation]],
-        input_shape: typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, int]],
+        input_shape: typing.Union[
+            typing.Tuple[int, int], typing.Tuple[int, int, int]
+        ] = None,
     ) -> typing.Union[typing.List[np.ndarray], np.ndarray]:
         """Compute the expected outputs for a model. *You
         usually should not need this method*. For training,
@@ -134,21 +120,23 @@ class Detector(ABC):
             input_shape: The assumed image input shape.
 
         Returns:
-            The output(s) as a list of numpy arrays
+            The output(s) that will be used by detector.train()
         """
 
     def freeze_backbone(self):
         """Freeze the body of the model, leaving the final classification and
         regression layer as trainable."""
-        for l in self.backbone.layers:
-            l.trainable = False
-        self.compile()
+        for p in self.model.backbone.parameters():
+            p.requires_grad = False
+        for m in self.model.backbone.modules():
+            m.eval()
 
     def unfreeze_backbone(self):
         """Unfreeze the body of the model, making all layers trainable."""
-        for l in self.backbone.layers:
-            l.trainable = True
-        self.compile()
+        for p in self.model.backbone.parameters():
+            p.requires_grad = True
+        for m in self.model.backbone.modules():
+            m.train()
 
     def compute_Xy(self, collection: SceneCollection):
         """Compute the X, y  representation for a collection."""
@@ -158,103 +146,15 @@ class Detector(ABC):
             self.compute_targets(collection.annotation_groups, images[0].shape),
         )
 
-    def batch_generator(
-        self,
-        collection: typing.Union[SceneCollection, str],
-        train_shape: typing.Tuple[int, int, int],
-        batch_size: int = 1,
-        augmenter: utils.AugmenterProtocol = None,
-        shuffle=True,
-    ):
-        """Create a batch generator from a collection or TFRecords pattern."""
-        if isinstance(collection, SceneCollection):
-            index = np.arange(len(collection)).tolist()
-            for idx in itertools.cycle(range(0, len(collection), batch_size)):
-                if idx == 0 and shuffle:
-                    random.shuffle(index)
-                sample = (
-                    collection.assign(
-                        scenes=[collection[i] for i in index[idx : idx + batch_size]]
-                    )
-                    .augment(augmenter=augmenter)
-                    .fit(height=train_shape[0], width=train_shape[1])[0]
-                )
-                yield self.compute_Xy(sample)
-        elif isinstance(collection, str):
-            dataset = tf.data.Dataset.list_files(collection).interleave(
-                tf.data.TFRecordDataset
-            )
-            if shuffle:
-                dataset = dataset.shuffle(64)
-            dataset = dataset.prefetch(batch_size).batch(batch_size).repeat()
-            for records in dataset:
-                sample = (
-                    SceneCollection(
-                        scenes=[
-                            Scene.from_example(
-                                record, annotation_config=self.annotation_config
-                            )
-                            for record in records
-                        ],
-                        annotation_config=self.annotation_config,
-                    )
-                    .augment(augmenter=augmenter)
-                    .fit(height=train_shape[0], width=train_shape[1])[0]
-                )
-                yield self.compute_Xy(collection=sample)
-        else:
-            raise NotImplementedError(f"Unknown collection type: {type(collection)}")
-
-    def dataset_from_collection(
-        self,
-        collection: typing.Union[SceneCollection, str],
-        batch_size: int,
-        augmenter: utils.AugmenterProtocol = None,
-        train_shape: typing.Tuple[int, int, int] = None,
-        shuffle: bool = False,
-    ) -> tf.data.Dataset:
-        """Create a tf.Dataset generating targets for this
-        detector from a scene collection or TFRecords string."""
-        if isinstance(collection, SceneCollection):
-            assert (
-                collection.annotation_config == self.annotation_config
-            ), "The collection configuration clashes with detector"
-            assert (
-                collection.consistent
-            ), "The collection has inconsistent annotation configuration"
-        if train_shape is None:
-            train_shape = getattr(self, "training_model", self.model).input_shape[1:]
-            assert all(
-                s is not None for s in train_shape
-            ), "train_shape must be provided for this model."
-
-        batch_generator = self.batch_generator(
-            collection=collection,
-            batch_size=batch_size,
-            augmenter=augmenter,
-            shuffle=shuffle,
-            train_shape=train_shape,
-        )
-        output_signature = tuple(
-            tensorspec_from_data(data) for data in next(batch_generator)
-        )
-        return tf.data.Dataset.from_generator(
-            lambda: batch_generator,
-            output_signature=output_signature,
-        )
-
     def train(
         self,
         training: typing.Union[SceneCollection, str],
         validation: typing.Union[SceneCollection, str] = None,
         batch_size: int = 1,
         augmenter: utils.AugmenterProtocol = None,
-        train_shape: typing.Tuple[int, int, int] = None,
-        augment_validation: bool = False,
-        **kwargs,
+        epochs=100,
     ):
-        """Run training job. All additional keyword arguments
-        passed to Keras' `fit_generator`.
+        """Run training job.
 
         Args:
             training: The collection of training images
@@ -267,36 +167,74 @@ class Detector(ABC):
             augment_validation: Whether to apply augmentation
                 to the validation set.
         """
-        training_model = getattr(self, "training_model", self.model)
-
-        if "steps_per_epoch" not in kwargs:
-            assert not isinstance(
-                training, str
-            ), "You must set steps_per_epoch if a dataset pattern is used."
-            kwargs["steps_per_epoch"] = int(len(training) // batch_size)
-        if validation is not None and "validation_steps" not in kwargs:
-            assert not isinstance(
-                validation, str
-            ), "You must set validation_steps if a dataset pattern is used."
-            kwargs["validation_steps"] = int(len(validation) // batch_size)
-        if "epochs" not in kwargs:
-            kwargs["epochs"] = 1000
-        training_dataset = self.dataset_from_collection(
-            training,
-            batch_size=batch_size,
-            augmenter=augmenter,
-            train_shape=train_shape,
-            shuffle=True,
+        optimizer = timm.optim.create_optimizer_v2(
+            self.training_model, learning_rate=1e-2, weight_decay=4e-5
+        )
+        scheduler, num_epochs = timm.scheduler.create_scheduler(
+            types.SimpleNamespace(
+                sched="cosine",
+                epochs=epochs,
+                min_lr=1e-5,
+                decay_rate=0.1,
+                warmup_lr=1e-4,
+                warmup_epochs=5,
+                cooldown_epochs=10,
+            ),
+            optimizer=optimizer,
         )
         if validation is not None:
-            kwargs["validation_data"] = self.dataset_from_collection(
-                validation,
-                batch_size=batch_size,
-                augmenter=augmenter if augment_validation else None,
-                train_shape=train_shape,
-                shuffle=False,
-            )
-        return training_model.fit(training_dataset, **kwargs)
+            validation = validation.fit(
+                width=self.input_shape[1], height=self.input_shape[0]
+            )[0]
+        for epoch in range(num_epochs):
+            with tqdm.trange(len(training) // batch_size) as t:
+                self.training_model.train()
+                t.set_description(f"Epoch {epoch + 1} / {epochs}")
+                cum_loss = 0
+                for batchIdx, start in enumerate(range(0, len(training), batch_size)):
+                    batch = training.assign(
+                        scenes=[
+                            training[idx] for idx in range(start, start + batch_size)
+                        ]
+                    )
+                    if augmenter is not None:
+                        batch = batch.augment(augmenter=augmenter)
+                    batch = batch.fit(
+                        width=self.input_shape[1], height=self.input_shape[0]
+                    )[0]
+                    optimizer.zero_grad()
+                    loss = self.training_model(
+                        self.compute_inputs(batch.images),
+                        self.compute_targets(annotation_groups=batch.annotation_groups),
+                    )["loss"]
+                    loss.backward()
+                    cum_loss += loss.detach().numpy()
+                    avg_loss = cum_loss / (batchIdx + 1)
+                    optimizer.step()
+                    scheduler.step(epoch)
+                    t.set_postfix(loss=avg_loss)
+                    t.update()
+                if validation is not None:
+                    t.set_postfix(
+                        mAP={
+                            k: round(v, 2)
+                            for k, v in metrics.mAP(
+                                true_collection=validation,
+                                pred_collection=validation.assign(
+                                    scenes=[
+                                        scene.assign(annotations=annotations)
+                                        for scene, annotations in zip(
+                                            validation,
+                                            self.detect_batch(
+                                                images=validation.images, threshold=0.01
+                                            ),
+                                        )
+                                    ]
+                                ),
+                            ).items()
+                        },
+                        loss=avg_loss,
+                    )
 
     def mAP(self, collection: SceneCollection, iou_threshold=0.5):
         """Compute the mAP metric for a given collection

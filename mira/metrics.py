@@ -147,7 +147,7 @@ def mAP(
     aps = {}
     for className, prs_cur in prs.items():
         ps = prs_cur[:, 0]
-        rs = prs_cur[:, 1]
+        rs = prs_cur[:, 1].astype("float32")
         pi = np.zeros(11)
         # If rs is None, there were no detections and no true
         # boxes. If it is all nans, then there were no
