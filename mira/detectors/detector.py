@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
+import abc
 import types
 import typing
+import random
 
 import torch
 import tqdm
@@ -8,8 +9,8 @@ import numpy as np
 import timm.optim
 import timm.scheduler
 
-from .. import metrics
-from ..core import SceneCollection, Annotation, AnnotationConfiguration, utils
+from .. import metrics as mm
+from .. import core as mc
 
 DEFAULT_SCHEDULER_PARAMS = dict(
     sched="cosine",
@@ -23,24 +24,24 @@ DEFAULT_SCHEDULER_PARAMS = dict(
 DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
 
 
-class Detector(ABC):
+class Detector(abc.ABC):
     """Abstract base class for a detector."""
 
     model: torch.nn.Module
     backbone: torch.nn.Module
-    annotation_config: AnnotationConfiguration
+    annotation_config: mc.AnnotationConfiguration
     training_model: typing.Optional[torch.nn.Module]
 
-    @abstractmethod
+    @abc.abstractmethod
     def invert_targets(
         self,
         y: typing.Any,
         threshold: float = 0.5,
         **kwargs,
-    ) -> typing.List[typing.List[Annotation]]:
+    ) -> typing.List[typing.List[mc.Annotation]]:
         """Compute a list of annotation groups from model output."""
 
-    def detect(self, image: np.ndarray, **kwargs) -> typing.List[Annotation]:
+    def detect(self, image: np.ndarray, **kwargs) -> typing.List[mc.Annotation]:
         """Run detection for a given image. All other args passed to invert_targets()
 
         Args:
@@ -62,7 +63,7 @@ class Detector(ABC):
         images: typing.List[np.ndarray],
         batch_size: int = 32,
         **kwargs,
-    ) -> typing.List[typing.List[Annotation]]:
+    ) -> typing.List[typing.List[mc.Annotation]]:
         """
         Perform object detection on a batch of images.
 
@@ -94,20 +95,20 @@ class Detector(ABC):
         ]
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def input_shape(self) -> typing.Tuple[int, int, int]:
         """Obtain the input shape for this model."""
 
-    @abstractmethod
+    @abc.abstractmethod
     def set_input_shape(self, width: int, height: int):
         """Set the input shape for this model."""
 
     def _scale_to_model_size(self, image: np.ndarray):
         height, width = self.input_shape[:2]
-        image, scale = utils.fit(image=image, width=width, height=height)
+        image, scale = mc.utils.fit(image=image, width=width, height=height)
         return image, scale
 
-    @abstractmethod
+    @abc.abstractmethod
     def compute_inputs(self, images: typing.List[np.ndarray]) -> np.ndarray:
         """Convert images into suitable model inputs. *You
         usually should not need this method*. For training,
@@ -121,10 +122,10 @@ class Detector(ABC):
             The input to the model
         """
 
-    @abstractmethod
+    @abc.abstractmethod
     def compute_targets(
         self,
-        annotation_groups: typing.List[typing.List[Annotation]],
+        annotation_groups: typing.List[typing.List[mc.Annotation]],
     ) -> typing.Union[typing.List[np.ndarray], np.ndarray]:
         """Compute the expected outputs for a model. *You
         usually should not need this method*. For training,
@@ -155,12 +156,13 @@ class Detector(ABC):
 
     def train(
         self,
-        training: SceneCollection,
-        validation: SceneCollection = None,
+        training: mc.SceneCollection,
+        validation: mc.SceneCollection = None,
         batch_size: int = 1,
-        augmenter: utils.AugmenterProtocol = None,
+        augmenter: mc.utils.AugmenterProtocol = None,
         train_backbone: bool = True,
         epochs=100,
+        shuffle=True,
         optimizer_params=None,
         scheduler_params=None,
     ):
@@ -194,6 +196,7 @@ class Detector(ABC):
             validation = validation.fit(
                 width=self.input_shape[1], height=self.input_shape[0]
             )[0]
+        train_index = np.arange(len(training)).tolist()
         for epoch in range(num_epochs):
             with tqdm.trange(len(training) // batch_size) as t:
                 training_model.train()
@@ -204,9 +207,12 @@ class Detector(ABC):
                 t.set_description(f"Epoch {epoch + 1} / {num_epochs}")
                 cum_loss = 0
                 for batchIdx, start in enumerate(range(0, len(training), batch_size)):
+                    if batchIdx == 0 and shuffle:
+                        random.shuffle(train_index)
                     batch = training.assign(
                         scenes=[
-                            training[idx] for idx in range(start, start + batch_size)
+                            training[train_index[idx]]
+                            for idx in range(start, start + batch_size)
                         ]
                     )
                     if augmenter is not None:
@@ -241,7 +247,7 @@ class Detector(ABC):
                         loss=avg_loss,
                     )
 
-    def mAP(self, collection: SceneCollection, iou_threshold=0.5, batch_size=32):
+    def mAP(self, collection: mc.SceneCollection, iou_threshold=0.5, batch_size=32):
         """Compute the mAP metric for a given collection
         of ground truth scenes.
 
@@ -264,7 +270,7 @@ class Detector(ABC):
                 )
             ]
         )
-        return metrics.mAP(
+        return mm.mAP(
             true_collection=collection,
             pred_collection=pred,
             iou_threshold=iou_threshold,
