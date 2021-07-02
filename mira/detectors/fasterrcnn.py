@@ -11,7 +11,7 @@ from .detector import Detector
 BACKBONE_TO_CONSTRUCTOR = {
     "resnet50": torchvision.models.detection.fasterrcnn_resnet50_fpn,
     "mobilenet_large": torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn,
-    "fasterrcnn_mobilenet_large_320": torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn,
+    "mobilenet_large_320": torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn,
 }
 
 
@@ -31,9 +31,8 @@ class FasterRCNN(Detector):
         self.model = BACKBONE_TO_CONSTRUCTOR[backbone](
             pretrained=pretrained_top,
             progress=True,
-            num_classes=len(mds.COCOAnnotationConfiguration90),
+            num_classes=len(annotation_config) + 1,
             pretrained_backbone=pretrained_backbone,
-            trainable_backbone_layers=5,
         )
         self.set_input_shape(width=512, height=512)
 

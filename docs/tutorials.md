@@ -71,13 +71,9 @@ import matplotlib.pyplot as plt
 # split to save time)
 dataset = datasets.load_voc2012(subset='val')
 
-# Load YOLO with pretrained layers. It is
+# Load FasterRCNN with pretrained layers. It is
 # set up to use COCO labels.
-detector_yolo = detectors.YOLOv3(
-    input_shape=(256, 256, 3),
-    pretrained_top=True,
-    size='tiny'
-)
+detector_faster = detectors.FasterRCNN(pretrained_top=True)
 
 detector_ed = detectors.EfficientDet(pretrained_top=True)
 
@@ -85,9 +81,9 @@ detector_ed = detectors.EfficientDet(pretrained_top=True)
 scene = dataset[5]
 
 # Set up side-by-side plots
-fig, (ax_ed, ax_yolo) = plt.subplots(ncols=2, figsize=(10, 5))
+fig, (ax_ed, ax_faster) = plt.subplots(ncols=2, figsize=(10, 5))
 ax_ed.set_title('EfficientDet')
-ax_yolo.set_title('YOLOv3')
+ax_faster.set_title('FasterRCNN')
 
 # We get predicted scenes from each detector. Detectors return
 # lists of annotations for a given image. So we can just replace
@@ -97,15 +93,15 @@ predicted_ed = scene.assign(
     annotations=detector_ed.detect(scene.image),
     annotation_config=detector_ed.annotation_config
 )
-predicted_yolo = scene.assign(
-    annotations=detector_yolo.detect(scene.image, threshold=0.4),
-    annotation_config=detector_yolo.annotation_config
+predicted_faster = scene.assign(
+    annotations=detector_faster.detect(scene.image, threshold=0.4),
+    annotation_config=detector_faster.annotation_config
 )
 
 # Plot both predictions. The calls to annotation() get us
 # an image with the bounding boxes drawn.
 _ = predicted_ed.annotated().show(ax=ax_ed)
-_ = predicted_yolo.annotated().show(ax=ax_yolo)
+_ = predicted_faster.annotated().show(ax=ax_faster)
 ```
 
 .. image:: _static/example_simple_od.png
@@ -115,7 +111,6 @@ _ = predicted_yolo.annotated().show(ax=ax_yolo)
 This example inspired by [the TensorFlow object detection tutorial](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/running_pets.md).
 
 ```python
-import tensorflow as tf
 import albumentations as A
 from mira import datasets, detectors
 
@@ -123,15 +118,13 @@ from mira import datasets, detectors
 # for each breed.
 dataset = datasets.load_oxfordiiitpets(breed=True)
 
-# Load YOLO with pretrained backbone. We'll
+# Load FasterRCNN with pretrained backbone. We'll
 # use the annotation configuration for our
 # new task.
-detector = detectors.YOLOv3(
-    input_shape=(256, 256, 3),
+detector = detectors.FasterRCNN(
     pretrained_top=False,
     pretrained_backbone=True,
     annotation_config=dataset.annotation_config,
-    size='tiny'
 )
 
 # Split our dataset into training, validation,
@@ -149,28 +142,13 @@ augmenter = A.Compose(
     bbox_params=A.BboxParams(format='pascal_voc', label_fields=['categories']),
 )
 
-# Make a callback to stop the training job
-# early if we plateau on the validation set.
-cbs = [
-    tf.keras.callbacks.EarlyStopping(
-        monitor='val_loss',
-        min_delta=0.1,
-        patience=50,
-        verbose=1,
-        mode='auto',
-        restore_best_weights=True
-    )
-]
-
 # Run training job
 detector.train(
     training=training,
     validation=validation,
-    steps_per_epoch=50,
     epochs=1000,
     batch_size=8,
     augmenter=augmenter,
-    callbacks=cbs
 )
 ```
 
@@ -214,14 +192,12 @@ And now we can train a detector.
 ```python
 from mira import detectors
 
-detector = detectors.YOLOv3(
+detector = detectors.FasterRCNN(
     annotation_config=training.annotation_config
 )
 detector.train(
     training=training,
     validation=validation,
-    epochs=1000,
-    steps_per_epoch=50
-    train_shape=(512, 512)
+    epochs=1000
 )
 ```

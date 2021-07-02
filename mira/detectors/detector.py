@@ -215,10 +215,14 @@ class Detector(ABC):
                         width=self.input_shape[1], height=self.input_shape[0]
                     )[0]
                     optimizer.zero_grad()
-                    loss = training_model(
+                    loss_dict = training_model(
                         self.compute_inputs(batch.images),
                         self.compute_targets(annotation_groups=batch.annotation_groups),
-                    )["loss"]
+                    )
+                    if "loss" in loss_dict:
+                        loss = loss_dict["loss"]
+                    else:
+                        loss = sum(loss for loss in loss_dict.values())
                     loss.backward()
                     cum_loss += loss.detach().numpy()
                     avg_loss = cum_loss / (batchIdx + 1)

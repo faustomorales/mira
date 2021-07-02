@@ -21,9 +21,6 @@ help:
 	@echo '  e.g., make test TEST_SCOPE="-m not_integration tests/api/"'
 
 init:  ## Initialize the development environment.
-	git submodule init
-	git submodule update --remote
-	./packaging/package-automl.sh
 	pip install poetry-dynamic-versioning poetry
 	poetry install
 
