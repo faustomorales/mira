@@ -205,7 +205,7 @@ class Detector(abc.ABC):
                 the scheduler.
         """
         training_model = (
-            self.training_model if hasattr(self, "training_modle") else self.model
+            self.training_model if hasattr(self, "training_model") else self.model
         )
         assert training_model is not None
         optimizer = timm.optim.create_optimizer_v2(
