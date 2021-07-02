@@ -67,7 +67,7 @@ class FasterRCNN(Detector):
         return [
             {
                 "boxes": torch.tensor(b[:, :4], dtype=torch.float32),
-                "labels": torch.tensor(b[:, -1] + 1),
+                "labels": torch.tensor(b[:, -1] + 1, dtype=torch.int64),
             }
             for b in [
                 self.annotation_config.bboxes_from_group(g) for g in annotation_groups
