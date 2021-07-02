@@ -104,7 +104,7 @@ class EfficientDet(Detector):
                     selection=mc.Selection(x1=x1, y1=y1, x2=x2, y2=y2),
                     score=score,
                 )
-                for x1, y1, x2, y2, score, labelIdx in group
+                for x1, y1, x2, y2, score, labelIdx in group.detach().numpy()
                 if score > threshold
             ]
             for group in detections

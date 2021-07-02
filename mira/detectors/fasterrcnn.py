@@ -49,7 +49,9 @@ class FasterRCNN(Detector):
                     score=score,
                 )
                 for (x1, y1, x2, y2), labelIdx, score in zip(
-                    labels["boxes"], labels["labels"], labels["scores"]
+                    labels["boxes"].detach().numpy(),
+                    labels["labels"].detach().numpy(),
+                    labels["scores"].detach().numpy(),
                 )
                 if score > threshold
             ]
