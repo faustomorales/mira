@@ -11,6 +11,17 @@ import timm.scheduler
 from .. import metrics
 from ..core import SceneCollection, Annotation, AnnotationConfiguration, utils
 
+DEFAULT_SCHEDULER_PARAMS = dict(
+    sched="cosine",
+    min_lr=1e-5,
+    decay_rate=0.1,
+    warmup_lr=1e-4,
+    warmup_epochs=5,
+    cooldown_epochs=10,
+)
+
+DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
+
 
 class Detector(ABC):
     """Abstract base class for a detector."""
@@ -23,8 +34,7 @@ class Detector(ABC):
     @abstractmethod
     def invert_targets(
         self,
-        y: typing.List[np.ndarray],
-        input_shape: typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, int]],
+        y: typing.Any,
         threshold: float = 0.5,
         **kwargs,
     ) -> typing.List[typing.List[Annotation]]:
@@ -64,11 +74,11 @@ class Detector(ABC):
         Returns:
             A list of lists of annotations.
         """
+        self.model.eval()
         images, scales = list(
             zip(*[self._scale_to_model_size(image) for image in images])
         )
         annotation_groups = []
-        self.model.eval()
         for start in range(0, len(images), batch_size):
             annotation_groups.extend(
                 self.invert_targets(
@@ -83,8 +93,17 @@ class Detector(ABC):
             for annotations, scale in zip(annotation_groups, scales)
         ]
 
+    @property
+    @abstractmethod
+    def input_shape(self) -> typing.Tuple[int, int, int]:
+        """Obtain the input shape for this model."""
+
+    @abstractmethod
+    def set_input_shape(self, width: int, height: int):
+        """Set the input shape for this model."""
+
     def _scale_to_model_size(self, image: np.ndarray):
-        height, width = self.input_shape
+        height, width = self.input_shape[:2]
         image, scale = utils.fit(image=image, width=width, height=height)
         return image, scale
 
@@ -106,9 +125,6 @@ class Detector(ABC):
     def compute_targets(
         self,
         annotation_groups: typing.List[typing.List[Annotation]],
-        input_shape: typing.Union[
-            typing.Tuple[int, int], typing.Tuple[int, int, int]
-        ] = None,
     ) -> typing.Union[typing.List[np.ndarray], np.ndarray]:
         """Compute the expected outputs for a model. *You
         usually should not need this method*. For training,
@@ -117,7 +133,6 @@ class Detector(ABC):
 
         Args:
             annotation_groups: A list of lists of annotation groups.
-            input_shape: The assumed image input shape.
 
         Returns:
             The output(s) that will be used by detector.train()
@@ -126,33 +141,28 @@ class Detector(ABC):
     def freeze_backbone(self):
         """Freeze the body of the model, leaving the final classification and
         regression layer as trainable."""
-        for p in self.model.backbone.parameters():
+        for p in self.model.backbone.parameters():  # type: ignore
             p.requires_grad = False
-        for m in self.model.backbone.modules():
+        for m in self.model.backbone.modules():  # type: ignore
             m.eval()
 
     def unfreeze_backbone(self):
         """Unfreeze the body of the model, making all layers trainable."""
-        for p in self.model.backbone.parameters():
+        for p in self.model.backbone.parameters():  # type: ignore
             p.requires_grad = True
-        for m in self.model.backbone.modules():
+        for m in self.model.backbone.modules():  # type: ignore
             m.train()
-
-    def compute_Xy(self, collection: SceneCollection):
-        """Compute the X, y  representation for a collection."""
-        images = collection.images
-        return (
-            self.compute_inputs(images),
-            self.compute_targets(collection.annotation_groups, images[0].shape),
-        )
 
     def train(
         self,
-        training: typing.Union[SceneCollection, str],
-        validation: typing.Union[SceneCollection, str] = None,
+        training: SceneCollection,
+        validation: SceneCollection = None,
         batch_size: int = 1,
         augmenter: utils.AugmenterProtocol = None,
+        train_backbone: bool = True,
         epochs=100,
+        optimizer_params=None,
+        scheduler_params=None,
     ):
         """Run training job.
 
@@ -167,18 +177,16 @@ class Detector(ABC):
             augment_validation: Whether to apply augmentation
                 to the validation set.
         """
+        training_model = (
+            self.training_model if hasattr(self, "training_modle") else self.model
+        )
+        assert training_model is not None
         optimizer = timm.optim.create_optimizer_v2(
-            self.training_model, learning_rate=1e-2, weight_decay=4e-5
+            training_model, **(optimizer_params or DEFAULT_OPTIMIZER_PARAMS)
         )
         scheduler, num_epochs = timm.scheduler.create_scheduler(
             types.SimpleNamespace(
-                sched="cosine",
-                epochs=epochs,
-                min_lr=1e-5,
-                decay_rate=0.1,
-                warmup_lr=1e-4,
-                warmup_epochs=5,
-                cooldown_epochs=10,
+                **{**(scheduler_params or DEFAULT_SCHEDULER_PARAMS), "epochs": epochs}
             ),
             optimizer=optimizer,
         )
@@ -188,8 +196,12 @@ class Detector(ABC):
             )[0]
         for epoch in range(num_epochs):
             with tqdm.trange(len(training) // batch_size) as t:
-                self.training_model.train()
-                t.set_description(f"Epoch {epoch + 1} / {epochs}")
+                training_model.train()
+                if not train_backbone:
+                    self.freeze_backbone()
+                else:
+                    self.unfreeze_backbone()
+                t.set_description(f"Epoch {epoch + 1} / {num_epochs}")
                 cum_loss = 0
                 for batchIdx, start in enumerate(range(0, len(training), batch_size)):
                     batch = training.assign(
@@ -203,7 +215,7 @@ class Detector(ABC):
                         width=self.input_shape[1], height=self.input_shape[0]
                     )[0]
                     optimizer.zero_grad()
-                    loss = self.training_model(
+                    loss = training_model(
                         self.compute_inputs(batch.images),
                         self.compute_targets(annotation_groups=batch.annotation_groups),
                     )["loss"]
@@ -218,25 +230,14 @@ class Detector(ABC):
                     t.set_postfix(
                         mAP={
                             k: round(v, 2)
-                            for k, v in metrics.mAP(
-                                true_collection=validation,
-                                pred_collection=validation.assign(
-                                    scenes=[
-                                        scene.assign(annotations=annotations)
-                                        for scene, annotations in zip(
-                                            validation,
-                                            self.detect_batch(
-                                                images=validation.images, threshold=0.01
-                                            ),
-                                        )
-                                    ]
-                                ),
+                            for k, v in self.mAP(
+                                collection=validation, batch_size=batch_size
                             ).items()
                         },
                         loss=avg_loss,
                     )
 
-    def mAP(self, collection: SceneCollection, iou_threshold=0.5):
+    def mAP(self, collection: SceneCollection, iou_threshold=0.5, batch_size=32):
         """Compute the mAP metric for a given collection
         of ground truth scenes.
 
@@ -250,8 +251,13 @@ class Detector(ABC):
         """
         pred = collection.assign(
             scenes=[
-                s.assign(annotations=self.detect(s.image, threshold=0.05))
-                for s in collection
+                scene.assign(annotations=annotations)
+                for scene, annotations in zip(
+                    collection,
+                    self.detect_batch(
+                        images=collection.images, threshold=0.01, batch_size=batch_size
+                    ),
+                )
             ]
         )
         return metrics.mAP(

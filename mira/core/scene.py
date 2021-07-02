@@ -3,16 +3,11 @@
 # pylint: disable=invalid-name,len-as-condition
 
 import os
-import json
 import typing
 import logging
 import math
 import io
 
-try:
-    import tensorflow as tf
-except ImportError:
-    tf = None
 import sklearn.model_selection as skms
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -128,115 +123,6 @@ class Scene:
         }
         kwargs = {**defaults, **kwargs}
         return Scene(**kwargs)
-
-    def to_example(self):
-        """Obtain a tf.Example for the scene."""
-        assert tf is not None, "TensorFlow not found."
-        image = self.image
-        bboxes = self.bboxes()
-        bboxes_scaled = bboxes[:, :4].astype("float32") / np.array(
-            [image.shape[1], image.shape[0], image.shape[1], image.shape[0]]
-        ).astype("float32")
-        image_bytes = io.BytesIO()
-        utils.save(image, image_bytes, extension=".png")
-        image_bytes.seek(0)
-        return tf.train.Example(
-            features=tf.train.Features(
-                feature={
-                    "image/height": tf.train.Feature(
-                        int64_list=tf.train.Int64List(value=[image.shape[0]])
-                    ),
-                    "image/width": tf.train.Feature(
-                        int64_list=tf.train.Int64List(value=[image.shape[1]])
-                    ),
-                    "image/encoded": tf.train.Feature(
-                        bytes_list=tf.train.BytesList(value=[image_bytes.read()])
-                    ),
-                    "image/format": tf.train.Feature(
-                        bytes_list=tf.train.BytesList(value=["png".encode()])
-                    ),
-                    "image/object/bbox/xmin": tf.train.Feature(
-                        float_list=tf.train.FloatList(value=bboxes_scaled[:, 0])
-                    ),
-                    "image/object/bbox/ymin": tf.train.Feature(
-                        float_list=tf.train.FloatList(value=bboxes_scaled[:, 1])
-                    ),
-                    "image/object/bbox/xmax": tf.train.Feature(
-                        float_list=tf.train.FloatList(value=bboxes_scaled[:, 2])
-                    ),
-                    "image/object/bbox/ymax": tf.train.Feature(
-                        float_list=tf.train.FloatList(value=bboxes_scaled[:, 3])
-                    ),
-                    "image/metadata": tf.train.Feature(
-                        bytes_list=tf.train.BytesList(
-                            value=[json.dumps(self.metadata or {}).encode()]
-                        )
-                    ),
-                    "image/object/class/text": tf.train.Feature(
-                        bytes_list=tf.train.BytesList(
-                            value=[
-                                self.annotation_config[idx].name.encode()
-                                for idx in bboxes[:, -1].tolist()
-                            ]
-                        )
-                    ),
-                }
-            )
-        )
-
-    @classmethod
-    def from_example(cls, serialized, annotation_config: AnnotationConfiguration):
-        """Load a scene using a serialized tf.Example representation."""
-        assert tf is not None, "TensorFlow not found."
-        deserialized = tf.io.parse_single_example(
-            serialized,
-            features={
-                "image/encoded": tf.io.FixedLenFeature((), tf.string),
-                "image/height": tf.io.FixedLenFeature((), tf.int64, -1),
-                "image/width": tf.io.FixedLenFeature((), tf.int64, -1),
-                "image/object/bbox/xmin": tf.io.VarLenFeature(tf.float32),
-                "image/object/bbox/xmax": tf.io.VarLenFeature(tf.float32),
-                "image/object/bbox/ymin": tf.io.VarLenFeature(tf.float32),
-                "image/object/bbox/ymax": tf.io.VarLenFeature(tf.float32),
-                "image/object/class/text": tf.io.VarLenFeature(tf.string),
-                "image/metadata": tf.io.FixedLenFeature((), tf.string),
-            },
-        )
-        width, height = (
-            deserialized["image/width"].numpy(),
-            deserialized["image/height"].numpy(),
-        )
-        image = tf.io.decode_image(deserialized["image/encoded"]).numpy()
-        assert (
-            width == image.shape[1] and height == image.shape[0]
-        ), "Deserialization failed."
-        return cls(
-            image=image,
-            metadata=json.loads(deserialized["image/metadata"].numpy().decode("utf-8")),
-            annotations=[
-                Annotation(
-                    selection=Selection(
-                        x1=x1 * width, y1=y1 * height, x2=x2 * width, y2=y2 * height
-                    ),
-                    category=annotation_config[label.decode("utf-8")],
-                )
-                for x1, x2, y1, y2, label in zip(
-                    *map(
-                        lambda s: tf.sparse.to_dense(s, default_value=0),
-                        [
-                            deserialized["image/object/bbox/xmin"],
-                            deserialized["image/object/bbox/xmax"],
-                            deserialized["image/object/bbox/ymin"],
-                            deserialized["image/object/bbox/ymax"],
-                        ],
-                    ),
-                    tf.sparse.to_dense(
-                        deserialized["image/object/class/text"], default_value=""
-                    ).numpy(),
-                )
-            ],
-            annotation_config=annotation_config,
-        )
 
     def show(self, *args, **kwargs) -> mpl.axes.Axes:
         """Show an annotated version of the image. All arguments
@@ -452,51 +338,6 @@ class SceneCollection:
         """Obtained an augmented version of the given collection.
         All arguments passed to `Scene.augment`"""
         return self.assign(scenes=[s.augment(**kwargs) for s in self.scenes])
-
-    def to_tfrecords(self, output_prefix, n_scenes_per_shard=1):
-        """Write scene collection as a series of TfRecord files.
-
-        Args:
-            output_prefix: The prefix for the .tfrecord files (e.g.,
-                my_directory/my_training_dataset).
-            n_scenes_per_shard: The number of scenes to store in each file.
-        """
-        assert tf is not None, "TensorFlow not found."
-        if os.path.dirname(output_prefix):
-            os.makedirs(os.path.dirname(output_prefix), exist_ok=True)
-        n_shards = math.ceil(len(self) / n_scenes_per_shard)
-        for shard, start in enumerate(range(0, len(self), n_scenes_per_shard)):
-            with tf.io.TFRecordWriter(
-                f"{output_prefix}-{shard + 1}-of-{n_shards}.tfrecord"
-            ) as writer:
-                for scene in [
-                    self[idx]
-                    for idx in range(start, min(start + n_scenes_per_shard, len(self)))
-                ]:
-                    writer.write(scene.to_example().SerializeToString())
-
-    @classmethod
-    def from_tfrecord_pattern(cls, pattern, annotation_config):
-        """Load a scene collection from TfRecord files.
-
-        Args:
-            pattern: The file pattern for the TfRecord files (e.g.,
-                my_directory/my_training_dataset*.tfrecord)
-            annotation_config: The annotation configuration to use
-                when loading the examples.
-        """
-        assert tf is not None, "TensorFlow not found."
-        return cls(
-            scenes=[
-                Scene.from_example(record, annotation_config=annotation_config)
-                for record in (
-                    tf.data.Dataset.list_files(pattern).interleave(
-                        tf.data.TFRecordDataset
-                    )
-                )
-            ],
-            annotation_config=annotation_config,
-        )
 
     def train_test_split(
         self, *args, **kwargs

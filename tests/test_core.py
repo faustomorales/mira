@@ -32,12 +32,3 @@ def test_file_read():
             core.utils.save(image, buffer, ".png")
             buffer.seek(0)
             np.testing.assert_allclose(core.utils.read(buffer), image)
-
-
-def test_scene_serialization():
-    scene = datasets.load_shapes()[0]
-    inverted = core.Scene.from_example(
-        scene.to_example().SerializeToString(),
-        annotation_config=scene.annotation_config,
-    )
-    assert all(a1 == a2 for a1, a2 in zip(scene.annotations, inverted.annotations))

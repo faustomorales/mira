@@ -10,6 +10,8 @@ from .detector import Detector
 
 
 class EfficientDet(Detector):
+    """A wrapper for EfficientDet as implemented in the effdet package."""
+
     def __init__(
         self,
         annotation_config=mds.COCOAnnotationConfiguration90,
@@ -32,7 +34,7 @@ class EfficientDet(Detector):
         )
 
     def set_input_shape(self, width, height):
-        self.model.config = omegaconf.OmegaConf.merge(
+        self.model.config = omegaconf.OmegaConf.merge(  # type: ignore
             self.model.config,
             omegaconf.OmegaConf.create({"image_size": (height, width)}),
         )
@@ -41,7 +43,7 @@ class EfficientDet(Detector):
 
     @property
     def input_shape(self):
-        return tuple(self.model.config.image_size)
+        return tuple(self.model.config.image_size)  # type: ignore
 
     def compute_inputs(self, images):
         mean = np.array([0.485, 0.456, 0.406]) * 255
@@ -52,7 +54,7 @@ class EfficientDet(Detector):
     def compute_targets(self, annotation_groups):
         bboxes = [
             self.annotation_config.bboxes_from_group(g)[
-                : self.model.config.max_det_per_image
+                : self.model.config.max_det_per_image  # type: ignore
             ]
             for g in annotation_groups
         ]
@@ -60,7 +62,7 @@ class EfficientDet(Detector):
         bboxes = [
             np.pad(
                 b,
-                ((0, self.model.config.max_det_per_image - len(b)), (0, 0)),
+                ((0, self.model.config.max_det_per_image - len(b)), (0, 0)),  # type: ignore
                 mode="constant",
                 constant_values=-1,
             )[:, [1, 0, 3, 2, 4]]
@@ -71,15 +73,16 @@ class EfficientDet(Detector):
             "cls": torch.tensor([b[:, -1] for b in bboxes]),
         }
 
-    def invert_targets(self, y, threshold=0.5):
+    # pylint: disable=protected-access
+    def invert_targets(self, y, threshold=0.5, **kwargs):
         config = self.model.config
         class_out, box_out = y
         class_out, box_out, indices, classes = effdet.bench._post_process(
             class_out,
             box_out,
-            num_levels=config.num_levels,
-            num_classes=config.num_classes,
-            max_detection_points=config.max_detection_points,
+            num_levels=config.num_levels,  # type: ignore
+            num_classes=config.num_classes,  # type: ignore
+            max_detection_points=config.max_detection_points,  # type: ignore
         )
         img_scale, img_size = None, None
         detections = effdet.bench._batch_detection(
@@ -91,7 +94,7 @@ class EfficientDet(Detector):
             classes,
             img_scale,
             img_size,
-            max_det_per_image=config.max_det_per_image,
+            max_det_per_image=config.max_det_per_image,  # type: ignore
             soft_nms=True,
         )
         return [
