@@ -1,6 +1,6 @@
 """Scene and SceneCollection objects"""
 
-# pylint: disable=invalid-name,len-as-condition
+# pylint: disable=invalid-name,len-as-condition,unsupported-assignment-operation
 
 import os
 import typing

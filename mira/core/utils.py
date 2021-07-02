@@ -1,3 +1,4 @@
+# pylint: disable=unsupported-assignment-operation
 import typing
 import os
 import logging
@@ -40,7 +41,8 @@ def read(filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO]):
         image = np.asarray(bytearray(filepath_or_buffer.read()), dtype=np.uint8)  # type: ignore
         image = cv2.imdecode(image, cv2.IMREAD_COLOR)
     elif isinstance(filepath_or_buffer, str) and validators.url(filepath_or_buffer):
-        return read(urllib.request.urlopen(filepath_or_buffer))
+        with urllib.request.urlopen(filepath_or_buffer) as data:
+            return read(data)
     else:
         assert os.path.isfile(
             filepath_or_buffer  # type: ignore

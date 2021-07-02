@@ -51,6 +51,7 @@ class ProgressFileObject(io.FileIO):  # noqa: E302
         super().close()
 
 
+# pylint: disable=consider-using-with
 def _extract_archive(  # noqa: E302
     file_path, path=".", archive_format="auto", extract_check_fn=None
 ):
