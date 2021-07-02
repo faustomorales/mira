@@ -8,6 +8,7 @@ import tqdm
 import numpy as np
 import timm.optim
 import timm.scheduler
+import typing_extensions as tx
 
 from .. import metrics as mm
 from .. import core as mc
@@ -22,6 +23,23 @@ DEFAULT_SCHEDULER_PARAMS = dict(
 )
 
 DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
+
+
+def _loss_from_loss_dict(loss_dict: typing.Dict[str, torch.Tensor]):
+    if "loss" in loss_dict:
+        return loss_dict["loss"]
+    return sum(loss for loss in loss_dict.values())
+
+
+# pylint: disable=too-few-public-methods
+class CallbackProtocol(tx.Protocol):
+    """A protocol defining how we expect callbacks to
+    behave."""
+
+    def __call__(
+        self, detector: "Detector", summaries: typing.List[typing.Dict[str, typing.Any]]
+    ) -> typing.Dict[str, typing.Any]:
+        pass
 
 
 class Detector(abc.ABC):
@@ -163,6 +181,7 @@ class Detector(abc.ABC):
         train_backbone: bool = True,
         epochs=100,
         shuffle=True,
+        callbacks: typing.List[CallbackProtocol] = None,
         optimizer_params=None,
         scheduler_params=None,
     ):
@@ -173,11 +192,17 @@ class Detector(abc.ABC):
             validation: The collection of validation images
             batch_size: The batch size to use for training
             augmenter: The augmenter for generating samples
-            train_shape: The shape to use for training the model
-                (assuming the model does not have fixed input
-                size).
-            augment_validation: Whether to apply augmentation
-                to the validation set.
+            train_backbone: Whether to fit the backbone.
+            epochs: The number of epochs to train.
+            shuffle: Whether to shuffle the training data on each epoch.
+            callbacks: A list of functions that accept the detector as well
+                as a list of previous summaries and returns a dict of summary keys
+                and values which will be added to the current summary. It can raise
+                StopIteration to stop training early.
+            optimizer_params: Passed to timm.optim.create_optimizer_v2 to build
+                the optimizer.
+            scheduler_params: Passed to timm.schduler.create_scheduler to build
+                the scheduler.
         """
         training_model = (
             self.training_model if hasattr(self, "training_modle") else self.model
@@ -197,6 +222,7 @@ class Detector(abc.ABC):
                 width=self.input_shape[1], height=self.input_shape[0]
             )[0]
         train_index = np.arange(len(training)).tolist()
+        summaries = []
         for epoch in range(num_epochs):
             with tqdm.trange(len(training) // batch_size) as t:
                 training_model.train()
@@ -221,14 +247,14 @@ class Detector(abc.ABC):
                         width=self.input_shape[1], height=self.input_shape[0]
                     )[0]
                     optimizer.zero_grad()
-                    loss_dict = training_model(
-                        self.compute_inputs(batch.images),
-                        self.compute_targets(annotation_groups=batch.annotation_groups),
+                    loss = _loss_from_loss_dict(
+                        training_model(
+                            self.compute_inputs(batch.images),
+                            self.compute_targets(
+                                annotation_groups=batch.annotation_groups
+                            ),
+                        )
                     )
-                    if "loss" in loss_dict:
-                        loss = loss_dict["loss"]
-                    else:
-                        loss = sum(loss for loss in loss_dict.values())
                     loss.backward()
                     cum_loss += loss.detach().numpy()
                     avg_loss = cum_loss / (batchIdx + 1)
@@ -236,16 +262,26 @@ class Detector(abc.ABC):
                     scheduler.step(epoch)
                     t.set_postfix(loss=avg_loss)
                     t.update()
+                summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
+                summaries.append(summary)
                 if validation is not None:
-                    t.set_postfix(
-                        mAP={
-                            k: round(v, 2)
-                            for k, v in self.mAP(
-                                collection=validation, batch_size=batch_size
-                            ).items()
-                        },
-                        loss=avg_loss,
-                    )
+                    summary["val_mAP"] = {
+                        k: round(v, 2)
+                        for k, v in self.mAP(
+                            collection=validation, batch_size=batch_size
+                        ).items()
+                    }
+                if callbacks is not None:
+                    try:
+                        for callback in callbacks:
+                            for k, v in callback(
+                                detector=self, summaries=summaries
+                            ).items():
+                                summary[k] = v
+                    except StopIteration:
+                        return summaries
+                t.set_postfix(**summary)
+        return summaries
 
     def mAP(self, collection: mc.SceneCollection, iou_threshold=0.5, batch_size=32):
         """Compute the mAP metric for a given collection
