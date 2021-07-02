@@ -238,7 +238,9 @@ class Detector(abc.ABC):
                     batch = training.assign(
                         scenes=[
                             training[train_index[idx]]
-                            for idx in range(start, start + batch_size)
+                            for idx in range(
+                                start, min(start + batch_size, len(train_index))
+                            )
                         ]
                     )
                     if augmenter is not None:
