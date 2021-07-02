@@ -6,6 +6,6 @@ m2r2==0.2.7
 opencv-contrib-python-headless
 tqdm
 sphinxcontrib-mermaid
-tensorflow==2.5.0
-tensorflow-addons==0.13.0
+torch
+torchvision
 albumentations
