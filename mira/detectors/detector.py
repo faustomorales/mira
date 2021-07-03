@@ -50,6 +50,13 @@ class Detector(abc.ABC):
     annotation_config: mc.AnnotationConfiguration
     training_model: typing.Optional[torch.nn.Module]
 
+    def __init__(self, device="cpu"):
+        self.device = torch.device(device)
+
+    def set_device(self, device):
+        """Set the device for training and inference tasks."""
+        self.device = torch.device(device)
+
     @abc.abstractmethod
     def invert_targets(
         self,

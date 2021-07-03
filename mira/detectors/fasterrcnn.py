@@ -26,19 +26,28 @@ class FasterRCNN(Detector):
         backbone: tx.Literal[
             "resnet50", "mobilenet_large", "mobilenet_large_320"
         ] = "resnet50",
+        device="cpu",
     ):
+        super().__init__(device=device)
         self.annotation_config = annotation_config
         self.model = BACKBONE_TO_CONSTRUCTOR[backbone](
             pretrained=pretrained_top,
             progress=True,
             num_classes=len(annotation_config) + 1,
             pretrained_backbone=pretrained_backbone,
+        ).to(self.device)
+        self.set_input_shape(
+            width=min(self.model.transform.min_size),  # type: ignore
+            height=min(self.model.transform.min_size),  # type: ignore
         )
-        self.set_input_shape(width=512, height=512)
 
     def compute_inputs(self, images):
         images = np.float32(images) / 255.0
-        return torch.tensor(images, dtype=torch.float32).permute(0, 3, 1, 2)
+        return (
+            torch.tensor(images, dtype=torch.float32)
+            .permute(0, 3, 1, 2)
+            .to(self.device)
+        )
 
     def invert_targets(self, y, threshold=0.5, **kwargs):
         return [
@@ -60,6 +69,9 @@ class FasterRCNN(Detector):
 
     def set_input_shape(self, width, height):
         self._input_shape = (height, width, 3)
+        self.model.transform.fixed_size = (height, width)  # type: ignore
+        self.model.transform.min_size = (min(width, height),)  # type: ignore
+        self.model.transform.max_size = max(height, width)  # type: ignore
 
     @property
     def input_shape(self):
@@ -68,8 +80,8 @@ class FasterRCNN(Detector):
     def compute_targets(self, annotation_groups):
         return [
             {
-                "boxes": torch.tensor(b[:, :4], dtype=torch.float32),
-                "labels": torch.tensor(b[:, -1] + 1, dtype=torch.int64),
+                "boxes": torch.tensor(b[:, :4], dtype=torch.float32).to(self.device),
+                "labels": torch.tensor(b[:, -1] + 1, dtype=torch.int64).to(self.device),
             }
             for b in [
                 self.annotation_config.bboxes_from_group(g) for g in annotation_groups

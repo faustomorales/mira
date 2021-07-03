@@ -18,7 +18,9 @@ class EfficientDet(Detector):
         model_name: str = "tf_efficientdet_d0",
         pretrained_backbone: bool = True,
         pretrained_top: bool = False,
+        device="cpu",
     ):
+        super().__init__(device=device)
         default_config = effdet.get_efficientdet_config(model_name=model_name)
         self.annotation_config = annotation_config
         self.model = effdet.create_model(
@@ -28,7 +30,7 @@ class EfficientDet(Detector):
             pretrained=pretrained_top,
             pretrained_backbone=pretrained_backbone,
             image_size=(None, None),
-        )
+        ).to(self.device)
         self.set_input_shape(
             width=default_config.image_size[1], height=default_config.image_size[0]
         )
@@ -39,17 +41,21 @@ class EfficientDet(Detector):
             omegaconf.OmegaConf.create({"image_size": (height, width)}),
         )
         self.anchors = effdet.anchors.Anchors.from_config(self.model.config)
-        self.training_model = effdet.DetBenchTrain(self.model)
+        self.training_model = effdet.DetBenchTrain(self.model).to(self.device)
 
     @property
     def input_shape(self):
-        return tuple(self.model.config.image_size)  # type: ignore
+        return tuple(self.model.config.image_size) + (3,)  # type: ignore
 
     def compute_inputs(self, images):
         mean = np.array([0.485, 0.456, 0.406]) * 255
         std = np.array([0.229, 0.224, 0.225]) * 255
         images = (np.float32(images) - mean) / std
-        return torch.tensor(images, dtype=torch.float32).permute(0, 3, 1, 2)
+        return (
+            torch.tensor(images, dtype=torch.float32)
+            .permute(0, 3, 1, 2)
+            .to(self.device)
+        )
 
     def compute_targets(self, annotation_groups):
         bboxes = [
@@ -69,8 +75,10 @@ class EfficientDet(Detector):
             for b in bboxes
         ]  # (ymin, xmin, ymax, xmax, class)
         return {
-            "bbox": torch.tensor([b[:, :4] for b in bboxes], dtype=torch.float32),
-            "cls": torch.tensor([b[:, -1] for b in bboxes]),
+            "bbox": torch.tensor([b[:, :4] for b in bboxes], dtype=torch.float32).to(
+                self.device
+            ),
+            "cls": torch.tensor([b[:, -1] for b in bboxes]).to(self.device),
         }
 
     # pylint: disable=protected-access
