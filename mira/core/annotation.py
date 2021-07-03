@@ -28,6 +28,9 @@ class AnnotationCategory:
         """The name of the category."""
         return self._name
 
+    def __repr__(self):
+        return repr(self._name)
+
 
 class Annotation:
     """Defines a single annotation.
@@ -83,6 +86,21 @@ class Annotation:
         self_bbox = self.selection.x1y1x2y2()
         other_bbox = other.selection.x1y1x2y2()
         return self_bbox == other_bbox and self.category == other.category
+
+    def __repr__(self):
+        return repr(
+            {
+                "selection": {
+                    "x1": self.selection.x1,
+                    "y1": self.selection.y1,
+                    "x2": self.selection.x2,
+                    "y2": self.selection.y2,
+                },
+                "category": self.category.name,
+                "score": self.score,
+                "metadata": self.metadata,
+            }
+        )
 
 
 class AnnotationConfiguration:
@@ -147,6 +165,9 @@ class AnnotationConfiguration:
 
     def __len__(self):
         return len(self._types)
+
+    def __repr__(self):
+        return repr([a.name for a in self.types])
 
     @property
     def types(self):
