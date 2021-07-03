@@ -95,11 +95,11 @@ class EfficientDet(Detector):
         img_scale, img_size = None, None
         detections = effdet.bench._batch_detection(
             class_out.shape[0],
-            class_out,
-            box_out,
-            self.anchors.boxes.to(self.device),
-            indices,
-            classes,
+            class_out.cpu(),
+            box_out.cpu(),
+            self.anchors.boxes.cpu(),
+            indices.cpu(),
+            classes.cpu(),
             img_scale,
             img_size,
             max_det_per_image=config.max_det_per_image,  # type: ignore
