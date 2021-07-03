@@ -97,7 +97,7 @@ class EfficientDet(Detector):
             class_out.shape[0],
             class_out,
             box_out,
-            self.anchors.boxes,
+            self.anchors.boxes.to(self.device),
             indices,
             classes,
             img_scale,
