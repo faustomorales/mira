@@ -56,6 +56,9 @@ class Detector(abc.ABC):
     def set_device(self, device):
         """Set the device for training and inference tasks."""
         self.device = torch.device(device)
+        self.model.to(self.device)
+        if hasattr(self, "training_model"):
+            self.training_model.to(self.device)  # type: ignore
 
     @abc.abstractmethod
     def invert_targets(
@@ -265,7 +268,7 @@ class Detector(abc.ABC):
                         )
                     )
                     loss.backward()
-                    cum_loss += loss.detach().numpy()
+                    cum_loss += loss.detach().cpu().numpy()
                     avg_loss = cum_loss / (batchIdx + 1)
                     optimizer.step()
                     scheduler.step(epoch)
