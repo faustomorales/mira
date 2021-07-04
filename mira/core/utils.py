@@ -121,7 +121,7 @@ def fit(image, width: int, height, cval: int = 255) -> typing.Tuple[np.ndarray, 
         width=width, height=height, n_channels=_get_channels(image), cval=cval
     )
     image = resize(image, scale=scale)
-    fitted[: image.shape[0], : image.shape[1]] = image[:width, :height]
+    fitted[: image.shape[0], : image.shape[1]] = image[:height, :width]
     return fitted, scale
 
 
