@@ -2,7 +2,7 @@ import torch
 import pandas as pd
 
 
-def best_weights_callback(filepath, metric="loss", method="min"):
+def best_weights(filepath, metric="loss", method="min"):
     """A callback that saves the best model weights according to a metric.
 
     Args:
@@ -28,7 +28,7 @@ def best_weights_callback(filepath, metric="loss", method="min"):
     return callback
 
 
-def csv_logger_callback(filepath):
+def csv_logger(filepath):
     """A callback that saves a CSV of the summaries to a specific
     filepath.
 
