@@ -165,3 +165,62 @@ def mAP(
                 pi[i] = pc.max()
         aps[className] = pi.mean()
     return aps
+
+
+def crop_error_examples(
+    true_collection: SceneCollection,
+    pred_collection: SceneCollection,
+    threshold=0.3,
+    iou_threshold=0.1,
+):
+    """Get crops of true positives, false negatives, and false positives.
+
+    Args:
+        true_collection: A collection of the ground truth scenes.
+        pred_collection: A collection of the predicted scenes.
+        threshold: The score threshold for selecting annotations from predicted
+            scenes.
+        iou_threhsold: The IoU threshold for counting a box as a true positive.
+
+    Returns:
+        A list of dicts with "true_positives", "false_positives", and "false_negatives"
+        with the same length of the input collections. The values in each dict
+        are crops from the original image.
+    """
+    examples = []
+    for true_scene, pred_scene in zip(true_collection, pred_collection):
+        image = pred_scene.image
+        boxes_true = true_scene.bboxes()[:, :4]
+        boxes_pred = pred_scene.assign(
+            annotations=[
+                a
+                for a in pred_scene.annotations
+                if a.score is None or a.score > threshold
+            ]
+        ).bboxes()[:, :4]
+        iou = utils.compute_iou(boxes_pred, boxes_true)
+        examples.append(
+            {
+                "true_positives": [
+                    (
+                        ann.selection.extract(image),
+                        pred_scene.annotations[predIdx].score,
+                    )
+                    for ann, iou, predIdx in zip(
+                        true_scene.annotations, iou.max(axis=0), iou.argmax(axis=0)
+                    )
+                    if iou > iou_threshold
+                ],
+                "false_positives": [
+                    (ann.selection.extract(image), ann.score)
+                    for ann, iou in zip(pred_scene.annotations, iou.max(axis=1))
+                    if iou < iou_threshold
+                ],
+                "false_negatives": [
+                    ann.selection.extract(image)
+                    for ann, iou in zip(true_scene.annotations, iou.max(axis=0))
+                    if iou < iou_threshold
+                ],
+            }
+        )
+    return examples

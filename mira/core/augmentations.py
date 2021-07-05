@@ -2,6 +2,8 @@ import random
 
 import albumentations as A
 
+BboxParams = A.BboxParams(format="pascal_voc", label_fields=["categories"])
+
 
 class RandomCropToPaddedBBox(A.DualTransform):
     """Crop an image to have a bounding box centered within it. Useful for

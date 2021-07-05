@@ -36,6 +36,7 @@ protocol.
 
 ```python
 from mira import datasets
+from mira import core
 import albumentations as A
 
 dataset = datasets.load_voc2012(subset='val')
@@ -43,7 +44,7 @@ scene = dataset[15]
 
 augmenter = A.Compose(
     [A.HorizontalFlip(p=1), A.GaussianBlur()],
-    bbox_params=A.BboxParams(format='pascal_voc', label_fields=['categories']),
+    bbox_params=core.augmentations.BboxParams,
 )
 
 fig, (ax_original, ax_augmenter) = plt.subplots(ncols=2, figsize=(10, 5))
@@ -112,7 +113,7 @@ This example inspired by [the TensorFlow object detection tutorial](https://gith
 
 ```python
 import albumentations as A
-from mira import datasets, detectors
+from mira import datasets, detectors, core
 
 # Load the Oxford pets datasets with a class
 # for each breed.
@@ -139,7 +140,7 @@ training, validation = trainval.train_test_split(
 # Create an augmenter
 augmenter = A.Compose(
     [A.HorizontalFlip(p=1), A.GaussianBlur()],
-    bbox_params=A.BboxParams(format='pascal_voc', label_fields=['categories']),
+    bbox_params=core.augmentations.BboxParams,
 )
 
 # Run training job
