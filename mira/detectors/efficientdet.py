@@ -2,6 +2,7 @@ import torch
 import effdet
 import omegaconf
 import numpy as np
+import pkg_resources
 
 
 from .. import datasets as mds
@@ -31,6 +32,7 @@ class EfficientDet(Detector):
             pretrained_backbone=pretrained_backbone,
             image_size=(None, None),
         ).to(self.device)
+        self.model_name = model_name
         self.set_input_shape(
             width=default_config.image_size[1], height=default_config.image_size[0]
         )
@@ -117,3 +119,31 @@ class EfficientDet(Detector):
             ]
             for group in detections
         ]
+
+    @property
+    def serve_module_string(self):
+        return (
+            pkg_resources.resource_string(
+                "mira", "detectors/assets/serve/efficientdet.py"
+            )
+            .decode("utf-8")
+            .replace("NUM_CLASSES", str(self.model.config.num_classes))  # type: ignore
+            .replace("INPUT_WIDTH", str(self.input_shape[1]))
+            .replace("INPUT_HEIGHT", str(self.input_shape[0]))
+            .replace("MODEL_NAME", f"'{self.model_name}'")
+            .replace("NUM_LEVELS", str(self.model.config.num_levels))  # type: ignore
+            .replace("MAX_DET_PER_IMAGE", str(self.model.config.max_det_per_image))  # type: ignore
+            .replace(
+                "MAX_DETECTION_POINTS", str(self.model.config.max_detection_points)  # type: ignore
+            )
+        )
+
+    @property
+    def serve_module_index(self):
+        return {
+            **{0: "__background__"},
+            **{
+                str(idx + 1): label.name
+                for idx, label in enumerate(self.annotation_config)
+            },
+        }

@@ -202,3 +202,49 @@ detector.train(
     epochs=1000
 )
 ```
+
+## Deployment
+You can deploy your models using TorchServe. The example below exports pretrained models to the MAR format.
+
+```python
+import mira.detectors as md
+
+detector1 = md.FasterRCNN(pretrained_top=True, backbone="resnet50")
+detector1.to_torchserve("model-store/fastrcnn")
+detector2 = md.EfficientDet(pretrained_top=True, model_name="tf_efficientdet_d0")
+detector2.to_torchserve("model-store/effdet")
+```
+
+The above will generate `fastrcnn.mar` and `effdet.amr` in the `model-store` directory. You can then use those models with TorchServe using:
+
+```bash
+torchserve --start --model-store model-store --models effdet=effdet.mar,fastrcnn=fastrcnn.mar
+```
+
+Then you can do inference in TorchServe using something like the following. Most of the boilerplate is just for unpacking the `torchserve` format, which is fairly straightforward but requires a little wrangling.
+
+```python
+# Get responses from server.
+with open("path/to/image.jpg", "rb") as f:
+    data = f.read()
+    prediction1 = requests.post("http://localhost:8080/predictions/fastrcnn", data=data).json()
+    prediction2 = requests.post("http://localhost:8080/predictions/effdet", data=data).json()
+    annotation_config = mc.AnnotationConfiguration(set([list(p.keys())[0] for p in prediction1 + prediction2]))
+scene1 = mc.Scene(
+    image=filename,
+    annotation_config=annotation_config,
+    annotations=[
+        mc.Annotation(selection=mc.Selection(*p[label]), category=annotation_config[label], score=p["score"]) for label, p in [
+            (next(k for k in p if k != "score"), p) for p in prediction1
+        ]
+    ]
+)
+scene2 = mc.Scene(
+    image=filename,
+    annotation_config=annotation_config,
+    annotations=[
+        mc.Annotation(selection=mc.Selection(*p[label]), category=annotation_config[label], score=p["score"]) for label, p in [
+            (next(k for k in p if k != "score"), p) for p in prediction2
+        ]
+    ]
+```

@@ -1,7 +1,10 @@
+import os
 import abc
+import json
 import types
 import typing
 import random
+import tempfile
 
 import torch
 import tqdm
@@ -9,6 +12,13 @@ import numpy as np
 import timm.optim
 import timm.scheduler
 import typing_extensions as tx
+
+try:
+    import model_archiver.model_packaging as marmp
+    import model_archiver.model_packaging_utils as marmpu
+except ImportError:
+    marmp = None
+    marmpu = None
 
 from .. import metrics as mm
 from .. import core as mc
@@ -135,6 +145,16 @@ class Detector(abc.ABC):
         height, width = self.input_shape[:2]
         image, scale = mc.utils.fit(image=image, width=width, height=height)
         return image, scale
+
+    @property
+    @abc.abstractmethod
+    def serve_module_string(self) -> str:
+        """Return the module string used as part of TorchServe."""
+
+    @property
+    @abc.abstractmethod
+    def serve_module_index(self) -> dict:
+        """Return the class index -> label mapping for TorchServe."""
 
     @abc.abstractmethod
     def compute_inputs(self, images: typing.List[np.ndarray]) -> np.ndarray:
@@ -323,3 +343,37 @@ class Detector(abc.ABC):
             pred_collection=pred,
             iou_threshold=iou_threshold,
         )
+
+    def to_torchserve(
+        self, filepath, archive_format: tx.Literal["default", "no-archive"] = "default"
+    ):
+        """Build a TorchServe-compatible MAR file for this model."""
+        assert (
+            marmpu is not None
+        ), "You must `pip install torch-model-archiver` to use this function."
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with tempfile.TemporaryDirectory() as tdir:
+            serialized_file = os.path.join(tdir, "weights.pth")
+            index_to_name_file = os.path.join(tdir, "index_to_name.json")
+            model_file = os.path.join(tdir, "model.py")
+            torch.save(self.model.state_dict(prefix="model."), serialized_file)
+            with open(index_to_name_file, "w") as f:
+                f.write(json.dumps(self.serve_module_index))
+            with open(model_file, "w") as f:
+                f.write(self.serve_module_string)
+            args = types.SimpleNamespace(
+                model_name=os.path.basename(filepath),
+                serialized_file=serialized_file,
+                handler="object_detector",
+                model_file=model_file,
+                version="1.0",
+                requirements_file=None,
+                runtime="python",
+                extra_files=index_to_name_file,
+                export_path=os.path.dirname(filepath),
+                force=True,
+                archive_format=archive_format,
+            )
+            marmp.package_model(
+                args=args, manifest=marmpu.ModelExportUtils.generate_manifest_json(args)
+            )

@@ -38,5 +38,6 @@ def csv_logger_callback(filepath):
 
     def callback(_, summaries):
         pd.json_normalize(summaries).to_csv(filepath, index=False)
+        return {}
 
     return callback

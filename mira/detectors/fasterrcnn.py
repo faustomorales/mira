@@ -2,6 +2,7 @@ import torch
 import torchvision
 import numpy as np
 import typing_extensions as tx
+import pkg_resources
 
 from .. import datasets as mds
 from .. import core as mc
@@ -40,6 +41,30 @@ class FasterRCNN(Detector):
             width=min(self.model.transform.min_size),  # type: ignore
             height=min(self.model.transform.min_size),  # type: ignore
         )
+        self.backbone_name = backbone
+
+    @property
+    def serve_module_string(self):
+        return (
+            pkg_resources.resource_string(
+                "mira", "detectors/assets/serve/fasterrcnn.py"
+            )
+            .decode("utf-8")
+            .replace("NUM_CLASSES", str(len(self.annotation_config) + 1))
+            .replace("INPUT_WIDTH", str(self.input_shape[1]))
+            .replace("INPUT_HEIGHT", str(self.input_shape[0]))
+            .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
+        )
+
+    @property
+    def serve_module_index(self):
+        return {
+            **{0: "__background__"},
+            **{
+                str(idx + 1): label.name
+                for idx, label in enumerate(self.annotation_config)
+            },
+        }
 
     def compute_inputs(self, images):
         images = np.float32(images) / 255.0
