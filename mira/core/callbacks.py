@@ -35,8 +35,8 @@ def csv_logger(filepath):
     Args:
         filepath: The filepath where the logs will be saved.
     """
-
-    def callback(_, summaries):
+    # pylint: disable=unused-argument
+    def callback(detector, summaries):
         pd.json_normalize(summaries).to_csv(filepath, index=False)
         return {}
 
