@@ -53,7 +53,9 @@ class Annotation:
     ):
         if category is None:
             raise ValueError("A category object must be specified.")
-        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+        self.x1, self.y1, self.x2, self.y2 = map(
+            lambda v: int(round(v)), [x1, y1, x2, y2]
+        )
         self.category = category
         self.score = score
         self.metadata = metadata or {}
