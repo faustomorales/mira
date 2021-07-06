@@ -1,16 +1,17 @@
 # pylint: disable=invalid-name
 """Metrics for object detection tasks."""
-from typing import List, Tuple
+import typing
 
 import numpy as np
 
-from .utils import compute_overlap
-from .core import SceneCollection
+from .core import SceneCollection, utils
 
 
-def precision_recall_curve(true_collection: SceneCollection,
-                           pred_collection: SceneCollection,
-                           iou_threshold: float = 0.5) -> List[np.ndarray]:
+def precision_recall_curve(
+    true_collection: SceneCollection,
+    pred_collection: SceneCollection,
+    iou_threshold: float = 0.5,
+) -> typing.Dict[str, np.ndarray]:
     """Compute the precision-recall curve for each of the
     classes.
 
@@ -24,17 +25,21 @@ def precision_recall_curve(true_collection: SceneCollection,
         which is the precision, recall, and score for each of the
         predicted boxes for the category.
     """
-    assert true_collection.annotation_config == pred_collection.annotation_config, (  # noqa: E501
-        'Annotation configurations must match')
+    assert (
+        true_collection.annotation_config == pred_collection.annotation_config
+    ), "Annotation configurations must match"
     annotation_config = true_collection.annotation_config
-    assert len(true_collection.scenes) == len(pred_collection.scenes), \
-        'Must have same scenes in each collection'
+    assert len(true_collection.scenes) == len(
+        pred_collection.scenes
+    ), "Must have same scenes in each collection"
 
     # The ith entry in tfs is a list of lists, each of length three,
     # which are the change in the number of true positives and
     # false positives, along with the score at which the change
     # occurred for the ith class.
-    tfs = [[[], [], []] for c in range(len(annotation_config))]
+    tfs: typing.List[typing.List[typing.List[int]]] = [
+        [[], [], []] for c in range(len(annotation_config))
+    ]
 
     # The ith entry in tfs is the number of true boxes
     # for the ith class.
@@ -44,8 +49,9 @@ def precision_recall_curve(true_collection: SceneCollection,
         pred_bboxes = pred.bboxes()
         true_bboxes = true.bboxes()
         pred_scores = pred.scores()
-        assert all(s is not None
-                   for s in pred_scores), 'All annotations must have a score.'
+        assert all(
+            s is not None for s in pred_scores
+        ), "All annotations must have a score."
 
         for classIdx in range(len(annotation_config)):
             pred_bboxes_cur = pred_bboxes[pred_bboxes[:, 4] == classIdx]
@@ -74,15 +80,19 @@ def precision_recall_curve(true_collection: SceneCollection,
             pred_scores_cur = pred_scores_cur[(-pred_scores_cur).argsort()]
 
             # (n, m): status for ith prediction for jth true box
-            det = compute_overlap(
-                boxes=pred_bboxes_cur.astype('float64'),
-                query_boxes=true_bboxes_cur.astype('float64')) > iou_threshold
+            det = (
+                utils.compute_iou(
+                    pred_bboxes_cur[:, :4],
+                    true_bboxes_cur[:, :4],
+                )
+                > iou_threshold
+            )
 
             fp_prev = 0
             tp_prev = 0
             for i in range(nPredicted):
-                tp_cur = det[:i + 1].max(axis=0).sum()
-                fp_cur = (i + 1) - det[:i + 1].max(axis=1).sum()
+                tp_cur = det[: i + 1].max(axis=0).sum()
+                fp_cur = (i + 1) - det[: i + 1].max(axis=1).sum()
 
                 tp_delta = tp_cur - tp_prev
                 fp_delta = fp_cur - fp_prev
@@ -101,16 +111,15 @@ def precision_recall_curve(true_collection: SceneCollection,
 
     prs = [None for n in range(len(annotation_config))]
 
-    for classIdx, tfs_cur, pos_cur in zip(
-            range(len(annotation_config)), tfs, pos):
+    for classIdx, tfs_cur, pos_cur in zip(range(len(annotation_config)), tfs, pos):
         # If we had no detections AND there
         # were no true boxes, precision and recall
         # are not defined.
-        tfs_cur = np.array(tfs_cur).T
-        tfs_cur = tfs_cur[(-tfs_cur[:, 2]).argsort()]
-        tp = tfs_cur[:, 0].cumsum()
-        fp = tfs_cur[:, 1].cumsum()
-        scores = tfs_cur[:, 2]
+        tfs_cur_arr = np.array(tfs_cur).T
+        tfs_cur_arr = tfs_cur_arr[(-tfs_cur_arr[:, 2]).argsort()]
+        tp = tfs_cur_arr[:, 0].cumsum()
+        fp = tfs_cur_arr[:, 1].cumsum()
+        scores = tfs_cur_arr[:, 2]
 
         precisions = tp / (tp + fp)
         recalls = tp / pos_cur
@@ -118,9 +127,11 @@ def precision_recall_curve(true_collection: SceneCollection,
     return dict(zip([c.name for c in annotation_config], prs))
 
 
-def mAP(true_collection: SceneCollection,
-        pred_collection: SceneCollection,
-        iou_threshold: float = 0.5) -> float:
+def mAP(
+    true_collection: SceneCollection,
+    pred_collection: SceneCollection,
+    iou_threshold: float = 0.5,
+) -> typing.Dict[str, float]:
     """Compute mAP (mean average precision) for
     a pair of scene collections.
 
@@ -132,12 +143,11 @@ def mAP(true_collection: SceneCollection,
     Returns:
         mAP class scores
     """
-    prs = precision_recall_curve(true_collection, pred_collection,
-                                 iou_threshold)
+    prs = precision_recall_curve(true_collection, pred_collection, iou_threshold)
     aps = {}
     for className, prs_cur in prs.items():
         ps = prs_cur[:, 0]
-        rs = prs_cur[:, 1]
+        rs = prs_cur[:, 1].astype("float32")
         pi = np.zeros(11)
         # If rs is None, there were no detections and no true
         # boxes. If it is all nans, then there were no
@@ -155,3 +165,58 @@ def mAP(true_collection: SceneCollection,
                 pi[i] = pc.max()
         aps[className] = pi.mean()
     return aps
+
+
+def crop_error_examples(
+    true_collection: SceneCollection,
+    pred_collection: SceneCollection,
+    threshold=0.3,
+    iou_threshold=0.1,
+):
+    """Get crops of true positives, false negatives, and false positives.
+
+    Args:
+        true_collection: A collection of the ground truth scenes.
+        pred_collection: A collection of the predicted scenes.
+        threshold: The score threshold for selecting annotations from predicted
+            scenes.
+        iou_threhsold: The IoU threshold for counting a box as a true positive.
+
+    Returns:
+        A list of dicts with "true_positives", "false_positives", and "false_negatives"
+        with the same length of the input collections. The values in each dict
+        are crops from the original image.
+    """
+    examples = []
+    for true_scene, pred_scene in zip(true_collection, pred_collection):
+        boxes_true = true_scene.bboxes()[:, :4]
+        boxes_pred = pred_scene.assign(
+            annotations=[
+                a
+                for a in pred_scene.annotations
+                if a.score is None or a.score > threshold
+            ]
+        ).bboxes()[:, :4]
+        iou = utils.compute_iou(boxes_pred, boxes_true)
+        examples.append(
+            {
+                "true_positives": [
+                    ann.assign(score=pred_scene.annotations[predIdx].score)
+                    for ann, iou, predIdx in zip(
+                        true_scene.annotations, iou.max(axis=0), iou.argmax(axis=0)
+                    )
+                    if iou > iou_threshold
+                ],
+                "false_positives": [
+                    ann
+                    for ann, iou in zip(pred_scene.annotations, iou.max(axis=1))
+                    if iou < iou_threshold
+                ],
+                "false_negatives": [
+                    ann
+                    for ann, iou in zip(true_scene.annotations, iou.max(axis=0))
+                    if iou < iou_threshold
+                ],
+            }
+        )
+    return examples

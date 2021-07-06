@@ -4,11 +4,11 @@ mira provides tooling for simple object detection projects. The package spans th
 
 - **Core** object detection abstractions for images and annotations
 - Access to **datasets** from common formats (e.g., VOC, COCO) and image sets (e.g., VOC 2012)
-- A common API to for **well-known models** (e.g., RetinaNet and YOLO)
+- A common API to for **well-known models** (e.g., EfficientDet and FasterRCNN)
 
 Check out [the docs](https://mira-python.readthedocs.io/en/latest/).
 
-##  Installation
+## Installation
 
 ```shell
 pip install mira

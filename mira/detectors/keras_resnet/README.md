@@ -1,1 +1,0 @@
-This is a copy of https://github.com/broadinstitute/keras-resnet but adapted to use tf.keras.

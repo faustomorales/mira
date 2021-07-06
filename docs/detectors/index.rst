@@ -9,8 +9,5 @@ Detectors are high-level abstractions of Keras object detection architectures. T
 There are currently four implemented architectures.
 
 .. toctree::
-   yolov3
-   retinanet
-   east
-   advancedeast
-   mtcnn
+   fasterrcnn
+   efficientdet

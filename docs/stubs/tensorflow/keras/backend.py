@@ -1,1 +1,0 @@
-floatx = lambda: 'float32'
