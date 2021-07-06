@@ -8,7 +8,6 @@ import logging
 from tqdm import tqdm
 
 from ..core import (
-    Selection,
     Scene,
     SceneCollection,
     AnnotationConfiguration,
@@ -87,19 +86,14 @@ def load_voc(
         image_path = os.path.join(image_dir, scene_metadata["filename"])
         for obj in root.findall("object"):
             category = annotation_config[obj.find("name").text]  # type: ignore
-            selection = None
-            for bndbox in obj.findall("bndbox"):
-                xmin, ymin, xmax, ymax = [
-                    int(float(bndbox.find(k).text))  # type: ignore
-                    for k in ["xmin", "ymin", "xmax", "ymax"]
-                ]
-                current = Selection(x1=xmin, y1=ymin, x2=xmax, y2=ymax)
-                if selection is None:
-                    selection = current
-                else:
-                    selection += current
-            assert selection is not None
-            annotations.append(Annotation(selection=selection, category=category))
+            bndbox = obj.find("bndbox")
+            xmin, ymin, xmax, ymax = [
+                int(float(bndbox.find(k).text))  # type: ignore
+                for k in ["xmin", "ymin", "xmax", "ymax"]
+            ]
+            annotations.append(
+                Annotation(x1=xmin, y1=ymin, x2=xmax, y2=ymax, category=category)
+            )
         scenes.append(
             Scene(
                 annotation_config=annotation_config,

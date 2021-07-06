@@ -111,7 +111,10 @@ class EfficientDet(Detector):
             [
                 mc.Annotation(
                     category=self.annotation_config[int(labelIdx) - 1],
-                    selection=mc.Selection(x1=x1, y1=y1, x2=x2, y2=y2),
+                    x1=x1,
+                    y1=y1,
+                    x2=x2,
+                    y2=y2,
                     score=score,
                 )
                 for x1, y1, x2, y2, score, labelIdx in group.detach().cpu().numpy()

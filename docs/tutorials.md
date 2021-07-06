@@ -234,7 +234,12 @@ scene1 = mc.Scene(
     image=filename,
     annotation_config=annotation_config,
     annotations=[
-        mc.Annotation(selection=mc.Selection(*p[label]), category=annotation_config[label], score=p["score"]) for label, p in [
+        mc.Annotation(
+            x1=p[label][0],
+            y1=p[label][1],
+            x2=p[label][2],
+            y2=p[label][3],
+            category=annotation_config[label], score=p["score"]) for label, p in [
             (next(k for k in p if k != "score"), p) for p in prediction1
         ]
     ]
@@ -243,8 +248,14 @@ scene2 = mc.Scene(
     image=filename,
     annotation_config=annotation_config,
     annotations=[
-        mc.Annotation(selection=mc.Selection(*p[label]), category=annotation_config[label], score=p["score"]) for label, p in [
+        mc.Annotation(
+            x1=p[label][0],
+            y1=p[label][1],
+            x2=p[label][2],
+            y2=p[label][3],
+            category=annotation_config[label], score=p["score"]) for label, p in [
             (next(k for k in p if k != "score"), p) for p in prediction2
         ]
     ]
+)
 ```

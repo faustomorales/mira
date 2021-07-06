@@ -13,7 +13,6 @@ from ..core import (
     SceneCollection,
     AnnotationConfiguration,
     Annotation,
-    Selection,
 )
 
 log = logging.getLogger(__name__)
@@ -79,12 +78,10 @@ def load_coco(
                 annotations=[
                     Annotation(
                         category=annotation_config[categories[int(ann[0])]],
-                        selection=Selection(
-                            x1=ann[1],
-                            y1=ann[2],
-                            x2=ann[1] + ann[3],
-                            y2=ann[2] + ann[4],
-                        ),
+                        x1=ann[1],
+                        y1=ann[2],
+                        x2=ann[1] + ann[3],
+                        y2=ann[2] + ann[4],
                     )
                     for ann in current
                 ],
@@ -140,12 +137,10 @@ def load_coco_text(
                 annotations=[
                     Annotation(
                         category=annotation_config[ann["class"]],
-                        selection=Selection(
-                            x1=ann["bbox"][0],
-                            y1=ann["bbox"][1],
-                            x2=ann["bbox"][0] + ann["bbox"][2],
-                            y2=ann["bbox"][1] + ann["bbox"][3],
-                        ),
+                        x1=ann["bbox"][0],
+                        y1=ann["bbox"][1],
+                        x2=ann["bbox"][0] + ann["bbox"][2],
+                        y2=ann["bbox"][1] + ann["bbox"][3],
                     )
                     for ann in anns
                 ],

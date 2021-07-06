@@ -15,7 +15,6 @@ import numpy as np
 import validators
 
 from .annotation import AnnotationConfiguration, Annotation
-from .selection import Selection
 from . import utils
 
 log = logging.getLogger(__name__)
@@ -180,11 +179,11 @@ class Scene:
         img_raw = self.image
         img = img_raw
         for ann in self.annotations:
-            img = ann.selection.draw(img, color=color, opaque=opaque)
+            img = ann.draw(img, color=color, opaque=opaque)
         utils.show(img, ax=ax)
         if labels:
             for ann in self.annotations:
-                x1, y1, _, _ = ann.selection.x1y1x2y2()
+                x1, y1, _, _ = ann.x1y1x2y2()
                 ax.annotate(
                     text=ann.category.name,
                     xy=(x1, y1),
@@ -234,20 +233,23 @@ class Scene:
             return self
         transformed = augmenter(
             image=self.image,
-            bboxes=[ann.selection.x1y1x2y2() for ann in self.annotations],
+            bboxes=[ann.x1y1x2y2() for ann in self.annotations],
             categories=[ann.category.name for ann in self.annotations],
         )
         image = transformed["image"]
         annotations = [
             Annotation(
-                selection=Selection(*bbox).crop(
-                    width=image.shape[1], height=image.shape[0]
-                ),
+                x1=x1,
+                y1=y1,
+                x2=x2,
+                y2=y2,
                 category=self.annotation_config[category],
             )
-            for bbox, category in zip(transformed["bboxes"], transformed["categories"])
+            for (x1, y1, x2, y2), category in zip(
+                transformed["bboxes"], transformed["categories"]
+            )
         ]
-        annotations = [ann for ann in annotations if ann.selection.area() > 0]
+        annotations = [ann for ann in annotations if ann.area() > 0]
         return self.assign(
             image=image,
             annotations=annotations,
@@ -334,10 +336,12 @@ class SceneCollection:
         All images will be loaded if not already cached."""
         return [s.image for s in self.scenes]
 
-    def augment(self, **kwargs):
+    def augment(self, augmenter: utils.AugmenterProtocol, **kwargs):
         """Obtained an augmented version of the given collection.
         All arguments passed to `Scene.augment`"""
-        return self.assign(scenes=[s.augment(**kwargs) for s in self.scenes])
+        return self.assign(
+            scenes=[s.augment(augmenter=augmenter, **kwargs) for s in self.scenes]
+        )
 
     def train_test_split(
         self, *args, **kwargs

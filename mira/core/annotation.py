@@ -1,9 +1,8 @@
 import logging
 import typing
 
+import cv2
 import numpy as np
-
-from .selection import Selection
 
 log = logging.getLogger(__name__)
 
@@ -44,23 +43,125 @@ class Annotation:
 
     def __init__(
         self,
-        selection: Selection,
+        x1: int,
+        y1: int,
+        x2: int,
+        y2: int,
         category: AnnotationCategory,
         score: float = None,
         metadata: dict = None,
     ):
         if category is None:
             raise ValueError("A category object must be specified.")
-        self.selection = selection
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.category = category
         self.score = score
         self.metadata = metadata or {}
+
+    def area(self) -> int:
+        """Compute the area of the selection."""
+        return (self.y2 - self.y1) * (self.x2 - self.x1)
+
+    def xywh(self) -> typing.Tuple[int, int, int, int]:
+        """Get the bounding box as x, y, width
+        and height."""
+        x1, y1, x2, y2 = self.x1y1x2y2()
+        return x1, y1, x2 - x1, y2 - y1
+
+    def x1y1x2y2(self) -> typing.Tuple[int, int, int, int]:
+        """The simple bounding box containing the selection.
+
+        Returns:
+            The coordinates (x1, y1, x2, y2). The first set always
+            correspond with the top left of the image. The second
+            set always correspond with the bottom right of the image.
+        """
+        return (self.x1, self.y1, self.x2, self.y2)
+
+    def draw(
+        self,
+        image: np.ndarray,
+        color: typing.Union[
+            typing.Tuple[int, int, int], typing.Tuple[int, int, int, int]
+        ],
+        opaque: bool = False,
+    ) -> np.ndarray:
+        """Draw selection onto given image.
+
+        Args:
+            image: The image to draw on.
+            color: The color to use.
+            opaque: Whether the box should be filled.
+
+        Returns:
+            The image with the selection drawn
+        """
+        target = image.copy()
+        pts = np.array(
+            [
+                [self.x1, self.y1],
+                [self.x2, self.y1],
+                [self.x2, self.y2],
+                [self.x1, self.y2],
+            ]
+        )
+        if opaque:
+            return cv2.fillPoly(img=target, pts=[pts], color=color)
+        return cv2.polylines(
+            img=target, pts=[pts], isClosed=True, thickness=5, color=color
+        )
+
+    def extract(self, image):
+        """Extract selection from image (i.e., crop the image
+        to the selection).
+        """
+        x1, y1, x2, y2 = self.x1y1x2y2()
+        cropped = image[max(y1, 0) : max(y2, 0), max(x1, 0) : max(0, x2)]
+        return cropped
+
+    def crop(self, width, height):
+        """Crop a selection to a given image width
+        and height.
+
+        Args:
+            width: The width of the image
+            height: The height of the image
+        """
+        return self.assign(
+            **{
+                k: max(0, min(v, d))
+                for v, d, k in [
+                    (self.x1, width, "x1"),
+                    (self.y1, height, "y1"),
+                    (self.x2, width, "x2"),
+                    (self.y2, height, "y2"),
+                ]
+            }
+        )
+
+    def resize(self, scale: float) -> "Annotation":
+        """Obtain a revised selection with a given
+        uniform scaling."""
+        return self.assign(
+            **{
+                k: int(v * scale)
+                for v, k in [
+                    (self.x1 * scale, "x1"),
+                    (self.y1 * scale, "y1"),
+                    (self.x2, "x2"),
+                    (self.y2, "y2"),
+                ]
+            }
+        )
 
     def assign(self, **kwargs) -> "Annotation":
         """Get a new Annotation with only the supplied
         keyword arguments changed."""
         defaults = {
-            "selection": self.selection,
+            "x1": self.x1,
+            "y1": self.y1,
+            "x2": self.x2,
+            "y2": self.y2,
             "category": self.category,
             "score": self.score,
             "metadata": self.metadata,
@@ -77,24 +178,19 @@ class Annotation:
             )
         raise ValueError("%s is not in the new annotation configuration.")
 
-    def resize(self, scale) -> "Annotation":
-        """Get a new annotation with the given
-        uniform scaling."""
-        return self.assign(selection=self.selection.resize(scale=scale))
-
     def __eq__(self, other):
-        self_bbox = self.selection.x1y1x2y2()
-        other_bbox = other.selection.x1y1x2y2()
+        self_bbox = self.x1y1x2y2()
+        other_bbox = other.x1y1x2y2()
         return self_bbox == other_bbox and self.category == other.category
 
     def __repr__(self):
         return repr(
             {
                 "selection": {
-                    "x1": self.selection.x1,
-                    "y1": self.selection.y1,
-                    "x2": self.selection.x2,
-                    "y2": self.selection.y2,
+                    "x1": self.x1,
+                    "y1": self.y1,
+                    "x2": self.x2,
+                    "y2": self.y2,
                 },
                 "category": self.category.name,
                 "score": self.score,
@@ -122,10 +218,7 @@ class AnnotationConfiguration:
         x1, y1, x2, y2, class_index where class_index is determined
         from the annotation configuration."""
         return np.array(
-            [
-                list(a.selection.x1y1x2y2()) + [self.index(a.category)]
-                for a in annotations
-            ],
+            [list(a.x1y1x2y2()) + [self.index(a.category)] for a in annotations],
         ).reshape(-1, 5)
 
     def __getitem__(self, key):

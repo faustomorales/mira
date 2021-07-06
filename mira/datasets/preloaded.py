@@ -175,7 +175,10 @@ def load_shapes(
                 )
             annotations.append(
                 core.Annotation(
-                    selection=core.Selection(x1=x, y1=y, x2=x + w, y2=y + w),
+                    x1=x,
+                    y1=y,
+                    x2=x + w,
+                    y2=y + w,
                     category=annotation_config[" ".join([color, shape])],
                 )
             )
