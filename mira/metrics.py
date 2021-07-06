@@ -202,22 +202,30 @@ def crop_error_examples(
         examples.append(
             {
                 "true_positives": [
-                    (
-                        ann.selection.extract(image),
-                        pred_scene.annotations[predIdx].score,
-                    )
+                    {
+                        "crop": ann.selection.extract(image),
+                        "bbox": ann.selection.x1y1x2y2(),
+                        "score": pred_scene.annotations[predIdx].score,
+                    }
                     for ann, iou, predIdx in zip(
                         true_scene.annotations, iou.max(axis=0), iou.argmax(axis=0)
                     )
                     if iou > iou_threshold
                 ],
                 "false_positives": [
-                    (ann.selection.extract(image), ann.score)
+                    {
+                        "crop": ann.selection.extract(image),
+                        "bbox": ann.selection.x1y1x2y2(),
+                        "score": ann.score,
+                    }
                     for ann, iou in zip(pred_scene.annotations, iou.max(axis=1))
                     if iou < iou_threshold
                 ],
                 "false_negatives": [
-                    ann.selection.extract(image)
+                    {
+                        "crop": ann.selection.extract(image),
+                        "bbox": ann.selection.x1y1x2y2(),
+                    }
                     for ann, iou in zip(true_scene.annotations, iou.max(axis=0))
                     if iou < iou_threshold
                 ],
