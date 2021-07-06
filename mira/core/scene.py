@@ -15,7 +15,7 @@ import numpy as np
 import validators
 
 from .annotation import AnnotationConfiguration, Annotation
-from . import utils
+from . import utils, augmentations
 
 log = logging.getLogger(__name__)
 
@@ -222,7 +222,7 @@ class Scene:
 
     def augment(
         self,
-        augmenter: utils.AugmenterProtocol = None,
+        augmenter: augmentations.AugmenterProtocol = None,
     ) -> "Scene":
         """Obtain an augmented version of the scene using the given augmenter.
 
@@ -336,7 +336,7 @@ class SceneCollection:
         All images will be loaded if not already cached."""
         return [s.image for s in self.scenes]
 
-    def augment(self, augmenter: utils.AugmenterProtocol, **kwargs):
+    def augment(self, augmenter: augmentations.AugmenterProtocol, **kwargs):
         """Obtained an augmented version of the given collection.
         All arguments passed to `Scene.augment`"""
         return self.assign(

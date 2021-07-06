@@ -6,7 +6,6 @@ import urllib
 import urllib.request
 import io
 
-import typing_extensions as tx
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -227,27 +226,3 @@ def compute_iou(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     )
     iou = interArea / (boxAArea + boxBArea - interArea)
     return iou
-
-
-AugmentedResult = tx.TypedDict(
-    "AugmentedResult",
-    {
-        "image": np.ndarray,
-        "bboxes": typing.List[typing.Tuple[int, int, int, int]],
-        "categories": typing.List[str],
-    },
-)
-
-# pylint: disable=too-few-public-methods
-class AugmenterProtocol(tx.Protocol):
-    """A protocol defining how we expect augmentation
-    pipelines to behave. bboxes is expected to be in
-    pascal_voc (or x1, y1, x2, y2) format."""
-
-    def __call__(
-        self,
-        image: np.ndarray,
-        bboxes: typing.List[typing.Tuple[int, int, int, int]],
-        categories: typing.List[str],
-    ) -> AugmentedResult:
-        pass

@@ -41,17 +41,6 @@ def _loss_from_loss_dict(loss_dict: typing.Dict[str, torch.Tensor]):
     return sum(loss for loss in loss_dict.values())
 
 
-# pylint: disable=too-few-public-methods
-class CallbackProtocol(tx.Protocol):
-    """A protocol defining how we expect callbacks to
-    behave."""
-
-    def __call__(
-        self, detector: "Detector", summaries: typing.List[typing.Dict[str, typing.Any]]
-    ) -> typing.Dict[str, typing.Any]:
-        pass
-
-
 class Detector(abc.ABC):
     """Abstract base class for a detector."""
 
@@ -207,11 +196,11 @@ class Detector(abc.ABC):
         training: mc.SceneCollection,
         validation: mc.SceneCollection = None,
         batch_size: int = 1,
-        augmenter: mc.utils.AugmenterProtocol = None,
+        augmenter: mc.augmentations.AugmenterProtocol = None,
         train_backbone: bool = True,
         epochs=100,
         shuffle=True,
-        callbacks: typing.List[CallbackProtocol] = None,
+        callbacks: typing.List[mc.callbacks.CallbackProtocol] = None,
         optimizer_params=None,
         scheduler_params=None,
     ):

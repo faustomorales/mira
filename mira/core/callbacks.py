@@ -1,8 +1,23 @@
+import typing
+
 import torch
 import pandas as pd
+import typing_extensions as tx
+
+if typing.TYPE_CHECKING:
+    from ..detectors import Detector
+
+# pylint: disable=too-few-public-methods
+class CallbackProtocol(tx.Protocol):
+    """A protocol defining how we expect callbacks to behave."""
+
+    def __call__(
+        self, detector: "Detector", summaries: typing.List[typing.Dict[str, typing.Any]]
+    ) -> typing.Dict[str, typing.Any]:
+        pass
 
 
-def best_weights(filepath, metric="loss", method="min"):
+def best_weights(filepath, metric="loss", method="min") -> CallbackProtocol:
     """A callback that saves the best model weights according to a metric.
 
     Args:
@@ -28,7 +43,7 @@ def best_weights(filepath, metric="loss", method="min"):
     return callback
 
 
-def csv_logger(filepath):
+def csv_logger(filepath) -> CallbackProtocol:
     """A callback that saves a CSV of the summaries to a specific
     filepath.
 
