@@ -156,6 +156,20 @@ class Scene:
         annotations = [ann.resize(scale=scale) for ann in self.annotations]
         return self.assign(image=image, annotations=annotations), scale
 
+    def show_annotations(self, **kwargs):
+        """Show annotations as individual plots. All arguments
+        passed to plt.subplots."""
+        if len(self.annotations) == 0:
+            return None
+        fig, axs = plt.subplots(nrows=len(self.annotations), **kwargs)
+        if len(self.annotations) == 1:
+            axs = [axs]
+        image = self.image
+        for ann, ax in zip(self.annotations, axs):
+            ax.imshow(ann.extract(image))
+            ax.set_title(ann.category.name)
+        return fig
+
     def annotated(
         self, dpi=72, fontsize="x-large", labels=True, opaque=False, color=(255, 0, 0)
     ) -> np.ndarray:
