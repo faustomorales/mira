@@ -191,8 +191,8 @@ class Scene:
             current_annotations = [
                 ann for ann in self.annotations if ann.category == current_category
             ]
-            if len(current_annotations) == 1:
-                # You can't have duplicates if there's only one.
+            if len(current_annotations) <= 1:
+                # You can't have duplicates if there's only one or None.
                 annotations.extend(current_annotations)
                 continue
             # Sort by area because we're going to identify duplicates
