@@ -226,3 +226,48 @@ def compute_iou(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     )
     iou = interArea / (boxAArea + boxBArea - interArea)
     return iou
+
+
+def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
+    """Compute pairwise overlap of two sets of boxes. Useful for detecting
+    redundant bounding boxes where there is no score to consider (as in
+    non-max suppression). Consider the following example:
+    .. code-block:: python
+        compute_overlap(
+            boxesA=np.array([[0, 0, 1, 1]]),
+            boxesB=np.array([[0, 0, 0.5, 0.5], [1, 1, 2, 2]])
+        )
+    This would yield :code:[[0.25, 0]] because 0.25 of boxA1 is contained
+    within boxB1 while none of boxA1 is contained within box B2. If
+    both boxes are for the same class, it may make sense to keep only
+    the box that fully encompasses the other (this is problem-specific).
+    Note that this function is not symmetric (i.e.,
+    compute_coverage(x, y) != compute_coverage(y, x)). In our example,
+    if we had reversed the inputs, we would have gotten :code:[[1], [0]]
+    because 100% of boxB1 (now A1) is contained in boxA1 (now B1) while
+    none of boxB2 (now A2) is contained in boxA1 (now B1).
+
+    Args:
+        boxesA: The first set of boxes, provided as x1, y1, x2, y2
+            coordinates as an array with shape (NA, 4).
+        boxesB: The second set of boxes provided in same form as boxesA.
+    Returns:
+        An IoU matrix of shape (NA, NB, 2) where 0 means no overlap and
+        1 means complete overlap.
+    """
+    # A joint matrix for all box pairs so we can vectorize. It has shape
+    # (NA, NB, 2, 4).
+    boxes = np.zeros((boxesA.shape[0], boxesB.shape[0], 2, 4))
+    boxes[:, :, 0] = boxesA[:, np.newaxis, :]
+    boxes[:, :, 1] = boxesB[np.newaxis, :, :]
+    xA = boxes[..., 0].max(axis=-1)
+    yA = boxes[..., 1].max(axis=-1)
+    xB = boxes[..., 2].min(axis=-1)
+    yB = boxes[..., 3].min(axis=-1)
+    interArea = (xB - xA).clip(0) * (yB - yA).clip(0)
+
+    boxAArea = (boxes[..., 0, 2] - boxes[..., 0, 0]) * (
+        boxes[..., 0, 3] - boxes[..., 0, 1]
+    )
+    coverageA = interArea / boxAArea
+    return coverageA

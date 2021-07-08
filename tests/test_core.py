@@ -18,6 +18,59 @@ def test_blank_and_properties():
     assert (image[:, :, :] == 125).all()
 
 
+def test_scene_deduplication():
+    ac = core.AnnotationConfiguration(["foo", "bar"])
+    scene = core.Scene(
+        image=core.utils.get_blank_image(width=200, height=100, n_channels=2, cval=125),
+        annotations=[
+            core.Annotation(
+                category=ac["foo"],
+                x1=0,
+                y1=0,
+                x2=10,
+                y2=10,
+                metadata={"tag": "drop-me-coverage"},
+            ),
+            core.Annotation(
+                category=ac["foo"],
+                x1=0,
+                y1=0,
+                x2=20,
+                y2=20,
+                metadata={"tag": "drop-me-always"},
+            ),
+            core.Annotation(
+                category=ac["foo"],
+                x1=0,
+                y1=0,
+                x2=20,
+                y2=20,
+                metadata={"tag": "keep-me"},
+            ),
+            core.Annotation(
+                category=ac["bar"],
+                x1=0,
+                y1=0,
+                x2=10,
+                y2=10,
+                metadata={"tag": "keep-me"},
+            ),
+        ],
+        annotation_config=ac,
+    )
+    deduplicated_coverage = scene.drop_duplicates(method="coverage")
+    deduplicated_iou = scene.drop_duplicates(method="iou")
+    assert len(deduplicated_coverage.annotations) == 2
+    assert len(deduplicated_iou.annotations) == 3
+    assert all(
+        ann.metadata["tag"] == "keep-me" for ann in deduplicated_coverage.annotations
+    )
+    assert all(
+        ann.metadata["tag"] in ["keep-me", "drop-me-coverage"]
+        for ann in deduplicated_iou.annotations
+    )
+
+
 def test_file_read():
     """Make sure reading files works."""
     image = core.utils.get_blank_image(width=200, height=100, n_channels=3, cval=125)

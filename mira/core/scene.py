@@ -7,6 +7,7 @@ import typing
 import logging
 import math
 import io
+import typing_extensions
 
 import sklearn.model_selection as skms
 import matplotlib.pyplot as plt
@@ -169,6 +170,53 @@ class Scene:
             ax.imshow(ann.extract(image))
             ax.set_title(ann.category.name)
         return fig
+
+    def drop_duplicates(
+        self, threshold=1, method: typing_extensions.Literal["iou", "coverage"] = "iou"
+    ):
+        """Remove annotations of the same class where one annotation covers similar or equal area as another.
+
+        Args:
+            method: Whether to check overlap by "coverage" (i.e.,
+                is X% of box A contained by some larger box B) or "iou"
+                (intersection-over-union). IoU is, of course, more strict.
+            threshold: The threshold for equality. Boxes are retained if there
+                is no larger box with which the overlap is greater than or
+                equal to this threshold.
+        """
+        annotations = []
+        assert method in ["iou", "coverage"]
+        func = utils.compute_iou if method == "iou" else utils.compute_coverage
+        for current_category in self.annotation_config:
+            current_annotations = [
+                ann for ann in self.annotations if ann.category == current_category
+            ]
+            if len(current_annotations) == 1:
+                # You can't have duplicates if there's only one.
+                annotations.extend(current_annotations)
+                continue
+            # Sort by area because we're going to identify duplicates
+            # in order of size.
+            current_annotations = sorted(
+                current_annotations, key=lambda ann: ann.area()
+            )
+            bboxes = self.annotation_config.bboxes_from_group(current_annotations)[
+                :, :4
+            ]
+            # Keep only annotations that are not duplicative with a larger (i.e.,
+            # later in our sorted list) annotation. The largest annotation is, of course,
+            # always retained.
+            annotations.extend(
+                [
+                    ann
+                    for idx, (ann, coverages) in enumerate(
+                        zip(current_annotations, func(bboxes, bboxes))
+                    )
+                    if idx == len(current_annotations) - 1
+                    or coverages[idx + 1 :].max() < threshold
+                ]
+            )
+        return self.assign(annotations=annotations)
 
     def annotated(
         self, dpi=72, fontsize="x-large", labels=True, opaque=False, color=(255, 0, 0)
