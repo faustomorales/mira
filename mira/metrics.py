@@ -174,14 +174,12 @@ def crop_error_examples(
     iou_threshold=0.1,
 ):
     """Get crops of true positives, false negatives, and false positives.
-
     Args:
         true_collection: A collection of the ground truth scenes.
         pred_collection: A collection of the predicted scenes.
         threshold: The score threshold for selecting annotations from predicted
             scenes.
         iou_threhsold: The IoU threshold for counting a box as a true positive.
-
     Returns:
         A list of dicts with "true_positives", "false_positives", and "false_negatives"
         with the same length of the input collections. The values in each dict
@@ -189,14 +187,15 @@ def crop_error_examples(
     """
     examples = []
     for true_scene, pred_scene in zip(true_collection, pred_collection):
-        boxes_true = true_scene.bboxes()[:, :4]
-        boxes_pred = pred_scene.assign(
+        pred_scene = pred_scene.assign(
             annotations=[
                 a
                 for a in pred_scene.annotations
                 if a.score is None or a.score > threshold
             ]
-        ).bboxes()[:, :4]
+        )
+        boxes_true = true_scene.bboxes()[:, :4]
+        boxes_pred = pred_scene.bboxes()[:, :4]
         iou = utils.compute_iou(boxes_pred, boxes_true)
         examples.append(
             {
@@ -206,17 +205,33 @@ def crop_error_examples(
                         true_scene.annotations, iou.max(axis=0), iou.argmax(axis=0)
                     )
                     if iou > iou_threshold
-                ],
+                ]
+                if (pred_scene.annotations and true_scene.annotations)
+                else [],
                 "false_positives": [
                     ann
-                    for ann, iou in zip(pred_scene.annotations, iou.max(axis=1))
+                    for ann, iou in zip(
+                        pred_scene.annotations,
+                        iou.max(axis=1)
+                        if true_scene.annotations
+                        else [-1] * len(pred_scene.annotations),
+                    )
                     if iou < iou_threshold
-                ],
+                ]
+                if len(pred_scene.annotations) > 0
+                else [],
                 "false_negatives": [
                     ann
-                    for ann, iou in zip(true_scene.annotations, iou.max(axis=0))
+                    for ann, iou in zip(
+                        true_scene.annotations,
+                        iou.max(axis=0)
+                        if pred_scene.annotations
+                        else [-1] * len(true_scene.annotations),
+                    )
                     if iou < iou_threshold
-                ],
+                ]
+                if true_scene.annotations
+                else [],
             }
         )
     return examples
