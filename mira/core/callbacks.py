@@ -56,3 +56,19 @@ def csv_logger(filepath) -> CallbackProtocol:
         return {}
 
     return callback
+
+
+def mAP(collection, key="val_mAP", **kwargs) -> CallbackProtocol:
+    """Build a callback that computes mAP. All kwargs
+    passed to detector.mAP()"""
+
+    # pylint: disable=unused-argument
+    def callback(detector, summaries):
+        return {
+            key: {
+                k: round(v, 2)
+                for k, v in detector.mAP(collection=collection, **kwargs).items()
+            }
+        }
+
+    return callback
