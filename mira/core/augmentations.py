@@ -36,7 +36,6 @@ class RandomCropToPaddedBBox(A.DualTransform):
     """Crop an image to have a bounding box centered within it. Useful for
     cases where labels are trusted in the area directly near a bounding box
     but not far from them.
-
     Args:
         width: The width of the cropped area.
         height: The height of the cropped area.
@@ -55,9 +54,16 @@ class RandomCropToPaddedBBox(A.DualTransform):
     def apply(self, img, **params):
         x_min, y_min = [params[k] for k in ["x_min", "y_min"]]
         img_h, img_w = img.shape[:2]
-        x_min_i = int(min(x_min * img_w, img_w - self.width))
-        y_min_i = int(min(y_min * img_h, img_h - self.height))
-        return img[y_min_i : y_min_i + self.height, x_min_i : x_min_i + self.width]
+        x_min_i = max(int(min(x_min * img_w, img_w - self.width)), 0)
+        y_min_i = max(int(min(y_min * img_h, img_h - self.height)), 0)
+        x_max_i = x_min_i + self.width
+        y_max_i = y_min_i + self.height
+        crop = img[y_min_i:y_max_i, x_min_i:x_max_i]
+        if x_max_i <= img_w and y_max_i <= img_h:
+            return crop
+        return np.pad(
+            crop, ((0, max(y_max_i - img_h, 0)), (0, max(x_max_i - img_w, 0)), (0, 0))
+        )
 
     def get_params_dependent_on_targets(self, params):
         img_h, img_w = params["image"].shape[:2]
@@ -93,8 +99,8 @@ class RandomCropToPaddedBBox(A.DualTransform):
         ]
         crop_w = self.width / cols
         crop_h = self.height / rows
-        scale_x = cols / self.width
-        scale_y = rows / self.height
+        scale_x = 1 / crop_w
+        scale_y = 1 / crop_h
         x1, y1, x2, y2 = [
             min(max(value - offset, 0), max_dim) * scale
             for value, offset, max_dim, scale in zip(
