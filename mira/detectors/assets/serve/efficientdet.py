@@ -3,18 +3,31 @@
 import torch
 import torchvision
 import effdet
+import omegaconf
 
 
 class EfficientDet(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.model = effdet.create_model(
-            model_name=MODEL_NAME,
+        config = omegaconf.OmegaConf.merge(
+            effdet.get_efficientdet_config(model_name=MODEL_NAME),
+            omegaconf.OmegaConf.create(
+                {
+                    "min_level": MIN_LEVEL,
+                    "max_level": MAX_LEVEL,
+                    "num_levels": NUM_LEVELS,
+                    "max_detection_points": MAX_DETECTION_POINTS,
+                }
+            ),
+        )
+        self.model = effdet.create_model_from_config(
+            config=config,
             num_classes=NUM_CLASSES,
             bench_task="",
             pretrained=False,
             pretrained_backbone=False,
             image_size=(INPUT_HEIGHT, INPUT_WIDTH),
+            max_det_per_image=MAX_DET_PER_IMAGE,
         )
         self.config = {"anchors": effdet.anchors.Anchors.from_config(self.model.config)}
         self.resize = torchvision.transforms.Resize(size=(INPUT_HEIGHT, INPUT_WIDTH))
@@ -32,9 +45,9 @@ class EfficientDet(torch.nn.Module):
         class_out, box_out, indices, classes = effdet.bench._post_process(
             class_out,
             box_out,
-            num_levels=NUM_LEVELS,  # type: ignore
-            num_classes=NUM_CLASSES,  # type: ignore
-            max_detection_points=MAX_DETECTION_POINTS,  # type: ignore
+            num_levels=self.model.config.num_levels,
+            num_classes=self.model.config.num_classes,
+            max_detection_points=self.model.config.max_detection_points,
         )
         img_scale, img_size = None, None
         detections = effdet.bench._batch_detection(
@@ -46,7 +59,7 @@ class EfficientDet(torch.nn.Module):
             classes.cpu(),
             img_scale,
             img_size,
-            max_det_per_image=MAX_DET_PER_IMAGE,  # type: ignore
+            max_det_per_image=self.model.config.max_det_per_image,
             soft_nms=True,
         )
         return [

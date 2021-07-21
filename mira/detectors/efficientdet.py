@@ -7,10 +7,10 @@ import pkg_resources
 
 from .. import datasets as mds
 from .. import core as mc
-from .detector import Detector
+from . import detector
 
 
-class EfficientDet(Detector):
+class EfficientDet(detector.Detector):
     """A wrapper for EfficientDet as implemented in the effdet package."""
 
     def __init__(
@@ -20,22 +20,26 @@ class EfficientDet(Detector):
         pretrained_backbone: bool = True,
         pretrained_top: bool = False,
         device="cpu",
+        resize_method: detector.ResizeMethod = "fit",
+        **kwargs,
     ):
-        super().__init__(device=device)
-        default_config = effdet.get_efficientdet_config(model_name=model_name)
+        super().__init__(device=device, resize_method=resize_method)
+        config = effdet.get_efficientdet_config(model_name=model_name)
+        if kwargs:
+            config = omegaconf.OmegaConf.merge(  # type: ignore
+                config,
+                omegaconf.OmegaConf.create(kwargs),
+            )
         self.annotation_config = annotation_config
-        self.model = effdet.create_model(
-            model_name=model_name,
+        self.model = effdet.create_model_from_config(
+            config=config,
             num_classes=len(annotation_config),
             bench_task="",
             pretrained=pretrained_top,
             pretrained_backbone=pretrained_backbone,
-            image_size=(None, None),
         ).to(self.device)
         self.model_name = model_name
-        self.set_input_shape(
-            width=default_config.image_size[1], height=default_config.image_size[0]
-        )
+        self.set_input_shape(width=config.image_size[1], height=config.image_size[0])
 
     def set_input_shape(self, width, height):
         self.model.config = omegaconf.OmegaConf.merge(  # type: ignore
@@ -135,6 +139,8 @@ class EfficientDet(Detector):
             .replace("INPUT_HEIGHT", str(self.input_shape[0]))
             .replace("MODEL_NAME", f"'{self.model_name}'")
             .replace("NUM_LEVELS", str(self.model.config.num_levels))  # type: ignore
+            .replace("MIN_LEVEL", str(self.model.config.min_level))  # type: ignore
+            .replace("MAX_LEVEL", str(self.model.config.max_level))  # type: ignore
             .replace("MAX_DET_PER_IMAGE", str(self.model.config.max_det_per_image))  # type: ignore
             .replace(
                 "MAX_DETECTION_POINTS", str(self.model.config.max_detection_points)  # type: ignore

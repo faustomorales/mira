@@ -6,7 +6,7 @@ import pkg_resources
 
 from .. import datasets as mds
 from .. import core as mc
-from .detector import Detector
+from . import detector
 
 
 BACKBONE_TO_CONSTRUCTOR = {
@@ -16,7 +16,7 @@ BACKBONE_TO_CONSTRUCTOR = {
 }
 
 
-class FasterRCNN(Detector):
+class FasterRCNN(detector.Detector):
     """A wrapper around the FasterRCNN models in torchvision."""
 
     def __init__(
@@ -28,8 +28,9 @@ class FasterRCNN(Detector):
             "resnet50", "mobilenet_large", "mobilenet_large_320"
         ] = "resnet50",
         device="cpu",
+        resize_method: detector.ResizeMethod = "fit",
     ):
-        super().__init__(device=device)
+        super().__init__(device=device, resize_method=resize_method)
         self.annotation_config = annotation_config
         self.model = BACKBONE_TO_CONSTRUCTOR[backbone](
             pretrained=pretrained_top,
@@ -42,6 +43,11 @@ class FasterRCNN(Detector):
             height=min(self.model.transform.min_size),  # type: ignore
         )
         self.backbone_name = backbone
+
+    @property
+    def training_model(self):
+        """Training model for this detector."""
+        return self.model
 
     @property
     def serve_module_string(self):

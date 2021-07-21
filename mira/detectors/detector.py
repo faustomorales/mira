@@ -34,6 +34,8 @@ DEFAULT_SCHEDULER_PARAMS = dict(
 
 DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
 
+ResizeMethod = tx.Literal["fit", "pad"]
+
 
 def _loss_from_loss_dict(loss_dict: typing.Dict[str, torch.Tensor]):
     if "loss" in loss_dict:
@@ -47,10 +49,11 @@ class Detector(abc.ABC):
     model: torch.nn.Module
     backbone: torch.nn.Module
     annotation_config: mc.AnnotationConfiguration
-    training_model: typing.Optional[torch.nn.Module]
+    training_model: torch.nn.Module
 
-    def __init__(self, device="cpu"):
+    def __init__(self, device="cpu", resize_method: tx.Literal["pad", "fit"] = "fit"):
         self.device = torch.device(device)
+        self.resize_method = resize_method
 
     def set_device(self, device):
         """Set the device for training and inference tasks."""
@@ -68,6 +71,32 @@ class Detector(abc.ABC):
     ) -> typing.List[typing.List[mc.Annotation]]:
         """Compute a list of annotation groups from model output."""
 
+    def resize_to_model_size(
+        self, image: np.ndarray
+    ) -> typing.Tuple[np.ndarray, float]:
+        """Resize image to model size."""
+        if self.resize_method == "fit":
+            return self.fit_to_model_size(image)
+        if self.resize_method == "pad":
+            return self.pad_to_model_size(image)
+        raise NotImplementedError(f"Unknown resize method: {self.resize_method}")
+
+    def fit_to_model_size(self, image: np.ndarray) -> typing.Tuple[np.ndarray, float]:
+        """Fit an image to model size by up-or-downsampling the constraining dimension
+        and then padding the the other dimension to size."""
+        height, width = self.input_shape[:2]
+        image, scale = mc.utils.fit(image=image, width=width, height=height)
+        return image, scale
+
+    def pad_to_model_size(self, image: np.ndarray) -> typing.Tuple[np.ndarray, float]:
+        """Pad images to model size."""
+        height, width = self.input_shape[:2]
+        assert image.shape[0] <= height, "Cannot pad image."
+        assert image.shape[1] <= width, "Cannot pad image."
+        padded = mc.utils.get_blank_image(width=width, height=height, n_channels=3)
+        padded[: image.shape[0], : image.shape[1]] = image
+        return padded, 1
+
     def detect(self, image: np.ndarray, **kwargs) -> typing.List[mc.Annotation]:
         """Run detection for a given image. All other args passed to invert_targets()
 
@@ -78,7 +107,7 @@ class Detector(abc.ABC):
             A list of annotations
         """
         self.model.eval()
-        image, scale = self._scale_to_model_size(image)
+        image, scale = self.resize_to_model_size(image)
         with torch.no_grad():
             annotations = self.invert_targets(
                 self.model(self.compute_inputs([image])), **kwargs
@@ -104,7 +133,7 @@ class Detector(abc.ABC):
         """
         self.model.eval()
         images, scales = list(
-            zip(*[self._scale_to_model_size(image) for image in images])
+            zip(*[self.resize_to_model_size(image) for image in images])
         )
         annotation_groups = []
         for start in range(0, len(images), batch_size):
@@ -129,11 +158,6 @@ class Detector(abc.ABC):
     @abc.abstractmethod
     def set_input_shape(self, width: int, height: int):
         """Set the input shape for this model."""
-
-    def _scale_to_model_size(self, image: np.ndarray):
-        height, width = self.input_shape[:2]
-        image, scale = mc.utils.fit(image=image, width=width, height=height)
-        return image, scale
 
     @property
     @abc.abstractmethod
@@ -184,12 +208,38 @@ class Detector(abc.ABC):
         for m in self.model.backbone.modules():  # type: ignore
             m.eval()
 
-    def unfreeze_backbone(self):
-        """Unfreeze the body of the model, making all layers trainable."""
-        for p in self.model.backbone.parameters():  # type: ignore
-            p.requires_grad = True
+    def unfreeze_backbone(self, batchnorm=True):
+        """Unfreeze the body of the model, making all layers trainable.
+
+        Args:
+            batchnorm: Whether to unfreeze batchnorm layers.
+        """
         for m in self.model.backbone.modules():  # type: ignore
-            m.train()
+            if isinstance(m, torch.nn.BatchNorm2d) and not batchnorm:
+                m.eval()
+                for p in m.parameters():
+                    p.requires_grad = False
+            else:
+                m.train()
+                for p in m.parameters():
+                    p.requires_grad = True
+
+    def loss_for_batch(self, batch):
+        """Compute the loss for a batch of scenes."""
+        self.training_model.train()
+        images, scales = list(
+            zip(*[self.resize_to_model_size(s.image) for s in batch.scenes])
+        )
+        annotation_groups = [
+            [ann.resize(scale) for ann in scene.annotations]
+            for scene, scale in zip(batch, scales)
+        ]
+        return _loss_from_loss_dict(
+            self.training_model(
+                self.compute_inputs(images),
+                self.compute_targets(annotation_groups=annotation_groups),
+            )
+        )
 
     def train(
         self,
@@ -198,6 +248,7 @@ class Detector(abc.ABC):
         batch_size: int = 1,
         augmenter: mc.augmentations.AugmenterProtocol = None,
         train_backbone: bool = True,
+        train_backbone_bn: bool = True,
         epochs=100,
         shuffle=True,
         callbacks: typing.List[mc.callbacks.CallbackProtocol] = None,
@@ -205,7 +256,6 @@ class Detector(abc.ABC):
         scheduler_params=None,
     ):
         """Run training job.
-
         Args:
             training: The collection of training images
             validation: The collection of validation images
@@ -236,10 +286,6 @@ class Detector(abc.ABC):
             ),
             optimizer=optimizer,
         )
-        if validation is not None:
-            validation = validation.fit(
-                width=self.input_shape[1], height=self.input_shape[0]
-            )[0]
         train_index = np.arange(len(training)).tolist()
         summaries = []
         for epoch in range(num_epochs):
@@ -248,7 +294,7 @@ class Detector(abc.ABC):
                 if not train_backbone:
                     self.freeze_backbone()
                 else:
-                    self.unfreeze_backbone()
+                    self.unfreeze_backbone(batchnorm=train_backbone_bn)
                 t.set_description(f"Epoch {epoch + 1} / {num_epochs}")
                 cum_loss = 0
                 for batchIdx, start in enumerate(range(0, len(training), batch_size)):
@@ -264,18 +310,8 @@ class Detector(abc.ABC):
                     )
                     if augmenter is not None:
                         batch = batch.augment(augmenter=augmenter)
-                    batch = batch.fit(
-                        width=self.input_shape[1], height=self.input_shape[0]
-                    )[0]
                     optimizer.zero_grad()
-                    loss = _loss_from_loss_dict(
-                        training_model(
-                            self.compute_inputs(batch.images),
-                            self.compute_targets(
-                                annotation_groups=batch.annotation_groups
-                            ),
-                        )
-                    )
+                    loss = self.loss_for_batch(batch)
                     loss.backward()
                     cum_loss += loss.detach().cpu().numpy()
                     avg_loss = cum_loss / (batchIdx + 1)
@@ -286,12 +322,25 @@ class Detector(abc.ABC):
                 summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
                 summaries.append(summary)
                 if validation is not None:
-                    summary["val_mAP"] = {
-                        k: round(v, 2)
-                        for k, v in self.mAP(
-                            collection=validation, batch_size=batch_size
-                        ).items()
-                    }
+                    summary["val_loss"] = np.mean(
+                        [
+                            self.loss_for_batch(
+                                validation.assign(
+                                    scenes=[
+                                        validation[idx]
+                                        for idx in range(
+                                            vstart,
+                                            min(vstart + batch_size, len(validation)),
+                                        )
+                                    ]
+                                )
+                            )
+                            .detach()
+                            .cpu()
+                            .numpy()
+                            for vstart in range(0, len(validation), batch_size)
+                        ]
+                    )
                 if callbacks is not None:
                     try:
                         for callback in callbacks:
