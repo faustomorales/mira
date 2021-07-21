@@ -300,13 +300,9 @@ class Detector(abc.ABC):
                 for batchIdx, start in enumerate(range(0, len(training), batch_size)):
                     if batchIdx == 0 and shuffle:
                         random.shuffle(train_index)
+                    end = min(start + batch_size, len(train_index))
                     batch = training.assign(
-                        scenes=[
-                            training[train_index[idx]]
-                            for idx in range(
-                                start, min(start + batch_size, len(train_index))
-                            )
-                        ]
+                        scenes=[training[train_index[idx]] for idx in range(start, end)]
                     )
                     if augmenter is not None:
                         batch = batch.augment(augmenter=augmenter)
@@ -314,7 +310,7 @@ class Detector(abc.ABC):
                     loss = self.loss_for_batch(batch)
                     loss.backward()
                     cum_loss += loss.detach().cpu().numpy()
-                    avg_loss = cum_loss / (batchIdx + 1)
+                    avg_loss = cum_loss / end
                     optimizer.step()
                     scheduler.step(epoch)
                     t.set_postfix(loss=avg_loss)
@@ -322,24 +318,29 @@ class Detector(abc.ABC):
                 summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
                 summaries.append(summary)
                 if validation is not None:
-                    summary["val_loss"] = np.mean(
-                        [
-                            self.loss_for_batch(
-                                validation.assign(
-                                    scenes=[
-                                        validation[idx]
-                                        for idx in range(
-                                            vstart,
-                                            min(vstart + batch_size, len(validation)),
-                                        )
-                                    ]
+                    summary["val_loss"] = (
+                        np.sum(
+                            [
+                                self.loss_for_batch(
+                                    validation.assign(
+                                        scenes=[
+                                            validation[idx]
+                                            for idx in range(
+                                                vstart,
+                                                min(
+                                                    vstart + batch_size, len(validation)
+                                                ),
+                                            )
+                                        ]
+                                    )
                                 )
-                            )
-                            .detach()
-                            .cpu()
-                            .numpy()
-                            for vstart in range(0, len(validation), batch_size)
-                        ]
+                                .detach()
+                                .cpu()
+                                .numpy()
+                                for vstart in range(0, len(validation), batch_size)
+                            ]
+                        )
+                        / len(validation)
                     )
                 if callbacks is not None:
                     try:
