@@ -131,12 +131,12 @@ class Annotation:
         """
         return self.assign(
             **{
-                k: max(0, min(v, d))
-                for v, d, k in [
-                    (self.x1, width, "x1"),
-                    (self.y1, height, "y1"),
-                    (self.x2, width, "x2"),
-                    (self.y2, height, "y2"),
+                k: max(0, min(getattr(self, k), d))
+                for d, k in [
+                    (width, "x1"),
+                    (height, "y1"),
+                    (width, "x2"),
+                    (height, "y2"),
                 ]
             }
         )
@@ -146,12 +146,12 @@ class Annotation:
         uniform scaling."""
         return self.assign(
             **{
-                k: int(v * scale)
-                for v, k in [
-                    (self.x1 * scale, "x1"),
-                    (self.y1 * scale, "y1"),
-                    (self.x2, "x2"),
-                    (self.y2, "y2"),
+                k: int(getattr(self, k) * scale)
+                for k in [
+                    "x1",
+                    "y1",
+                    "x2",
+                    "y2",
                 ]
             }
         )
