@@ -139,6 +139,7 @@ def load_shapes(
     )
 
     def make_scene():
+        # pylint: disable=unsubscriptable-object
         image = core.utils.get_blank_image(
             width=width, height=height, n_channels=3, cval=255
         )
@@ -155,6 +156,9 @@ def load_shapes(
         lookup = {"RED": (255, 0, 0), "BLUE": (0, 0, 255), "GREEN": (0, 255, 0)}
         annotations = []
         for x, y, w, shape, color in zip(xs, ys, ws, shapes, colors):
+            if image[y : y + w, x : x + w].min() == 0:
+                # Avoid overlapping shapes.
+                continue
             if shape == "RECTANGLE":
                 cv2.rectangle(
                     image,
