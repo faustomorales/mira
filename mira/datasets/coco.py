@@ -37,7 +37,7 @@ def load_coco(
     """
     if image_dir is None:
         image_dir = path.split(annotations_file)[0]
-    with open(annotations_file, "r") as f:
+    with open(annotations_file, "r", encoding="utf8") as f:
         data = json.load(f)
     categories = {}
     for category in data["categories"]:
@@ -108,7 +108,7 @@ def load_coco_text(
     Returns:
         A scene collection
     """
-    with open(annotations_file, "r") as f:
+    with open(annotations_file, "r", encoding="utf8") as f:
         data = json.load(f)
 
     category_names = set(ann["class"] for ann in data["anns"].values())

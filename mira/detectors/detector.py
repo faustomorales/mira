@@ -396,9 +396,9 @@ class Detector(abc.ABC):
             index_to_name_file = os.path.join(tdir, "index_to_name.json")
             model_file = os.path.join(tdir, "model.py")
             torch.save(self.model.state_dict(prefix="model."), serialized_file)
-            with open(index_to_name_file, "w") as f:
+            with open(index_to_name_file, "w", encoding="utf8") as f:
                 f.write(json.dumps(self.serve_module_index))
-            with open(model_file, "w") as f:
+            with open(model_file, "w", encoding="utf8") as f:
                 f.write(self.serve_module_string)
             args = types.SimpleNamespace(
                 model_name=os.path.basename(filepath),

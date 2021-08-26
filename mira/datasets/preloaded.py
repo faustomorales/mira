@@ -92,11 +92,11 @@ def load_voc2012(subset="train") -> core.SceneCollection:
     sids = []
     if subset in ["trainval", "train"]:
         sid_path = path.join(imageset_dir, "train.txt")
-        with open(sid_path, "r") as f:
+        with open(sid_path, "r", encoding="utf8") as f:
             sids.extend(f.read().split("\n"))
     if subset in ["trainval", "val"]:
         sid_path = path.join(imageset_dir, "val.txt")
-        with open(sid_path, "r") as f:
+        with open(sid_path, "r", encoding="utf8") as f:
             sids.extend(f.read().split("\n"))
     filepaths = [
         path.join(annotation_dir, "{0}.xml".format(sid))
