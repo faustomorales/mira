@@ -72,7 +72,7 @@ class Segmenter(torch.nn.Module):
                             [
                                 [
                                     torch.unsqueeze(
-                                        torch.masked_select(yi[c], mask[c]).max(), 0
+                                        torch.masked_select(yi[c], mask).max(), 0
                                     )
                                     for mask, c in ti["negative_pixels"]
                                 ]
