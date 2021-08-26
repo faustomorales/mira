@@ -2,6 +2,7 @@
 
 import torch
 import torchvision
+import numpy as np
 import effdet
 import omegaconf
 
@@ -31,9 +32,18 @@ class EfficientDet(torch.nn.Module):
         )
         self.config = {"anchors": effdet.anchors.Anchors.from_config(self.model.config)}
         self.resize = torchvision.transforms.Resize(size=(INPUT_HEIGHT, INPUT_WIDTH))
+        self.mean = torch.tensor(
+            np.array([[[[0.485]], [[0.456]], [[0.406]]]]), dtype=torch.float32
+        )
+        self.std = torch.tensor(
+            np.array([[[[0.229]], [[0.224]], [[0.225]]]]), dtype=torch.float32
+        )
+
+    def normalize(self, x):
+        return (x - self.mean) / self.std
 
     def forward(self, x):
-        resized = self.resize(x)
+        resized = self.normalize(self.resize(x))
         scales = torch.tensor(
             [
                 [i.shape[2] / o.shape[2], i.shape[1] / o.shape[1]]
