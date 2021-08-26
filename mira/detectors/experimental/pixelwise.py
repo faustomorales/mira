@@ -64,21 +64,25 @@ class Segmenter(torch.nn.Module):
         y = torch.cat(y, dim=1)
         y = self.classifier(y)
         if self.training:
-            binary_inputs = torch.cat(
-                [
+            binary_inputs_list = []
+            if any(ti["negative_pixels"] for ti in target):
+                binary_inputs_list.append(
                     torch.cat(
                         flatten(
                             [
                                 [
                                     torch.unsqueeze(
-                                        torch.masked_select(yi[c], mask).max(), 0
+                                        torch.masked_select(yi[c], mask[c]).max(), 0
                                     )
-                                    for mask, c in ti["negative_areas"]
+                                    for mask, c in ti["negative_pixels"]
                                 ]
                                 for yi, ti in zip(y, target)
                             ]
                         )
-                    ),
+                    )
+                )
+            if any(ti["positive_bboxes"] for ti in target):
+                binary_inputs_list.append(
                     torch.cat(
                         flatten(
                             [
@@ -86,20 +90,28 @@ class Segmenter(torch.nn.Module):
                                     torch.unsqueeze(
                                         self.positive_agg(yi[c, y1:y2, x1:x2]), 0  # type: ignore
                                     )
-                                    for x1, y1, x2, y2, c in ti["positive_boxes"]
+                                    for x1, y1, x2, y2, c in ti["positive_bboxes"]
                                 ]
                                 for yi, ti in zip(y, target)
                             ]
                         )
-                    ),
-                ]
-            )
+                    )
+                )
+            binary_inputs = torch.cat(binary_inputs_list)
             binary_target = torch.cat(
                 [
                     torch.cat(
-                        [torch.zeros(len(ti["negative_areas"])) for ti in target]
+                        [
+                            torch.zeros(len(ti["negative_pixels"]), device=x.device)
+                            for ti in target
+                        ]
                     ),
-                    torch.cat([torch.ones(len(ti["positive_boxes"])) for ti in target]),
+                    torch.cat(
+                        [
+                            torch.ones(len(ti["positive_bboxes"]), device=x.device)
+                            for ti in target
+                        ]
+                    ),
                 ]
             )
             return {
@@ -207,21 +219,23 @@ class AggregatedSegmentation(md.Detector):
         height_ds, width_ds = height // ds, width // ds
         targets = []
         for g in annotation_groups:
-            positive_boxes = [
+            positive_bboxes = [
                 (x1 // ds, y1 // ds, x2 // ds, y2 // ds, cIdx)
                 for x1, y1, x2, y2, cIdx in self.annotation_config.bboxes_from_group(g)
             ]
-            negative_areas = []
-            for cIdx in range(len(self.annotation_config)):
-                negative_map = np.ones((height_ds, width_ds), dtype="bool")
-                for x1, y1, x2, y2 in np.array(
-                    [p[:4] for p in positive_boxes if p[4] == cIdx]
-                ):
-                    negative_map[y1:y2, x1:x2] = False
-                negative_areas.append(
-                    (torch.tensor(negative_map).to(self.device), cIdx)
-                )
+            negative_pixels = np.ones(
+                (len(self.annotation_config), height_ds, width_ds), dtype="bool"
+            )
+            for x1, y1, x2, y2, cIdx in positive_bboxes:
+                negative_pixels[cIdx, y1:y2, x1:x2] = False
             targets.append(
-                {"positive_boxes": positive_boxes, "negative_areas": negative_areas}
+                {
+                    "positive_bboxes": positive_bboxes,
+                    "negative_pixels": [
+                        (torch.tensor(p).to(self.device), cIdx)
+                        for cIdx, p in enumerate(negative_pixels)
+                        if p.any()
+                    ],
+                }
             )
         return targets
