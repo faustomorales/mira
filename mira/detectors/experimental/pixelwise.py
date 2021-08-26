@@ -220,8 +220,14 @@ class AggregatedSegmentation(md.Detector):
         targets = []
         for g in annotation_groups:
             positive_bboxes = [
-                (x1 // ds, y1 // ds, x2 // ds, y2 // ds, cIdx)
+                np.floor(np.array([x1, y1, x2, y2]) / ds).astype("int32").tolist()
+                + [cIdx]
                 for x1, y1, x2, y2, cIdx in self.annotation_config.bboxes_from_group(g)
+            ]
+            # Make sure each box is at least one downsampled pixel wide.
+            positive_bboxes = [
+                (x1, y1, max(x2, x1 + 1), max(y2, y1 + 1), cIdx)
+                for x1, y1, x2, y2, cIdx in positive_bboxes
             ]
             negative_pixels = np.ones(
                 (len(self.annotation_config), height_ds, width_ds), dtype="bool"

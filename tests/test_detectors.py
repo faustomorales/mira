@@ -9,7 +9,7 @@ import mira.detectors.experimental.pixelwise as mpx
 
 
 @pytest.mark.parametrize(
-    "detector_class", [md.FasterRCNN, md.EfficientDet, mpx.AggregatedSegmentation]
+    "detector_class", [md.EfficientDet, mpx.AggregatedSegmentation, md.FasterRCNN]
 )
 def test_detector_edge_cases(detector_class):
     dataset = mds.load_shapes(width=256, height=256, n_scenes=1)
@@ -36,6 +36,24 @@ def test_detector_edge_cases(detector_class):
                     thickness=-1,
                     color=(0, 0, 255),
                     radius=base.image.shape[0] // 2,
+                ),
+            ),
+            base.assign(  # Very tiny annotations.
+                annotations=[
+                    mc.Annotation(
+                        x1=base.image.shape[1] // 2 - 1,
+                        y1=base.image.shape[0] // 2 - 1,
+                        x2=base.image.shape[1] // 2 + 1,
+                        y2=base.image.shape[0] // 2 + 1,
+                        category=dataset.annotation_config["blue circle"],
+                    )
+                ],
+                image=cv2.circle(  # A very small circle.
+                    np.ones_like(base.image) * 255,
+                    center=(base.image.shape[1] // 2, base.image.shape[0] // 2),
+                    thickness=-1,
+                    color=(0, 0, 255),
+                    radius=1,
                 ),
             ),
             base.assign(  # No negatives anywhere. WARNING: This is a nonsense test case -- not actually good for training.
