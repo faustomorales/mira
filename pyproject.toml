@@ -67,7 +67,8 @@ addopts = "--cov=mira --cov-report=term-missing"
 filterwarnings = [
     "ignore:the imp module is deprecated in favour of importlib;:DeprecationWarning",
     "ignore:Could not import the lzma module. Your installed Python is incomplete.:UserWarning",
-    "ignore:`layer.updates` will be removed in a future version.:UserWarning"
+    "ignore:`layer.updates` will be removed in a future version.:UserWarning",
+    "ignore:Named tensors and all their associated APIs are an experimental feature and subject to change.:UserWarning"
 ]
 
 [tool.pylint.master]
