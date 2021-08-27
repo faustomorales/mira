@@ -38,6 +38,7 @@ class Segmenter(torch.nn.Module):
         model_name="efficientnet_lite0",
         pretrained=True,
         positive_agg=torch.max,
+        negative_agg=torch.max,
     ):
         super().__init__()
         self.backbone = timm.create_model(
@@ -51,6 +52,7 @@ class Segmenter(torch.nn.Module):
             n_classes=n_classes,
         )
         self.positive_agg = positive_agg
+        self.negative_agg = negative_agg
         self.eval()
 
     def forward(self, x, target=None):
@@ -72,7 +74,10 @@ class Segmenter(torch.nn.Module):
                             [
                                 [
                                     torch.unsqueeze(
-                                        torch.masked_select(yi[c], mask).max(), 0
+                                        self.negative_agg(
+                                            torch.masked_select(yi[c], mask)
+                                        ),
+                                        0,
                                     )
                                     for mask, c in ti["negative_pixels"]
                                 ]
@@ -147,6 +152,7 @@ class AggregatedSegmentation(md.Detector):
         model_name="efficientnet_lite0",
         pretrained_backbone: bool = True,
         positive_agg=torch.max,
+        negative_agg=torch.max,
     ):
         super().__init__(device=device, resize_method=resize_method)
         self.annotation_config = annotation_config
@@ -156,6 +162,7 @@ class AggregatedSegmentation(md.Detector):
             model_name=model_name,
             pretrained=pretrained_backbone,
             positive_agg=positive_agg,
+            negative_agg=negative_agg,
         ).to(self.device)
         self.set_input_shape(width=256, height=256)
 
