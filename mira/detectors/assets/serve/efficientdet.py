@@ -40,7 +40,7 @@ class EfficientDet(torch.nn.Module):
         )
 
     def normalize(self, x):
-        return (x - self.mean) / self.std
+        return (x - self.mean.to(x.device)) / self.std.to(x.device)
 
     def forward(self, x):
         resized = self.normalize(self.resize(x))
