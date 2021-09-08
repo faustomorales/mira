@@ -317,6 +317,93 @@ class Scene:
             annotations=annotations,
         )
 
+    def to_subcrops(self, max_size: int) -> typing.List["Scene"]:
+        """Split a scene into subcrops of some maximum size while trying
+        to avoid splitting annotations.
+
+        Args:
+            max_size: The maximum size of a crop (it may be smaller at the
+                edges of an image).
+        """
+        if max_size % 2 == 0:
+            r1 = r2 = max_size // 2
+        else:
+            r1 = max_size // 2
+            r2 = max_size - r1
+        annotations = self.annotations
+        if not annotations:
+            raise NotImplementedError("This function does not support empty scenes.")
+        assert all(
+            max(a.x2 - a.x1, a.y2 - a.y1) < max_size for a in annotations
+        ), "At least one annotation is too big."
+        image = self.image
+        ih, iw = image.shape[:2]
+        subcrops = []
+        captured = []
+        for annotation in annotations:
+            if annotation in captured:
+                # We already captured this annotation.
+                continue
+            # Get the others, sorted by distance to the
+            # current annotation.
+            axc, ayc = ((annotation.x1 + annotation.x2) / 2), (
+                (annotation.y1 + annotation.y2) / 2
+            )
+            others = sorted(
+                [a for a in annotations if a is not annotation],
+                key=lambda a: np.square(
+                    [
+                        axc - ((a.x1 + a.x2) / 2),  # pylint: disable=cell-var-from-loop
+                        ayc - ((a.y1 + a.y2) / 2),  # pylint: disable=cell-var-from-loop
+                    ]
+                ).sum(),
+            )
+            solved = False
+            for r in range(len(others), -1, -1):
+                # Try to fit the annotation and the r-closest other
+                # annotations into this crop.
+                ann_inc = [annotation] + others[:r]
+                ann_exc = [a for a in annotations if a not in ann_inc]
+                box_inc = self.annotation_config.bboxes_from_group(ann_inc)[:, :4]
+                box_exc = self.annotation_config.bboxes_from_group(ann_exc)[:, :4]
+                xmin, ymin = box_inc[:, :2].min(axis=0)
+                xmax, ymax = box_inc[:, 2:].max(axis=0)
+                if max(xmax - xmin, ymax - ymin) > max_size:
+                    # This subset covers too large of an area.
+                    continue
+                xc, yc = map(
+                    lambda v: max(v, r1), [(xmax + xmin) / 2, (ymax + ymin) / 2]
+                )
+                xc, yc = min(xc, iw - r2), min(yc, ih - r2)
+                x1, y1, x2, y2 = map(round, [xc - r1, yc - r1, xc + r2, yc + r2])
+                coverages = utils.compute_coverage(
+                    np.concatenate([box_inc, box_exc], axis=0),
+                    np.array([[x1, y1, x2, y2]]),
+                )
+                if (coverages[: len(box_inc), 0] == 1).all() and (
+                    coverages[len(box_inc) :, 0] == 0
+                ).all():
+                    captured.extend(ann_inc)
+                    subcrops.append(
+                        self.assign(
+                            image=image[y1:y2, x1:x2],
+                            annotations=[
+                                a.assign(
+                                    x1=a.x1 - x1,
+                                    y1=a.y1 - y1,
+                                    x2=a.x2 - x1,
+                                    y2=a.y2 - y1,
+                                )
+                                for a in ann_inc
+                            ],
+                        )
+                    )
+                    solved = True
+                    break
+            if not solved:
+                raise ValueError("Failed to find a suitable crop.")
+        return subcrops
+
 
 class SceneCollection:
     """A collection of scenes.
