@@ -93,7 +93,9 @@ class Detector(abc.ABC):
         height, width = self.input_shape[:2]
         assert image.shape[0] <= height, "Cannot pad image."
         assert image.shape[1] <= width, "Cannot pad image."
-        padded = mc.utils.get_blank_image(width=width, height=height, n_channels=3)
+        padded = mc.utils.get_blank_image(
+            width=width, height=height, n_channels=3, cval=0
+        )
         padded[: image.shape[0], : image.shape[1]] = image
         return padded, 1
 
