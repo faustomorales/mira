@@ -11,6 +11,7 @@ import tqdm
 import numpy as np
 import timm.optim
 import timm.scheduler
+import pkg_resources
 import typing_extensions as tx
 
 try:
@@ -386,26 +387,40 @@ class Detector(abc.ABC):
         )
 
     def to_torchserve(
-        self, filepath, archive_format: tx.Literal["default", "no-archive"] = "default"
+        self,
+        filepath,
+        archive_format: tx.Literal["default", "no-archive"] = "default",
+        score_threshold: float = 0.5,
     ):
         """Build a TorchServe-compatible MAR file for this model."""
         assert (
             marmpu is not None
         ), "You must `pip install torch-model-archiver` to use this function."
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        dirname = os.path.dirname(filepath)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
         with tempfile.TemporaryDirectory() as tdir:
             serialized_file = os.path.join(tdir, "weights.pth")
             index_to_name_file = os.path.join(tdir, "index_to_name.json")
             model_file = os.path.join(tdir, "model.py")
+            handler_file = os.path.join(tdir, "object_detector.py")
             torch.save(self.model.state_dict(prefix="model."), serialized_file)
             with open(index_to_name_file, "w", encoding="utf8") as f:
                 f.write(json.dumps(self.serve_module_index))
             with open(model_file, "w", encoding="utf8") as f:
                 f.write(self.serve_module_string)
+            with open(handler_file, "w", encoding="utf8") as f:
+                f.write(
+                    pkg_resources.resource_string(
+                        "mira", "detectors/assets/serve/object_detector.py"
+                    )
+                    .decode("utf-8")
+                    .replace("SCORE_THRESHOLD", str(score_threshold))  # type: ignore
+                )
             args = types.SimpleNamespace(
                 model_name=os.path.basename(filepath),
                 serialized_file=serialized_file,
-                handler="object_detector",
+                handler=handler_file,
                 model_file=model_file,
                 version="1.0",
                 requirements_file=None,
