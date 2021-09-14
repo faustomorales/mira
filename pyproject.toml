@@ -32,7 +32,8 @@ numpy = "*"
 tqdm = "*"
 validators = "*"
 albumentations = "*"
-effdet = "^0.2.4"
+timm = "*"
+omegaconf = "*"
 
 [tool.poetry.dev-dependencies]
 black = "*"

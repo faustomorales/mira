@@ -1,10 +1,9 @@
 import torch
-import effdet
 import omegaconf
 import numpy as np
 import pkg_resources
 
-
+from ..thirdparty import effdet
 from .. import datasets as mds
 from .. import core as mc
 from . import detector
