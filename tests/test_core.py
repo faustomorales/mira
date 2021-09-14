@@ -1,14 +1,16 @@
 """
 Test core functions.
 """
-
+import typing
+import itertools
+import collections
 import tempfile
 import os
 import io
 
 import numpy as np
 
-from mira import core, datasets
+from mira import core
 
 
 def test_blank_and_properties():
@@ -85,3 +87,60 @@ def test_file_read():
             core.utils.save(image, buffer, ".png")
             buffer.seek(0)
             np.testing.assert_allclose(core.utils.read(buffer), image)
+
+
+def test_split():
+    n = 5000
+    items = np.arange(n)
+    sizes = [0.5, 0.30, 0.20]
+    group: typing.List[int] = np.random.choice(500, size=n).tolist()
+    stratify: typing.List[int] = np.random.choice(2, size=n).tolist()
+
+    splits1A = core.utils.split(
+        items=items, sizes=sizes, stratify=stratify, group=group, random_state=42
+    )
+
+    splits1B = core.utils.split(
+        items=items, sizes=sizes, stratify=stratify, group=group, random_state=42
+    )
+
+    splits2 = core.utils.split(
+        items=items, sizes=sizes, stratify=stratify, group=group, random_state=10
+    )
+
+    splits = splits1A
+
+    # Given the same random state, the splits should be the same.
+    assert splits1A == splits1B
+
+    # Given a different random state, the splits should be different.
+    assert splits1A != splits2
+
+    # No overlap between groups.
+    assert all(
+        len(a.intersection(b)) == 0
+        for a, b in itertools.combinations(
+            [set(group[idx] for idx in s) for s in splits], 2
+        )
+    )
+
+    # Roughly match the desired sizes.
+    assert all(
+        [
+            abs(size - len(split) / len(items)) < 0.05
+            for split, size in zip(splits, sizes)
+        ]
+    )
+
+    # Roughly achieve stratification
+    assert all(
+        [
+            all(
+                [
+                    abs(size - sum(stratify[i] == key for i in split) / count) < 0.05
+                    for size, split in zip(sizes, splits)
+                ]
+            )
+            for key, count in collections.Counter(stratify).items()
+        ]
+    )

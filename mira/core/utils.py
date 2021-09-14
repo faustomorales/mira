@@ -1,10 +1,11 @@
 # pylint: disable=unsupported-assignment-operation
-import typing
+import io
 import os
+import typing
 import logging
+import collections
 import urllib
 import urllib.request
-import io
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -232,7 +233,9 @@ def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     """Compute pairwise overlap of two sets of boxes. Useful for detecting
     redundant bounding boxes where there is no score to consider (as in
     non-max suppression). Consider the following example:
+
     .. code-block:: python
+
         compute_overlap(
             boxesA=np.array([[0, 0, 1, 1]]),
             boxesB=np.array([[0, 0, 0.5, 0.5], [1, 1, 2, 2]])
@@ -271,3 +274,79 @@ def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     )
     coverageA = interArea / boxAArea
     return coverageA
+
+
+def split(
+    items: typing.List[typing.Any],
+    sizes: typing.List[float],
+    random_state: int = 42,
+    stratify: typing.Sequence[typing.Hashable] = None,
+    group: typing.Sequence[typing.Hashable] = None,
+) -> typing.Sequence[typing.Any]:
+    """Split a list of items into groups of specific proportions.
+
+    For example, to split an array into groups containing 70%, 15%, and 15% of the
+    dataset, respectively, you can do something like the following:
+
+    .. code-block:: python
+
+        training, validation, test = split(
+            np.arange(100),
+            sizes=[0.7, 0.15, 0.15]
+        )
+
+    You can also use the `stratify` argument to ensure an even split
+    between different kinds of scenes. For example, to split
+    scenes containing at least 3 annotations proportionally,
+    do something like the following.
+
+    .. code-block:: python
+
+        training, validation, test = split(
+            np.arange(100),
+            sizes=[0.7, 0.15, 0.15],
+            stratify=np.random.choice(np.arange(3), size=100)
+        )
+
+    Finally, you can make sure certain scenes end up in the same
+    split (e.g., if they're crops from the same base image) using
+    the group argument.
+
+    .. code-block:: python
+
+        training, validation, test = split(
+            np.arange(100),
+            sizes=[0.7, 0.15, 0.15],
+            stratify=np.random.choice(np.arange(3), size=100),
+            group=np.random.choice(np.arange(20), size=100)
+        )
+
+    Returns:
+        A train and test scene collection.
+    """
+    if group is None:
+        group = list(range(len(items)))
+    if stratify is None:
+        stratify = [0] * len(items)
+    assert sum(sizes) == 1.0, "The sizes must add up to 1.0."
+    assert len(group) == len(items), "group must be the same length as the collection."
+    assert len(stratify) == len(
+        items
+    ), "stratify must be the same length as the collection."
+    rng = np.random.default_rng(seed=random_state)
+    unique = collections.Counter(group)
+    hashes = [
+        hash(tuple(set(s for s, g in zip(stratify, group) if g == u))) for u in unique
+    ]
+    totals = collections.Counter(hashes)
+    assert len(unique) >= len(
+        sizes
+    ), "Cannot group when number of unique groups is less than len(sizes)."
+    splits: typing.List[typing.List[typing.Any]] = [[] for _ in range(len(sizes))]
+    for ht, t in totals.items():
+        for a, u in zip(
+            rng.choice(len(sizes), size=t, p=sizes),
+            [u for h, u in zip(hashes, unique) if h == ht],
+        ):
+            splits[a].extend(i for i, g in zip(items, group) if g == u)
+    return splits

@@ -2,14 +2,13 @@
 
 # pylint: disable=invalid-name,len-as-condition,unsupported-assignment-operation
 
+import io
 import os
+import math
 import typing
 import logging
-import math
-import io
-import typing_extensions
 
-import sklearn.model_selection as skms
+import typing_extensions
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -492,37 +491,62 @@ class SceneCollection:
             scenes=[s.augment(augmenter=augmenter, **kwargs) for s in self.scenes]
         )
 
-    def train_test_split(
-        self, *args, **kwargs
-    ) -> typing.Tuple["SceneCollection", "SceneCollection"]:
-        """Obtain new scene collections, split into train
-        and test. All arguments passed to
-        `sklearn.model_selection.train_test_split
-        <https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html>`_.
+    def split(
+        self,
+        sizes: typing.List[float],
+        random_state: int = 42,
+        stratify: typing.Sequence[typing.Hashable] = None,
+        group: typing.Sequence[typing.Hashable] = None,
+    ) -> typing.Sequence["SceneCollection"]:
+        """Obtain new scene collections, split based on a
+        given set of proportios.
 
-        For example, to get two collections, one
-        containing 70% of the data and the other containing
-        30%, ::
+        For example, to get three collections containing 70%, 15%, and 15% of the
+        dataset, respectively, you can do something like the following:
 
-            training, testing = collection.train_test_split(
-                train_size=0.7, test_size=0.3
+        .. code-block:: python
+
+            training, validation, test = collection.split(
+                sizes=[0.7, 0.15, 0.15]
             )
 
         You can also use the `stratify` argument to ensure an even split
         between different kinds of scenes. For example, to split
-        scenes containing at least 3 annotations proportionally, ::
+        scenes containing at least 3 annotations proportionally,
+        do something like the following.
 
-            training, testing = collection.train_test_split(
-                train_size=0.7, test_size=0.3,
+        .. code-block:: python
+
+            training, validation, test = collection.split(
+                sizes=[0.7, 0.15, 0.15],
                 stratify=[len(s.annotations) >= 3 for s in collection]
             )
 
+        Finally, you can make sure certain scenes end up in the same
+        split (e.g., if they're crops from the same base image) using
+        the group argument.
+
+        .. code-block:: python
+
+            training, validation, test = collection.split(
+                sizes=[0.7, 0.15, 0.15],
+                stratify=[len(s.annotations) >= 3 for s in collection],
+                group=[s.metadata["origin"] for s in collection]
+            )
 
         Returns:
             A train and test scene collection.
         """
-        train, test = skms.train_test_split(self.scenes, *args, **kwargs)
-        return (self.assign(scenes=train), self.assign(scenes=test))
+        return [
+            self.assign(scenes=scenes)
+            for scenes in utils.split(
+                self.scenes,
+                sizes=sizes,
+                random_state=random_state,
+                stratify=stratify,
+                group=group,
+            )
+        ]
 
     def assign(self, **kwargs) -> "SceneCollection":
         """Obtain a new scene with the given keyword arguments
