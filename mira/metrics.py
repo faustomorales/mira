@@ -6,7 +6,7 @@ import numpy as np
 
 from .core import SceneCollection, utils
 
-
+# pylint: disable=unsubscriptable-object
 def precision_recall_curve(
     true_collection: SceneCollection,
     pred_collection: SceneCollection,

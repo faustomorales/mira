@@ -99,9 +99,7 @@ def load_voc2012(subset="train") -> core.SceneCollection:
         with open(sid_path, "r", encoding="utf8") as f:
             sids.extend(f.read().split("\n"))
     filepaths = [
-        path.join(annotation_dir, "{0}.xml".format(sid))
-        for sid in sids
-        if len(sid.strip()) > 0
+        path.join(annotation_dir, f"{sid}.xml") for sid in sids if len(sid.strip()) > 0
     ]
     return load_voc(
         filepaths=filepaths,

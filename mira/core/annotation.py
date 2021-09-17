@@ -229,15 +229,14 @@ class AnnotationConfiguration:
         if isinstance(key, int):
             if key >= len(self):
                 raise ValueError(
-                    "Index {0} is out of bounds ".format(key)
-                    + "(only have {0} entries)".format(len(self))
+                    f"Index {key} is out of bounds (only have {len(self)} entries)."
                 )
             return self.types[key]
         if isinstance(key, str):
             key = key.lower()
             val = next((e for e in self._types if e.name == key), None)
             if val is None:
-                raise ValueError("Did not find {0} in configuration".format(key))
+                raise ValueError(f"Did not find {key} in configuration")
             return val
         raise ValueError(f"Key must be int or str, not {key} of type {str(type(key))}")
 

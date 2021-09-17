@@ -80,7 +80,7 @@ class Scene:
         elif self.cache is False:
             pass
         else:
-            raise ValueError("Cannot handle cache parameter: {0}.".format(self.cache))
+            raise ValueError(f"Unsupported cache parameter: {self.cache}.")
         return image
 
     @property
@@ -424,9 +424,7 @@ class SceneCollection:
         for i, s in enumerate(scenes):
             if s.annotation_config != annotation_config:
                 raise ValueError(
-                    "Scene {0} of {1} has inconsistent configuration.".format(
-                        i + 1, len(scenes)
-                    )
+                    f"Scene {i+1} of {len(scenes)} has inconsistent configuration."
                 )
         self._annotation_config = annotation_config
         self._scenes = scenes
