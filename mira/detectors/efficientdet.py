@@ -155,3 +155,7 @@ class EfficientDet(detector.Detector):
                 for idx, label in enumerate(self.annotation_config)
             },
         }
+
+    @property
+    def anchor_boxes(self):
+        return self.anchors.boxes

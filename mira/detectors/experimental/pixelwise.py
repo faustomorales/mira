@@ -23,11 +23,6 @@ class PixelwiseClassifier(torch.nn.Module):
         return y
 
 
-def flatten(t):
-    """Standard utility function for flattening a nested list."""
-    return [item for sublist in t for item in sublist]
-
-
 class Segmenter(torch.nn.Module):
     """A classifier using segmentation on bounding boxes."""
 
@@ -70,7 +65,7 @@ class Segmenter(torch.nn.Module):
             if any(ti["negative_pixels"] for ti in target):
                 binary_inputs_list.append(
                     torch.cat(
-                        flatten(
+                        mc.utils.flatten(
                             [
                                 [
                                     torch.unsqueeze(
@@ -89,7 +84,7 @@ class Segmenter(torch.nn.Module):
             if any(ti["positive_bboxes"] for ti in target):
                 binary_inputs_list.append(
                     torch.cat(
-                        flatten(
+                        mc.utils.flatten(
                             [
                                 [
                                     torch.unsqueeze(
@@ -210,6 +205,10 @@ class AggregatedSegmentation(md.Detector):
 
     @property
     def serve_module_string(self):
+        raise NotImplementedError
+
+    @property
+    def anchor_boxes(self):
         raise NotImplementedError
 
     @property

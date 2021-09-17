@@ -29,6 +29,7 @@ class FasterRCNN(detector.Detector):
         ] = "resnet50",
         device="cpu",
         resize_method: detector.ResizeMethod = "fit",
+        **kwargs,
     ):
         super().__init__(device=device, resize_method=resize_method)
         self.annotation_config = annotation_config
@@ -37,6 +38,7 @@ class FasterRCNN(detector.Detector):
             progress=True,
             num_classes=len(annotation_config) + 1,
             pretrained_backbone=pretrained_backbone,
+            **kwargs,
         ).to(self.device)
         self.set_input_shape(
             width=min(self.model.transform.min_size),  # type: ignore
@@ -121,3 +123,19 @@ class FasterRCNN(detector.Detector):
                 self.annotation_config.bboxes_from_group(g) for g in annotation_groups
             ]
         ]
+
+    @property
+    def anchor_boxes(self):
+        image_list = torchvision.models.detection.image_list.ImageList(
+            tensors=torch.tensor(
+                np.random.randn(1, *self.input_shape).transpose(0, 3, 1, 2),
+                dtype=torch.float32,
+            ),
+            image_sizes=[self.input_shape[:2]],
+        )
+        feature_maps = self.model.backbone(image_list.tensors)  # type: ignore
+        return np.concatenate(
+            self.model.rpn.anchor_generator(  # type: ignore
+                image_list=image_list, feature_maps=list(feature_maps.values())
+            )
+        )

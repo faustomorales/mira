@@ -172,6 +172,11 @@ class Detector(abc.ABC):
     def serve_module_index(self) -> dict:
         """Return the class index -> label mapping for TorchServe."""
 
+    @property
+    @abc.abstractmethod
+    def anchor_boxes(self) -> np.ndarray:
+        """Return the list of anchor boxes in xyxy format."""
+
     @abc.abstractmethod
     def compute_inputs(self, images: typing.List[np.ndarray]) -> np.ndarray:
         """Convert images into suitable model inputs. *You
