@@ -1,3 +1,6 @@
+# pylint: disable=too-many-instance-attributes
+import typing
+
 import torch
 import torchvision
 import numpy as np
@@ -9,10 +12,93 @@ from .. import core as mc
 from . import detector
 
 
-BACKBONE_TO_CONSTRUCTOR = {
-    "resnet50": torchvision.models.detection.fasterrcnn_resnet50_fpn,
-    "mobilenet_large": torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn,
-    "mobilenet_large_320": torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn,
+class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
+    """
+    A noop extra FPN block. Use this to force a noop for functions
+    that automatically insert an FPN block when you set
+    extra_blocks to None.
+    """
+
+    def forward(self, results, x, names):
+        return results, names
+
+
+EXTRA_BLOCKS_MAP = {
+    "lastlevelmaxpool": torchvision.ops.feature_pyramid_network.LastLevelMaxPool,
+    "noop": LastLevelNoop,
+}
+
+BACKBONE_TO_PARAMS = {
+    "resnet50": {
+        "weights_url": "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
+        "backbone_func": torchvision.models.detection.backbone_utils.resnet_fpn_backbone,
+        "default_backbone_kwargs": {
+            "trainable_layers": 3,
+            "backbone_name": "resnet50",
+            "extra_blocks": "lastlevelmaxpool",
+        },
+        "default_anchor_kwargs": {
+            "sizes": ((32,), (64,), (128,), (256,), (512,)),
+            "aspect_ratios": ((0.5, 1.0, 2.0),) * 5,
+        },
+        "default_detector_kwargs": {},
+    },
+    "mobilenet_large": {
+        "weights_url": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
+        "backbone_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
+        "default_backbone_kwargs": {
+            "trainable_layers": 3,
+            "backbone_name": "mobilenet_v3_large",
+            "fpn": True,
+            "extra_blocks": "lastlevelmaxpool",
+        },
+        "default_anchor_kwargs": {
+            "sizes": (
+                (
+                    32,
+                    64,
+                    128,
+                    256,
+                    512,
+                ),
+            )
+            * 3,
+            "aspect_ratios": ((0.5, 1.0, 2.0),) * 3,
+        },
+        "default_detector_kwargs": {
+            "rpn_score_thresh": 0.05,
+        },
+    },
+    "mobilenet_large_320": {
+        "weights_url": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
+        "backbone_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
+        "default_backbone_kwargs": {
+            "trainable_layers": 3,
+            "backbone_name": "mobilenet_v3_large",
+            "fpn": True,
+            "extra_blocks": "lastlevelmaxpool",
+        },
+        "default_anchor_kwargs": {
+            "sizes": (
+                (
+                    32,
+                    64,
+                    128,
+                    256,
+                    512,
+                ),
+            )
+            * 3,
+            "aspect_ratios": ((0.5, 1.0, 2.0),) * 3,
+        },
+        "default_detector_kwargs": {
+            "min_size": 320,
+            "max_size": 640,
+            "rpn_pre_nms_top_n_test": 150,
+            "rpn_post_nms_top_n_test": 150,
+            "rpn_score_thresh": 0.05,
+        },
+    },
 }
 
 
@@ -29,17 +115,58 @@ class FasterRCNN(detector.Detector):
         ] = "resnet50",
         device="cpu",
         resize_method: detector.ResizeMethod = "fit",
-        **kwargs,
+        backbone_kwargs=None,
+        detector_kwargs=None,
+        anchor_kwargs=None,
     ):
         super().__init__(device=device, resize_method=resize_method)
         self.annotation_config = annotation_config
-        self.model = BACKBONE_TO_CONSTRUCTOR[backbone](
-            pretrained=pretrained_top,
-            progress=True,
-            num_classes=len(annotation_config) + 1,
-            pretrained_backbone=pretrained_backbone,
-            **kwargs,
-        ).to(self.device)
+        if pretrained_top:
+            pretrained_backbone = False
+        self.backbone_kwargs = {
+            **BACKBONE_TO_PARAMS[backbone]["default_backbone_kwargs"],
+            **(backbone_kwargs or {}),
+            "pretrained": pretrained_backbone,
+        }
+        self.anchor_kwargs = {
+            **BACKBONE_TO_PARAMS[backbone]["default_anchor_kwargs"],
+            **(anchor_kwargs or {}),
+        }
+        self.detector_kwargs = {
+            **BACKBONE_TO_PARAMS[backbone]["default_detector_kwargs"],
+            **(detector_kwargs or {}),
+        }
+        self.backbone = BACKBONE_TO_PARAMS[backbone]["backbone_func"](
+            **{
+                k: (
+                    v
+                    if k != "extra_blocks"
+                    or isinstance(
+                        v, torchvision.ops.feature_pyramid_network.ExtraFPNBlock
+                    )
+                    else EXTRA_BLOCKS_MAP[typing.cast(str, v)]()
+                )
+                for k, v in self.backbone_kwargs.items()
+            }
+        )
+        self.model = torchvision.models.detection.faster_rcnn.FasterRCNN(
+            self.backbone,
+            len(annotation_config) + 1,
+            rpn_anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
+                **self.anchor_kwargs
+            ),
+            **self.detector_kwargs,
+        )
+        if pretrained_top:
+            self.model.load_state_dict(
+                torch.hub.load_state_dict_from_url(
+                    torch.hub.load_state_dict_from_url(
+                        BACKBONE_TO_PARAMS[backbone]["weights_url"]
+                    ),
+                    progress=True,
+                )
+            )
+            torchvision.models.detection.faster_rcnn.overwrite_eps(self.model, 0.0)
         self.set_input_shape(
             width=min(self.model.transform.min_size),  # type: ignore
             height=min(self.model.transform.min_size),  # type: ignore
@@ -62,6 +189,11 @@ class FasterRCNN(detector.Detector):
             .replace("INPUT_WIDTH", str(self.input_shape[1]))
             .replace("INPUT_HEIGHT", str(self.input_shape[0]))
             .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
+            .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
+            .replace("ANCHOR_KWARGS", str(self.anchor_kwargs))
+            .replace(
+                "BACKBONE_KWARGS", str({**self.backbone_kwargs, "pretrained": False})
+            )
         )
 
     @property
@@ -130,7 +262,7 @@ class FasterRCNN(detector.Detector):
             tensors=torch.tensor(
                 np.random.randn(1, *self.input_shape).transpose(0, 3, 1, 2),
                 dtype=torch.float32,
-            ),
+            ).to(self.device),
             image_sizes=[self.input_shape[:2]],
         )
         feature_maps = self.model.backbone(image_list.tensors)  # type: ignore

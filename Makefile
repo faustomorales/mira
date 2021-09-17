@@ -50,6 +50,8 @@ lab: ## Start a jupyter lab instance
 shell:  ## Jump into poetry shell.
 	poetry shell
 
+check: format-check type-check lint-check test ## Run all CI/CD checks
+
 docs: ## Make a local HTML doc server that updates on changes to from Sphinx source
 	@$(EXEC) sphinx-autobuild -b html docs docs/build/html $(SPHINX_AUTO_EXTRA)
 

@@ -24,4 +24,4 @@ jobs:
           make init
       - name: Test Source
         run: |
-          make format-check type-check lint-check test
+          make check
