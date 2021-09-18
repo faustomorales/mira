@@ -1,3 +1,5 @@
+import typing
+
 import torch
 import omegaconf
 import numpy as np
@@ -37,6 +39,7 @@ class EfficientDet(detector.Detector):
             pretrained=pretrained_top,
             pretrained_backbone=pretrained_backbone,
         ).to(self.device)
+        self.backbone = typing.cast(torch.nn.Module, self.model.backbone)
         self.model_name = model_name
         self.set_input_shape(width=config.image_size[1], height=config.image_size[0])
 

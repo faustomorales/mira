@@ -31,22 +31,20 @@ class BackboneWithTIMM(torch.nn.Module):
 
     def __init__(self, model_name: str, pretrained: bool, out_channels=None, **kwargs):
         super().__init__()
-        self.backbone = timm.create_model(
+        self.body = timm.create_model(
             model_name=model_name, pretrained=pretrained, **kwargs, features_only=True
         )
-        self.out_channels = out_channels or max(self.backbone.feature_info.channels())
+        self.out_channels = out_channels or max(self.body.feature_info.channels())
         self.fpn = torchvision.ops.feature_pyramid_network.FeaturePyramidNetwork(
-            in_channels_list=self.backbone.feature_info.channels(),
+            in_channels_list=self.body.feature_info.channels(),
             out_channels=self.out_channels,
         )
 
     # pylint: disable=missing-function-docstring
     def forward(self, x):
-        features = self.backbone(x)
+        features = self.body(x)
         return self.fpn(
-            collections.OrderedDict(
-                zip(self.backbone.feature_info.module_name(), features)
-            )
+            collections.OrderedDict(zip(self.body.feature_info.module_name(), features))
         )
 
 
@@ -124,7 +122,7 @@ class RetinaNet(detector.Detector):
             **BACKBONE_TO_PARAMS[backbone]["default_detector_kwargs"],
             **(detector_kwargs or {}),
         }
-        self.backbone = BACKBONE_TO_PARAMS[backbone]["backbone_func"](
+        self.fpn = BACKBONE_TO_PARAMS[backbone]["backbone_func"](
             **{
                 k: (
                     v
@@ -137,8 +135,13 @@ class RetinaNet(detector.Detector):
                 for k, v in self.backbone_kwargs.items()
             }
         )
+        # In mira, backbone has meaning because we use it to skip
+        # training these weights. But the FPN includes feature extraction
+        # layers that we likely we want to change, so we distinguish
+        # between the FPN and the backbone.
+        self.backbone = self.fpn.body
         self.model = torchvision.models.detection.retinanet.RetinaNet(
-            backbone=self.backbone,
+            backbone=self.fpn,
             num_classes=len(annotation_config) + 1,
             anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
                 **self.anchor_kwargs

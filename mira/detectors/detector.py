@@ -212,9 +212,9 @@ class Detector(abc.ABC):
     def freeze_backbone(self):
         """Freeze the body of the model, leaving the final classification and
         regression layer as trainable."""
-        for p in self.model.backbone.parameters():  # type: ignore
+        for p in self.backbone.parameters():  # type: ignore
             p.requires_grad = False
-        for m in self.model.backbone.modules():  # type: ignore
+        for m in self.backbone.modules():  # type: ignore
             m.eval()
 
     def unfreeze_backbone(self, batchnorm=True):
@@ -223,7 +223,7 @@ class Detector(abc.ABC):
         Args:
             batchnorm: Whether to unfreeze batchnorm layers.
         """
-        for m in self.model.backbone.modules():  # type: ignore
+        for m in self.backbone.modules():  # type: ignore
             if isinstance(m, torch.nn.BatchNorm2d) and not batchnorm:
                 m.eval()
                 for p in m.parameters():
