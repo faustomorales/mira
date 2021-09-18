@@ -1,3 +1,4 @@
+# pylint: disable=too-many-public-methods
 import os
 import abc
 import json
@@ -438,3 +439,11 @@ class Detector(abc.ABC):
             marmp.package_model(
                 args=args, manifest=marmpu.ModelExportUtils.generate_manifest_json(args)
             )
+
+    @property
+    def anchor_sizes(self):
+        """Get an array of anchor sizes (i.e., width and height)."""
+        return np.diff(
+            self.anchor_boxes.reshape((-1, 2, 2)),
+            axis=1,
+        )[:, 0, :]

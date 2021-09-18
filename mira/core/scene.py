@@ -480,7 +480,7 @@ class SceneCollection:
                 )
             ).reshape((-1, 2, 2)),
             axis=1,
-        )
+        )[:, 0, :]
 
     @property
     def consistent(self):

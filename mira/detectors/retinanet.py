@@ -1,8 +1,10 @@
 # pylint: disable=too-many-instance-attributes
 import typing
 import functools
+import collections
 
 import torch
+import timm
 import torchvision
 import numpy as np
 import typing_extensions as tx
@@ -23,6 +25,31 @@ class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
         return results, names
 
 
+class BackboneWithTIMM(torch.nn.Module):
+    """An experimental class that operates Like BackboneWithFPN but built using a
+    model built using timm.create_model."""
+
+    def __init__(self, model_name: str, pretrained: bool, out_channels=None, **kwargs):
+        super().__init__()
+        self.backbone = timm.create_model(
+            model_name=model_name, pretrained=pretrained, **kwargs, features_only=True
+        )
+        self.out_channels = out_channels or max(self.backbone.feature_info.channels())
+        self.fpn = torchvision.ops.feature_pyramid_network.FeaturePyramidNetwork(
+            in_channels_list=self.backbone.feature_info.channels(),
+            out_channels=self.out_channels,
+        )
+
+    # pylint: disable=missing-function-docstring
+    def forward(self, x):
+        features = self.backbone(x)
+        return self.fpn(
+            collections.OrderedDict(
+                zip(self.backbone.feature_info.module_name(), features)
+            )
+        )
+
+
 EXTRA_BLOCKS_MAP = {
     "lastlevelp6p7_256": functools.partial(
         torchvision.ops.feature_pyramid_network.LastLevelP6P7,
@@ -30,6 +57,14 @@ EXTRA_BLOCKS_MAP = {
         out_channels=256,
     ),
     "noop": LastLevelNoop,
+}
+
+DEFAULT_ANCHOR_KWARGS = {
+    "sizes": tuple(
+        (x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3)))
+        for x in [32, 64, 128, 256, 512]
+    ),
+    "aspect_ratios": ((0.5, 1.0, 2.0),) * 5,
 }
 
 BACKBONE_TO_PARAMS = {
@@ -42,13 +77,16 @@ BACKBONE_TO_PARAMS = {
             "extra_blocks": "lastlevelp6p7_256",
             "returned_layers": [2, 3, 4],
         },
-        "default_anchor_kwargs": {
-            "sizes": tuple(
-                (x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3)))
-                for x in [32, 64, 128, 256, 512]
-            ),
-            "aspect_ratios": ((0.5, 1.0, 2.0),) * 5,
+        "default_anchor_kwargs": DEFAULT_ANCHOR_KWARGS,
+        "default_detector_kwargs": {},
+    },
+    "timm": {
+        "backbone_func": BackboneWithTIMM,
+        "default_backbone_kwargs": {
+            "model_name": "efficientnet_b0",
+            "out_indices": (0, 1, 2, 3, 4),
         },
+        "default_anchor_kwargs": DEFAULT_ANCHOR_KWARGS,
         "default_detector_kwargs": {},
     },
 }
@@ -99,15 +137,19 @@ class RetinaNet(detector.Detector):
                 for k, v in self.backbone_kwargs.items()
             }
         )
-        self.model = torchvision.models.detection.faster_rcnn.FasterRCNN(
-            self.backbone,
-            len(annotation_config) + 1,
-            rpn_anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
+        self.model = torchvision.models.detection.retinanet.RetinaNet(
+            backbone=self.backbone,
+            num_classes=len(annotation_config) + 1,
+            anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
                 **self.anchor_kwargs
             ),
             **self.detector_kwargs,
         )
         if pretrained_top:
+            if "weights_url" not in BACKBONE_TO_PARAMS[backbone]:
+                raise ValueError(
+                    f"There are no pretrained weights for backbone: {backbone}."
+                )
             self.model.load_state_dict(
                 torch.hub.load_state_dict_from_url(
                     torch.hub.load_state_dict_from_url(
@@ -202,8 +244,11 @@ class RetinaNet(detector.Detector):
             image_sizes=[self.input_shape[:2]],
         )
         feature_maps = self.model.backbone(image_list.tensors)  # type: ignore
+        assert len(feature_maps) == len(
+            self.model.anchor_generator.sizes  # type: ignore
+        ), f"Number of feature maps ({len(feature_maps)}) does not match number of anchor sizes ({len(self.model.anchor_generator.sizes)}). This model is misconfigured."  # type: ignore
         return np.concatenate(
-            self.model.rpn.anchor_generator(  # type: ignore
+            self.model.anchor_generator(  # type: ignore
                 image_list=image_list, feature_maps=list(feature_maps.values())
             )
         )
