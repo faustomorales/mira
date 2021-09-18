@@ -471,6 +471,18 @@ class SceneCollection:
         )
 
     @property
+    def annotation_sizes(self):
+        """An array of dimensions for the annotations in the collection."""
+        return np.diff(
+            np.array(
+                utils.flatten(
+                    [[a.x1y1x2y2() for a in g] for g in self.annotation_groups]
+                )
+            ).reshape((-1, 2, 2)),
+            axis=1,
+        )
+
+    @property
     def consistent(self):
         """Specifies whether all scenes have the same annotation
         configuration."""
