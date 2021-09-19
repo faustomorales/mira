@@ -235,7 +235,7 @@ class Detector(abc.ABC):
 
     def loss_for_batch(self, batch):
         """Compute the loss for a batch of scenes."""
-        self.training_model.train()
+        assert self.training_model.training, "Model not in training mode."
         images, scales = list(
             zip(*[self.resize_to_model_size(s.image) for s in batch.scenes])
         )
