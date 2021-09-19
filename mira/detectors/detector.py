@@ -263,6 +263,7 @@ class Detector(abc.ABC):
         callbacks: typing.List[mc.callbacks.CallbackProtocol] = None,
         optimizer_params=None,
         scheduler_params=None,
+        clip_grad_norm_params=None,
     ):
         """Run training job.
         Args:
@@ -318,6 +319,10 @@ class Detector(abc.ABC):
                     optimizer.zero_grad()
                     loss = self.loss_for_batch(batch)
                     loss.backward()
+                    if clip_grad_norm_params is not None:
+                        torch.nn.utils.clip_grad_norm_(
+                            training_model.parameters(), **clip_grad_norm_params
+                        )
                     cum_loss += loss.detach().cpu().numpy()
                     avg_loss = cum_loss / end
                     optimizer.step()
