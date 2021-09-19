@@ -321,7 +321,6 @@ class Detector(abc.ABC):
                     cum_loss += loss.detach().cpu().numpy()
                     avg_loss = cum_loss / end
                     optimizer.step()
-                    scheduler.step(epoch)
                     t.set_postfix(loss=avg_loss)
                     t.update()
                 summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
@@ -351,6 +350,10 @@ class Detector(abc.ABC):
                         )
                         / len(validation)
                     )
+                scheduler.step(
+                    epoch=epoch,
+                    metric=avg_loss if validation is None else summary["val_loss"],
+                )
                 if callbacks is not None:
                     try:
                         for callback in callbacks:
