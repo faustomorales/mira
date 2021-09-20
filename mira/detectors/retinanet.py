@@ -251,7 +251,10 @@ class RetinaNet(detector.Detector):
             self.model.anchor_generator.sizes  # type: ignore
         ), f"Number of feature maps ({len(feature_maps)}) does not match number of anchor sizes ({len(self.model.anchor_generator.sizes)}). This model is misconfigured."  # type: ignore
         return np.concatenate(
-            self.model.anchor_generator(  # type: ignore
-                image_list=image_list, feature_maps=list(feature_maps.values())
-            ).cpu()
+            [
+                a.cpu()
+                for a in self.model.anchor_generator(  # type: ignore
+                    image_list=image_list, feature_maps=list(feature_maps.values())
+                )
+            ]
         )

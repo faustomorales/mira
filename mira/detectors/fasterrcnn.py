@@ -267,7 +267,10 @@ class FasterRCNN(detector.Detector):
         )
         feature_maps = self.model.backbone(image_list.tensors)  # type: ignore
         return np.concatenate(
-            self.model.rpn.anchor_generator(  # type: ignore
-                image_list=image_list, feature_maps=list(feature_maps.values())
-            ).cpu()
+            [
+                a.cpu()
+                for a in self.model.rpn.anchor_generator(  # type: ignore
+                    image_list=image_list, feature_maps=list(feature_maps.values())
+                )
+            ]
         )
