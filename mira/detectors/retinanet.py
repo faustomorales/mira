@@ -253,5 +253,5 @@ class RetinaNet(detector.Detector):
         return np.concatenate(
             self.model.anchor_generator(  # type: ignore
                 image_list=image_list, feature_maps=list(feature_maps.values())
-            )
+            ).cpu()
         )
