@@ -3,8 +3,9 @@
 import torch
 import torchvision
 import numpy as np
-import effdet
+import mira.thirdparty.effdet as effdet
 import omegaconf
+import mira.detectors.common as mdc
 
 
 class EfficientDet(torch.nn.Module):
@@ -31,7 +32,6 @@ class EfficientDet(torch.nn.Module):
             max_det_per_image=MAX_DET_PER_IMAGE,
         )
         self.config = {"anchors": effdet.anchors.Anchors.from_config(self.model.config)}
-        self.resize = torchvision.transforms.Resize(size=(INPUT_HEIGHT, INPUT_WIDTH))
         self.mean = torch.tensor(
             np.array([[[[0.485]], [[0.456]], [[0.406]]]]), dtype=torch.float32
         )
@@ -43,13 +43,30 @@ class EfficientDet(torch.nn.Module):
         return (x - self.mean.to(x.device)) / self.std.to(x.device)
 
     def forward(self, x):
-        resized = self.normalize(self.resize(x))
-        scales = torch.tensor(
-            [
-                [i.shape[2] / o.shape[2], i.shape[1] / o.shape[1]]
-                for i, o in zip(x, resized)
-            ]
-        ).tile((1, 2))
+        resized, scales, sizes = mdc.resize(
+            x,
+            resize_method=RESIZE_METHOD,
+            height=INPUT_HEIGHT,
+            width=INPUT_WIDTH,
+            base=128,
+        )
+        # Go from [sy, sx] to [sx, sy, sx, sy]
+        scales = scales[:, [1, 0]].repeat((1, 2))
+        sizes = sizes[:, [1, 0]].repeat((1, 2))
+        resized = self.normalize(resized)
+        if (
+            self.model.config.image_size[0] != resized.shape[2]
+            or self.model.config.image_size[1] != resized.shape[3]
+        ):
+            self.model.config = omegaconf.OmegaConf.merge(  # type: ignore
+                self.model.config,
+                omegaconf.OmegaConf.create(
+                    {"image_size": (resized.shape[2], resized.shape[3])}
+                ),
+            )
+            self.config["anchors"] = effdet.anchors.Anchors.from_config(
+                self.model.config
+            )
         y = self.model(resized)
         class_out, box_out = y
         class_out, box_out, indices, classes = effdet.bench._post_process(
@@ -59,7 +76,6 @@ class EfficientDet(torch.nn.Module):
             num_classes=self.model.config.num_classes,
             max_detection_points=self.model.config.max_detection_points,
         )
-        img_scale, img_size = None, None
         detections = effdet.bench._batch_detection(
             class_out.shape[0],
             class_out.cpu(),
@@ -67,16 +83,23 @@ class EfficientDet(torch.nn.Module):
             self.config["anchors"].boxes.cpu(),
             indices.cpu(),
             classes.cpu(),
-            img_scale,
-            img_size,
+            img_scale=None,
+            img_size=None,
             max_det_per_image=self.model.config.max_det_per_image,
             soft_nms=True,
         )
+        clipped = [
+            group[:, :4].min(group_size.unsqueeze(0))
+            for group, group_size in zip(detections, sizes)
+        ]
+        has_area = [((c[:, 3] - c[:, 1]) * (c[:, 2] - c[:, 0])) > 0 for c in clipped]
         return [
             {
-                "boxes": group[:, :4] * scaler,
-                "labels": group[:, 5].type(torch.IntTensor),
-                "scores": group[:, 4],
+                "boxes": boxes[box_has_area] * (1 / scaler),
+                "labels": group[box_has_area, 5].type(torch.IntTensor),
+                "scores": group[box_has_area, 4],
             }
-            for group, scaler in zip(detections, scales)
+            for group, boxes, box_has_area, scaler in zip(
+                detections, clipped, has_area, scales
+            )
         ]

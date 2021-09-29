@@ -129,8 +129,7 @@ class EfficientDet(detector.Detector):
             for group in detections
         ]
 
-    @property
-    def serve_module_string(self):
+    def serve_module_string(self, enable_flexible_size=False):
         return (
             pkg_resources.resource_string(
                 "mira", "detectors/assets/serve/efficientdet.py"
@@ -140,6 +139,12 @@ class EfficientDet(detector.Detector):
             .replace("INPUT_WIDTH", str(self.input_shape[1]))
             .replace("INPUT_HEIGHT", str(self.input_shape[0]))
             .replace("MODEL_NAME", f"'{self.model_name}'")
+            .replace(
+                "RESIZE_METHOD",
+                "'pad_to_multiple'"
+                if enable_flexible_size
+                else f"'{self.resize_method}'",
+            )
             .replace("NUM_LEVELS", str(self.model.config.num_levels))  # type: ignore
             .replace("MIN_LEVEL", str(self.model.config.min_level))  # type: ignore
             .replace("MAX_LEVEL", str(self.model.config.max_level))  # type: ignore

@@ -3,26 +3,18 @@ import typing
 import functools
 import collections
 
+
 import torch
 import timm
 import torchvision
 import numpy as np
+import pkg_resources
 import typing_extensions as tx
 
 from .. import datasets as mds
 from .. import core as mc
 from . import detector
-
-
-class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
-    """
-    A noop extra FPN block. Use this to force a noop for functions
-    that automatically insert an FPN block when you set
-    extra_blocks to None.
-    """
-
-    def forward(self, results, x, names):
-        return results, names
+from . import common
 
 
 class BackboneWithTIMM(torch.nn.Module):
@@ -54,7 +46,7 @@ EXTRA_BLOCKS_MAP = {
         in_channels=256,
         out_channels=256,
     ),
-    "noop": LastLevelNoop,
+    "noop": common.LastLevelNoop,
 }
 
 DEFAULT_ANCHOR_KWARGS = {
@@ -155,9 +147,7 @@ class RetinaNet(detector.Detector):
                 )
             self.model.load_state_dict(
                 torch.hub.load_state_dict_from_url(
-                    torch.hub.load_state_dict_from_url(
-                        BACKBONE_TO_PARAMS[backbone]["weights_url"]
-                    ),
+                    BACKBONE_TO_PARAMS[backbone]["weights_url"],
                     progress=True,
                 )
             )
@@ -173,9 +163,24 @@ class RetinaNet(detector.Detector):
         """Training model for this detector."""
         return self.model
 
-    @property
-    def serve_module_string(self):
-        raise NotImplementedError
+    def serve_module_string(self, enable_flexible_size=False):
+        return (
+            pkg_resources.resource_string("mira", "detectors/assets/serve/retinanet.py")
+            .decode("utf-8")
+            .replace("NUM_CLASSES", str(len(self.annotation_config) + 1))
+            .replace("INPUT_WIDTH", str(self.input_shape[1]))
+            .replace("INPUT_HEIGHT", str(self.input_shape[0]))
+            .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
+            .replace(
+                "RESIZE_METHOD",
+                "None" if enable_flexible_size else f"'{self.resize_method}'",
+            )
+            .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
+            .replace("ANCHOR_KWARGS", str(self.anchor_kwargs))
+            .replace(
+                "BACKBONE_KWARGS", str({**self.backbone_kwargs, "pretrained": False})
+            )
+        )
 
     @property
     def serve_module_index(self):

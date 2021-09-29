@@ -163,9 +163,8 @@ class Detector(abc.ABC):
     def set_input_shape(self, width: int, height: int):
         """Set the input shape for this model."""
 
-    @property
     @abc.abstractmethod
-    def serve_module_string(self) -> str:
+    def serve_module_string(self, enable_flexible_size: bool) -> str:
         """Return the module string used as part of TorchServe."""
 
     @property
@@ -405,6 +404,7 @@ class Detector(abc.ABC):
         filepath,
         archive_format: tx.Literal["default", "no-archive"] = "default",
         score_threshold: float = 0.5,
+        enable_flexible_size=False,
     ):
         """Build a TorchServe-compatible MAR file for this model."""
         assert (
@@ -422,7 +422,9 @@ class Detector(abc.ABC):
             with open(index_to_name_file, "w", encoding="utf8") as f:
                 f.write(json.dumps(self.serve_module_index))
             with open(model_file, "w", encoding="utf8") as f:
-                f.write(self.serve_module_string)
+                f.write(
+                    self.serve_module_string(enable_flexible_size=enable_flexible_size)
+                )
             with open(handler_file, "w", encoding="utf8") as f:
                 f.write(
                     pkg_resources.resource_string(

@@ -54,7 +54,3 @@ check: format-check type-check lint-check test ## Run all CI/CD checks
 
 docs: ## Make a local HTML doc server that updates on changes to from Sphinx source
 	@$(EXEC) sphinx-autobuild -b html docs docs/build/html $(SPHINX_AUTO_EXTRA)
-
-update-efficient-det:
-	@-rm -rf automl
-	git clone https://github.com/google/automl.git

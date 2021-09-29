@@ -203,8 +203,7 @@ class AggregatedSegmentation(md.Detector):
     def set_input_shape(self, width, height):
         self._input_shape = (height, width, 3)
 
-    @property
-    def serve_module_string(self):
+    def serve_module_string(self, enable_flexible_size=True):
         raise NotImplementedError
 
     @property
