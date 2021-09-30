@@ -401,18 +401,18 @@ class Detector(abc.ABC):
 
     def to_torchserve(
         self,
-        filepath,
+        model_name: str,
+        directory=".",
         archive_format: tx.Literal["default", "no-archive"] = "default",
         score_threshold: float = 0.5,
         enable_flexible_size=False,
+        model_version="1.0",
     ):
         """Build a TorchServe-compatible MAR file for this model."""
         assert (
             marmpu is not None
         ), "You must `pip install torch-model-archiver` to use this function."
-        dirname = os.path.dirname(filepath)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
+        os.makedirs(directory, exist_ok=True)
         with tempfile.TemporaryDirectory() as tdir:
             serialized_file = os.path.join(tdir, "weights.pth")
             index_to_name_file = os.path.join(tdir, "index_to_name.json")
@@ -434,15 +434,15 @@ class Detector(abc.ABC):
                     .replace("SCORE_THRESHOLD", str(score_threshold))  # type: ignore
                 )
             args = types.SimpleNamespace(
-                model_name=os.path.basename(filepath),
+                model_name=model_name,
                 serialized_file=serialized_file,
                 handler=handler_file,
                 model_file=model_file,
-                version="1.0",
+                version=model_version,
                 requirements_file=None,
                 runtime="python",
                 extra_files=index_to_name_file,
-                export_path=os.path.dirname(filepath),
+                export_path=directory,
                 force=True,
                 archive_format=archive_format,
             )

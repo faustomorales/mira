@@ -210,9 +210,9 @@ You can deploy your models using TorchServe. The example below exports pretraine
 import mira.detectors as md
 
 detector1 = md.FasterRCNN(pretrained_top=True, backbone="resnet50")
-detector1.to_torchserve("model-store/fastrcnn")
+detector1.to_torchserve("fastrcnn")
 detector2 = md.EfficientDet(pretrained_top=True, model_name="tf_efficientdet_d0")
-detector2.to_torchserve("model-store/effdet")
+detector2.to_torchserve("effdet")
 ```
 
 The above will generate `fastrcnn.mar` and `effdet.amr` in the `model-store` directory. You can then use those models with TorchServe using:
