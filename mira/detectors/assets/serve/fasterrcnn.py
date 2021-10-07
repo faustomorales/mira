@@ -49,7 +49,7 @@ class FasterRCNNObjectDetector(torch.nn.Module):
         return self._input_shape
 
     def set_input_shape(self, width, height):
-        self._input_shape = (3, height, width)
+        self._input_shape = (height, width, 3)
         self.model.transform.fixed_size = (height, width)  # type: ignore
         self.model.transform.min_size = (min(width, height),)  # type: ignore
         self.model.transform.max_size = max(height, width)  # type: ignore
