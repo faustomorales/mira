@@ -123,9 +123,15 @@ def torchvision_serve_inference(
     # Go from [sy, sx] to [sx, sy, sx, sy]
     scales = scales[:, [1, 0]].repeat((1, 2))
     sizes = sizes[:, [1, 0]].repeat((1, 2))
-    if model.input_shape != resized.shape[1:]:
+    if (
+        model.input_shape[2],
+        model.input_shape[0],
+        model.input_shape[1],
+    ) != resized.shape[1:]:
         model.set_input_shape(height=resized.shape[2], width=resized.shape[3])
-    detections = model.model(resized)
+    detections = [
+        {k: v.detach().cpu() for k, v in d.items()} for d in model.model(resized)
+    ]
     clipped = [
         group["boxes"][:, :4].min(group_size.unsqueeze(0))
         for group, group_size in zip(detections, sizes)
