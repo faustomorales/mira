@@ -23,7 +23,7 @@ def find_consensus_regions(
             continue
         if len(bboxes1) > 0 and not len(bboxes2) > 0:
             exclude.extend(bboxes1)
-        elif not len(bboxes1) > 0 and len(bboxes2) > 0 :
+        elif not len(bboxes1) > 0 and len(bboxes2) > 0:
             exclude.extend(bboxes2)
         else:
             iou = utils.compute_iou(bboxes1, bboxes2)
