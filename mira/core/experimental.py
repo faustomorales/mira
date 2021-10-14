@@ -1,0 +1,146 @@
+import typing
+import itertools
+
+import cv2
+import numpy as np
+
+from . import utils, scene
+
+
+def find_consensus_regions(
+    collection: scene.SceneCollection, iou_threshold: float = 0.5
+) -> typing.Tuple[np.ndarray, np.ndarray]:
+    """Given a scene collection of the same image being
+    labeled by different people, find the regions of
+    consensus and non-consensus."""
+    exclude = []
+    for (bboxes1, bboxes2), annIdx in itertools.product(
+        itertools.combinations([s.bboxes() for s in collection], 2),
+        range(len(collection.annotation_config)),
+    ):
+        bboxes1, bboxes2 = [b[b[:, -1] == annIdx, :-1] for b in [bboxes1, bboxes2]]
+        if not len(bboxes1) > 0 and not len(bboxes2) > 0:
+            continue
+        if len(bboxes1) > 0 and not len(bboxes2) > 0:
+            exclude.extend(bboxes1)
+        elif not len(bboxes1) > 0 and len(bboxes2) > 0 :
+            exclude.extend(bboxes2)
+        else:
+            iou = utils.compute_iou(bboxes1, bboxes2)
+            exclude.extend(bboxes1[~(iou.max(axis=1) > iou_threshold)])
+            exclude.extend(bboxes2[~(iou.max(axis=0) > iou_threshold)])
+    exclude = np.array(exclude)
+    include = np.array(utils.flatten([s.bboxes()[:, :-1] for s in collection]))
+    include = np.unique(
+        include[utils.compute_iou(include, exclude).max(axis=1) == 0], axis=0
+    )
+    return include, exclude
+
+
+def find_consensus_crops(
+    include: np.ndarray, exclude: np.ndarray, width: int, height: int
+) -> np.ndarray:
+    """Given a list of consensus and non-consensus regions, crop the image into segments
+    that avoid the non-consensus regions while not splitting the consensus regions."""
+    crops = []
+    yfrontier = np.zeros(width)
+    while True:
+        xc1 = yfrontier.argmin()
+        yc1 = yfrontier[xc1]
+        exclude_frontier = (
+            (xc1 >= exclude[:, 0])
+            & (xc1 < exclude[:, 2])
+            & (yc1 >= exclude[:, 1])
+            & (yc1 < exclude[:, 3])
+        )
+        if exclude_frontier.any():
+            yfrontier[xc1] = exclude[exclude_frontier, 3].max()
+            continue
+        include_frontier = (
+            (xc1 >= include[:, 0])
+            & (xc1 < include[:, 2])
+            & (yc1 >= include[:, 1])
+            & (yc1 < include[:, 3])
+        )
+        if include_frontier.any():
+            yfrontier[xc1] = include[include_frontier, 3].max() + 1
+            continue
+        xye = exclude[(exclude[:, 2:] > (xc1, yc1)).min(axis=1)]
+        xyi = include[(include[:, 2:] > (xc1, yc1)).min(axis=1)]
+        crossed_inclusion_vertically = xyi[:, 0] < xc1
+        dycm = int(
+            (
+                xyi[crossed_inclusion_vertically, 1].min()
+                if crossed_inclusion_vertically.any()
+                else height
+            )
+            - yc1
+        )
+        dx, dy = 0, 0
+        for dyc in range(1, dycm + 1):
+            # Exclusion boxes that we would hit at the current
+            # y-value.
+            crossed_exclusion = xye[:, 1] < (yc1 + dyc)
+
+            # Inclusion boxes that we can never cross because they are split
+            # by the starting (yc) or current (yc + dyc) y-value.
+            crossed_inclusion = (
+                (xyi[:, 1] <= (yc1 + dyc)) & (xyi[:, 3] > (yc1 + dyc))
+            ) | (xyi[:, 1] < yc1)
+            dxc_max = (
+                min(
+                    xye[crossed_exclusion, 0].min()
+                    if crossed_exclusion.any()
+                    else width,
+                    xyi[crossed_inclusion, 0].min()
+                    if crossed_inclusion.any()
+                    else width,
+                )
+                - xc1
+            )
+
+            # Ranges of x-values that would result in splitting an
+            # inclusion box.
+            inclusion_ranges = xyi[(xyi[:, 1] < (yc1 + dyc))][:, [0, 2]]
+            for dxc in range(dxc_max, 0, -1):
+                if (
+                    len(inclusion_ranges) == 0
+                    or (
+                        (inclusion_ranges[:, 1] < (xc1 + dxc))
+                        | (inclusion_ranges[:, 0] > (xc1 + dxc))
+                    ).all()
+                ):
+                    if (dxc * dyc) > (dx * dy):
+                        dx, dy = dxc, dyc
+                    break
+        xc2, yc2 = xc1 + dx, yc1 + dy
+        if (yfrontier[xc1:xc2] == yc2).all():
+            # We've made no progress. Stop.
+            break
+        yfrontier[xc1:xc2] = yfrontier[xc1:xc2].clip(min=yc2)
+        crops.append([xc1, yc1, xc2, yc2])
+    return np.array(crops, dtype="int32")
+
+
+def visualize_consensus_crops(
+    include: np.ndarray, exclude: np.ndarray, crops: np.ndarray, width: int, height: int
+) -> np.ndarray:
+    """Create a visual of the consensus, non-consensus, and a set of crops."""
+    visual = np.zeros((height, width, 4), dtype="uint8") + (0, 0, 0, 255)
+    for xc1, yc1, xc2, yc2 in crops:
+        cv2.rectangle(
+            visual, pt1=(xc1, yc1), pt2=(xc2, yc2), thickness=-1, color=(0, 0, 255, 120)
+        )
+    for xc1, yc1, xc2, yc2 in crops:
+        cv2.rectangle(
+            visual,
+            pt1=(xc1, yc1),
+            pt2=(xc2, yc2),
+            thickness=2,
+            color=(255, 255, 0, 255),
+        )
+    for x1, y1, x2, y2 in include:
+        visual[y1:y2, x1:x2] = (0, 255, 0, 255)
+    for x1, y1, x2, y2 in exclude:
+        visual[y1:y2, x1:x2] = (255, 0, 0, 255)
+    return visual
