@@ -123,14 +123,29 @@ def find_consensus_crops(
 
 
 def visualize_consensus_crops(
-    include: np.ndarray, exclude: np.ndarray, crops: np.ndarray, width: int, height: int
+    include: np.ndarray,
+    exclude: np.ndarray,
+    crops: np.ndarray,
+    width: int,
+    height: int,
+    canvas: np.ndarray = None,
 ) -> np.ndarray:
     """Create a visual of the consensus, non-consensus, and a set of crops."""
-    visual = np.zeros((height, width, 4), dtype="uint8") + (0, 0, 0, 255)
-    for xc1, yc1, xc2, yc2 in crops:
-        cv2.rectangle(
-            visual, pt1=(xc1, yc1), pt2=(xc2, yc2), thickness=-1, color=(0, 0, 255, 120)
-        )
+    visual = (
+        canvas
+        if canvas is not None
+        else np.zeros((height, width, 4), dtype="uint8") + (0, 0, 0, 255)
+    )
+    if canvas is None:
+        # Draw filled regions if it's a blank image.
+        for xc1, yc1, xc2, yc2 in crops:
+            cv2.rectangle(
+                visual,
+                pt1=(xc1, yc1),
+                pt2=(xc2, yc2),
+                thickness=-1,
+                color=(0, 0, 255, 120),
+            )
     for xc1, yc1, xc2, yc2 in crops:
         cv2.rectangle(
             visual,
