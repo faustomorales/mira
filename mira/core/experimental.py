@@ -4,19 +4,19 @@ import itertools
 import cv2
 import numpy as np
 
-from . import utils, scene
+from . import utils
 
 
 def find_consensus_regions(
-    collection: scene.SceneCollection, iou_threshold: float = 0.5
+    bbox_groups: typing.List[np.ndarray], iou_threshold: float = 0.5
 ) -> typing.Tuple[np.ndarray, np.ndarray]:
-    """Given a scene collection of the same image being
+    """Given a set of box groups for the same image being
     labeled by different people, find the regions of
     consensus and non-consensus."""
     exclude = []
     for (bboxes1, bboxes2), annIdx in itertools.product(
-        itertools.combinations([s.bboxes() for s in collection], 2),
-        range(len(collection.annotation_config)),
+        itertools.combinations(bbox_groups, 2),
+        range(max([g[:, -1].max() if len(g) > 0 else 0 for g in bbox_groups])),
     ):
         bboxes1, bboxes2 = [b[b[:, -1] == annIdx, :-1] for b in [bboxes1, bboxes2]]
         if not len(bboxes1) > 0 and not len(bboxes2) > 0:
@@ -30,7 +30,7 @@ def find_consensus_regions(
             exclude.extend(bboxes1[~(iou.max(axis=1) > iou_threshold)])
             exclude.extend(bboxes2[~(iou.max(axis=0) > iou_threshold)])
     exclude = np.array(exclude)
-    include = np.array(utils.flatten([s.bboxes()[:, :-1] for s in collection]))
+    include = np.array(utils.flatten([g[:, :-1] for g in bbox_groups]))
     include = np.unique(
         include[utils.compute_iou(include, exclude).max(axis=1) == 0], axis=0
     )
