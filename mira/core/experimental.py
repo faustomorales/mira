@@ -3,8 +3,36 @@ import itertools
 
 import cv2
 import numpy as np
+import scipy.sparse.csgraph as ssc
 
 from . import utils
+
+
+def collapse_boxes(boxes: np.ndarray, threshold=0.5, mode="smallest"):
+    """Given a set of boxes, collapse overlapping boxes into the smallest
+    or largest common area."""
+    assert mode in ["smallest", "largest"], f"Unknown mode: {mode}"
+    n_components, labels = ssc.connected_components(
+        utils.compute_iou(boxes, boxes) > threshold, directed=False
+    )
+    return np.array(
+        [
+            (
+                [subgroup[:, :2].max(axis=0), subgroup[:, 2:].min(axis=0)]
+                if (
+                    (subgroup[:, 2:].min(axis=0) - subgroup[:, :2].max(axis=0)) > 0
+                ).all()
+                else subgroup[
+                    np.product(subgroup[:, 2:] - subgroup[:, :2], axis=1).argmin()
+                ]
+            )
+            if mode == "smallest"
+            else [subgroup[:, :2].min(axis=0), subgroup[:, 2:].max(axis=0)]
+            for subgroup in [
+                boxes[labels == component] for component in range(n_components)
+            ]
+        ]
+    ).reshape(-1, 4)
 
 
 def find_consensus_regions(
@@ -29,11 +57,17 @@ def find_consensus_regions(
             iou = utils.compute_iou(bboxes1, bboxes2)
             exclude.extend(bboxes1[~(iou.max(axis=1) > iou_threshold)])
             exclude.extend(bboxes2[~(iou.max(axis=0) > iou_threshold)])
-    exclude = np.array(exclude)
-    include = np.array(utils.flatten([g[:, :-1] for g in bbox_groups]))
-    include = np.unique(
-        include[utils.compute_iou(include, exclude).max(axis=1) == 0], axis=0
+    exclude = np.array(exclude) if len(exclude) > 0 else np.empty((0, 4))
+    include = np.concatenate(
+        [g[:, :-1] if len(g) > 0 else np.empty((0, 4)) for g in bbox_groups], axis=0
     )
+    if len(include) > 0:
+        include = np.unique(
+            include[utils.compute_iou(include, exclude).max(axis=1) == 0]
+            if len(exclude) > 0
+            else include,
+            axis=0,
+        )
     return include, exclude
 
 
