@@ -119,7 +119,7 @@ def find_consensus_crops(
             break
         yfrontier[xc1:xc2] = yfrontier[xc1:xc2].clip(min=yc2)
         crops.append([xc1, yc1, xc2, yc2])
-    return np.array(crops, dtype="int32")
+    return np.array(crops).round().astype("int32")
 
 
 def visualize_consensus_crops(
