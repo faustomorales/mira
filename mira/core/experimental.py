@@ -71,11 +71,36 @@ def find_consensus_regions(
     return include, exclude
 
 
-def find_consensus_crops(
-    include: np.ndarray, exclude: np.ndarray, width: int, height: int
+def find_acceptable_crops(
+    include: np.ndarray,
+    width: int,
+    height: int,
+    exclude: np.ndarray = None,
+    max_width: int = None,
+    max_height: int = None,
+    cache=None,
 ) -> np.ndarray:
     """Given a list of consensus and non-consensus regions, crop the image into segments
     that avoid the non-consensus regions while not splitting the consensus regions."""
+    if max_width is None:
+        max_width = width
+    if max_height is None:
+        max_height = height
+    if exclude is None:
+        exclude = np.empty((0, 4))
+    key = None
+    if cache is not None:
+        key = (
+            hash(include.tobytes()),
+            width,
+            height,
+            hash(exclude.tobytes()),
+            max_width,
+            max_height,
+        )
+        crops = cache.get(key)
+        if crops is not None:
+            return crops
     crops = []
     yfrontier = np.zeros(width)
     while True:
@@ -102,16 +127,19 @@ def find_consensus_crops(
         xye = exclude[(exclude[:, 2:] > (xc1, yc1)).min(axis=1)]
         xyi = include[(include[:, 2:] > (xc1, yc1)).min(axis=1)]
         crossed_inclusion_vertically = xyi[:, 0] < xc1
-        dycm = int(
-            (
-                xyi[crossed_inclusion_vertically, 1].min()
-                if crossed_inclusion_vertically.any()
-                else height
-            )
-            - yc1
+        dyc_max = min(
+            int(
+                (
+                    xyi[crossed_inclusion_vertically, 1].min()
+                    if crossed_inclusion_vertically.any()
+                    else height
+                )
+                - yc1
+            ),
+            max_height,
         )
         dx, dy = 0, 0
-        for dyc in range(1, dycm + 1):
+        for dyc in range(1, dyc_max + 1):
             # Exclusion boxes that we would hit at the current
             # y-value.
             crossed_exclusion = xye[:, 1] < (yc1 + dyc)
@@ -121,16 +149,19 @@ def find_consensus_crops(
             crossed_inclusion = (
                 (xyi[:, 1] <= (yc1 + dyc)) & (xyi[:, 3] > (yc1 + dyc))
             ) | (xyi[:, 1] < yc1)
-            dxc_max = (
-                min(
-                    xye[crossed_exclusion, 0].min()
-                    if crossed_exclusion.any()
-                    else width,
-                    xyi[crossed_inclusion, 0].min()
-                    if crossed_inclusion.any()
-                    else width,
-                )
-                - xc1
+            dxc_max = min(
+                (
+                    min(
+                        xye[crossed_exclusion, 0].min()
+                        if crossed_exclusion.any()
+                        else width,
+                        xyi[crossed_inclusion, 0].min()
+                        if crossed_inclusion.any()
+                        else width,
+                    )
+                    - xc1
+                ),
+                max_width,
             )
 
             # Ranges of x-values that would result in splitting an
@@ -153,18 +184,23 @@ def find_consensus_crops(
             break
         yfrontier[xc1:xc2] = yfrontier[xc1:xc2].clip(min=yc2)
         crops.append([xc1, yc1, xc2, yc2])
-    return np.array(crops).round().astype("int32")
+    crops = np.array(crops).round().astype("int32")
+    if cache is not None:
+        cache[key] = crops
+    return crops
 
 
-def visualize_consensus_crops(
+def visualize_crops(
     include: np.ndarray,
-    exclude: np.ndarray,
     crops: np.ndarray,
     width: int,
     height: int,
+    exclude: np.ndarray = None,
     canvas: np.ndarray = None,
 ) -> np.ndarray:
     """Create a visual of the consensus, non-consensus, and a set of crops."""
+    if exclude is None:
+        exclude = np.empty((0, 4))
     visual = (
         canvas
         if canvas is not None
