@@ -136,11 +136,14 @@ class RandomCropBBoxSafe(A.DualTransform):
         uint8, float32
     """
 
-    def __init__(self, width, height, always_apply=False, p=1.0, cache=None):
+    def __init__(
+        self, width, height, always_apply=False, p=1.0, min_size=1, cache=None
+    ):
         super().__init__(always_apply, p)
         self.width = width
         self.height = height
         self.cache = cache
+        self.min_size = min_size
 
     def apply(self, img, **params):
         x_min, y_min, x_max, y_max = [
@@ -156,8 +159,12 @@ class RandomCropBBoxSafe(A.DualTransform):
         img_h, img_w = params["image"].shape[:2]
         crops = mce.find_acceptable_crops(
             include=(
-                np.array([b[:4] for b in params["bboxes"]])
-                * np.array([img_w, img_h, img_w, img_h])
+                (
+                    np.array([b[:4] for b in params["bboxes"]])
+                    * np.array([img_w, img_h, img_w, img_h])
+                )
+                if len(params["bboxes"]) > 0
+                else np.empty((0, 4))
             )
             .round()
             .astype("int32"),
@@ -167,6 +174,8 @@ class RandomCropBBoxSafe(A.DualTransform):
             max_height=self.height,
             cache=self.cache,
         )
+        # Make sure we have crops that are at least 1px wide.
+        crops = crops[(crops[:, 2:] - crops[:, :2]).min(axis=1) > self.min_size]
         if len(crops) == 0:
             raise ValueError("Failed to find a suitable crop.")
         crop = crops[round(random.random() * (max(crops.shape[0] - 1, 0)))]
