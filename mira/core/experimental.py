@@ -44,7 +44,7 @@ def find_consensus_regions(
     exclude = []
     for (bboxes1, bboxes2), annIdx in itertools.product(
         itertools.combinations(bbox_groups, 2),
-        range(max([g[:, -1].max() if len(g) > 0 else 0 for g in bbox_groups])),
+        range(max([g[:, -1].max() if len(g) > 0 else 0 for g in bbox_groups]) + 1),
     ):
         bboxes1, bboxes2 = [b[b[:, -1] == annIdx, :-1] for b in [bboxes1, bboxes2]]
         if not len(bboxes1) > 0 and not len(bboxes2) > 0:
