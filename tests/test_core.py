@@ -11,6 +11,8 @@ import io
 import numpy as np
 
 from mira import core
+from mira.core import experimental as mce
+import mira.datasets as mds
 
 
 def test_blank_and_properties():
@@ -144,3 +146,20 @@ def test_split():
             for key, count in collections.Counter(stratify).items()
         ]
     )
+
+
+def test_find_consensus_crops():
+    width = 512
+    height = 768
+    for scene in mds.load_shapes(width=width, height=height, n_scenes=10):
+        boxes = scene.bboxes()[:, :4]
+        include = boxes[:-2]
+        exclude = boxes[-2:]
+        crops = mce.find_acceptable_crops(
+            include=include, width=width, height=height, exclude=exclude
+        )
+        include_coverage = core.utils.compute_coverage(include, crops)
+        exclude_coverage = core.utils.compute_coverage(exclude, crops)
+        assert include_coverage.max(axis=1).sum() == len(include)
+        assert (exclude_coverage == 0).all()
+        assert ((include_coverage == 1) | (include_coverage == 0)).all()
