@@ -71,6 +71,69 @@ def find_consensus_regions(
     return include, exclude
 
 
+def search(x, y, exclude, include, max_height, max_width, min_height=1, min_width=1):
+    """Starting at some coordinates, search for the largest rectangle
+    that encompasses include boxes fully and does not cross any exclude boxes."""
+    crossings = np.concatenate(
+        [
+            boxes[
+                (
+                    (x >= boxes[:, 0])
+                    & (x < boxes[:, 2])
+                    & (y >= boxes[:, 1])
+                    & (y < boxes[:, 3])
+                )
+            ]
+            for boxes in [exclude, include]
+        ],
+        axis=0,
+    )
+    if len(crossings) > 0:
+        return (1, crossings[:, 3].max() - y, False)
+    xye = exclude[(exclude[:, 2:] > (x, y)).min(axis=1)]
+    xyi = include[(include[:, 2:] > (x, y)).min(axis=1)]
+
+    # We can extend as far as (a) the first inclusion box that
+    # crosses we would spxclit vertically or (b)
+    # the maximum height or (c) the image height.
+    dyc_max = int(np.concatenate([xyi[xyi[:, 0] < x, 1] - y, [max_height]]).min())
+    dx, dy = 0, 0
+    for dyc in range(min_height, dyc_max + 1):
+        # We can go as far as (a) the first exclusion box OR
+        # (b) the first inclusion box that crosses at the
+        # starting (yc) or current (yc + dyc) y-value or (c)
+        # the maximum width for the boxes or (d) the width
+        # of the image.
+        dxc_max = np.concatenate(
+            [
+                xye[xye[:, 1] < (y + dyc), 0] - x,
+                xyi[
+                    ((xyi[:, 1] <= (y + dyc)) & (xyi[:, 3] > (y + dyc)))
+                    | (xyi[:, 1] < y),
+                    0,
+                ]
+                - x,
+                [max_width],
+            ]
+        ).min()
+
+        # Ranges of x-values that would result in splitting an
+        # inclusion box.
+        inclusion_ranges = xyi[(xyi[:, 1] < (y + dyc))][:, [0, 2]]
+        for dxc in range(dxc_max, max(min_width - 1, 1), -1):
+            if (
+                len(inclusion_ranges) == 0
+                or (
+                    (inclusion_ranges[:, 1] < (x + dxc))
+                    | (inclusion_ranges[:, 0] > (x + dxc))
+                ).all()
+            ):
+                if (dxc * dyc) > (dx * dy):
+                    dx, dy = dxc, dyc
+                break
+    return dx, dy, (dx > 0 and dy > 0)
+
+
 def find_acceptable_crops(
     include: np.ndarray,
     width: int,
@@ -102,88 +165,36 @@ def find_acceptable_crops(
         if crops is not None:
             return crops
     crops = []
-    yfrontier = np.zeros(width)
+    yfrontier = np.zeros(width, dtype="int32")
     while True:
         xc1 = yfrontier.argmin()
         yc1 = yfrontier[xc1]
-        exclude_frontier = (
-            (xc1 >= exclude[:, 0])
-            & (xc1 < exclude[:, 2])
-            & (yc1 >= exclude[:, 1])
-            & (yc1 < exclude[:, 3])
+        dx1, dy1, success = search(
+            x=xc1,
+            y=yc1,
+            exclude=exclude,
+            include=include,
+            max_height=min(max_height, height - yc1),
+            max_width=min(max_width, width - xc1),
         )
-        if exclude_frontier.any():
-            yfrontier[xc1] = exclude[exclude_frontier, 3].max()
-            continue
-        include_frontier = (
-            (xc1 >= include[:, 0])
-            & (xc1 < include[:, 2])
-            & (yc1 >= include[:, 1])
-            & (yc1 < include[:, 3])
+        xc2, yc2 = xc1 + dx1, yc1 + dy1
+        dx2, dy2, _ = search(
+            x=width - (xc1 + dx1),
+            y=height - (yc1 + dy1),
+            exclude=(width, height, width, height) - exclude[:, [2, 3, 0, 1]],
+            include=(width, height, width, height) - include[:, [2, 3, 0, 1]],
+            max_height=min(max_height, yc1 + dy1),
+            max_width=min(max_width, xc1 + dx1),
+            min_height=dy1,
+            min_width=dx1,
         )
-        if include_frontier.any():
-            yfrontier[xc1] = include[include_frontier, 3].max() + 1
-            continue
-        xye = exclude[(exclude[:, 2:] > (xc1, yc1)).min(axis=1)]
-        xyi = include[(include[:, 2:] > (xc1, yc1)).min(axis=1)]
-        crossed_inclusion_vertically = xyi[:, 0] < xc1
-        dyc_max = min(
-            int(
-                (
-                    xyi[crossed_inclusion_vertically, 1].min()
-                    if crossed_inclusion_vertically.any()
-                    else height
-                )
-                - yc1
-            ),
-            max_height,
-        )
-        dx, dy = 0, 0
-        for dyc in range(1, dyc_max + 1):
-            # Exclusion boxes that we would hit at the current
-            # y-value.
-            crossed_exclusion = xye[:, 1] < (yc1 + dyc)
-
-            # Inclusion boxes that we can never cross because they are split
-            # by the starting (yc) or current (yc + dyc) y-value.
-            crossed_inclusion = (
-                (xyi[:, 1] <= (yc1 + dyc)) & (xyi[:, 3] > (yc1 + dyc))
-            ) | (xyi[:, 1] < yc1)
-            dxc_max = min(
-                (
-                    min(
-                        xye[crossed_exclusion, 0].min()
-                        if crossed_exclusion.any()
-                        else width,
-                        xyi[crossed_inclusion, 0].min()
-                        if crossed_inclusion.any()
-                        else width,
-                    )
-                    - xc1
-                ),
-                max_width,
-            )
-
-            # Ranges of x-values that would result in splitting an
-            # inclusion box.
-            inclusion_ranges = xyi[(xyi[:, 1] < (yc1 + dyc))][:, [0, 2]]
-            for dxc in range(dxc_max, 0, -1):
-                if (
-                    len(inclusion_ranges) == 0
-                    or (
-                        (inclusion_ranges[:, 1] < (xc1 + dxc))
-                        | (inclusion_ranges[:, 0] > (xc1 + dxc))
-                    ).all()
-                ):
-                    if (dxc * dyc) > (dx * dy):
-                        dx, dy = dxc, dyc
-                    break
-        xc2, yc2 = xc1 + dx, yc1 + dy
+        xc1, yc1 = xc2 - dx2, yc2 - dy2
         if (yfrontier[xc1:xc2] == yc2).all():
             # We've made no progress. Stop.
             break
         yfrontier[xc1:xc2] = yfrontier[xc1:xc2].clip(min=yc2)
-        crops.append([xc1, yc1, xc2, yc2])
+        if success:
+            crops.append([xc1, yc1, xc2, yc2])
     crops = np.array(crops).round().astype("int32")
     if cache is not None:
         cache[key] = crops
@@ -204,7 +215,7 @@ def visualize_crops(
     visual = (
         canvas
         if canvas is not None
-        else np.zeros((height, width, 4), dtype="uint8") + (0, 0, 0, 255)
+        else (np.zeros((height, width, 4)) + (0, 0, 0, 255)).astype("uint8")
     )
     if canvas is None:
         # Draw filled regions if it's a blank image.
