@@ -98,7 +98,7 @@ def search(x, y, exclude, include, max_height, max_width, min_height=1, min_widt
     # the maximum height or (c) the image height.
     dyc_max = int(np.concatenate([xyi[xyi[:, 0] < x, 1] - y, [max_height]]).min())
     dx, dy = 0, 0
-    for dyc in range(min_height, dyc_max + 1):
+    for dyc in range(int(min_height), int(dyc_max) + 1):
         # We can go as far as (a) the first exclusion box OR
         # (b) the first inclusion box that crosses at the
         # starting (yc) or current (yc + dyc) y-value or (c)
@@ -120,7 +120,7 @@ def search(x, y, exclude, include, max_height, max_width, min_height=1, min_widt
         # Ranges of x-values that would result in splitting an
         # inclusion box.
         inclusion_ranges = xyi[(xyi[:, 1] < (y + dyc))][:, [0, 2]]
-        for dxc in range(dxc_max, max(min_width - 1, 1), -1):
+        for dxc in range(int(dxc_max), int(max(min_width - 1, 1)), -1):
             if (
                 len(inclusion_ranges) == 0
                 or (
