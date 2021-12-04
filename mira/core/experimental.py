@@ -76,15 +76,22 @@ def search(x, y, exclude, include, max_height, max_width, min_height=1, min_widt
     that encompasses include boxes fully and does not cross any exclude boxes."""
     crossings = np.concatenate(
         [
-            boxes[
+            exclude[
                 (
-                    (x >= boxes[:, 0])
-                    & (x < boxes[:, 2])
-                    & (y >= boxes[:, 1])
-                    & (y < boxes[:, 3])
+                    (x >= exclude[:, 0])
+                    & (x < exclude[:, 2])
+                    & (y >= exclude[:, 1])
+                    & (y < exclude[:, 3])
                 )
-            ]
-            for boxes in [exclude, include]
+            ],
+            include[
+                (
+                    (x > include[:, 0])
+                    & (x < include[:, 2])
+                    & (y > include[:, 1])
+                    & (y < include[:, 3])
+                )
+            ],
         ],
         axis=0,
     )
@@ -94,9 +101,14 @@ def search(x, y, exclude, include, max_height, max_width, min_height=1, min_widt
     xyi = include[(include[:, 2:] > (x, y)).min(axis=1)]
 
     # We can extend as far as (a) the first inclusion box that
-    # crosses we would spxclit vertically or (b)
-    # the maximum height or (c) the image height.
-    dyc_max = int(np.concatenate([xyi[xyi[:, 0] < x, 1] - y, [max_height]]).min())
+    # crosses we would split vertically or (b) the first exclusion
+    # box that we would split vertically or (c) the maximum height or
+    # (d) the image height.
+    dyc_max = int(
+        np.concatenate(
+            [xyi[xyi[:, 0] < x, 1] - y, xye[xye[:, 0] <= x, 1] - y, [max_height]]
+        ).min()
+    )
     dx, dy = 0, 0
     for dyc in range(int(min_height), int(dyc_max) + 1):
         # We can go as far as (a) the first exclusion box OR
@@ -106,9 +118,9 @@ def search(x, y, exclude, include, max_height, max_width, min_height=1, min_widt
         # of the image.
         dxc_max = np.concatenate(
             [
-                xye[xye[:, 1] < (y + dyc), 0] - x,
+                xye[(xye[:, 1] < (y + dyc)) & (xye[:, 0] != x), 0] - x,
                 xyi[
-                    ((xyi[:, 1] <= (y + dyc)) & (xyi[:, 3] > (y + dyc)))
+                    ((xyi[:, 1] < (y + dyc)) & (xyi[:, 3] > (y + dyc)))
                     | (xyi[:, 1] < y),
                     0,
                 ]
@@ -116,19 +128,20 @@ def search(x, y, exclude, include, max_height, max_width, min_height=1, min_widt
                 [max_width],
             ]
         ).min()
-
         # Ranges of x-values that would result in splitting an
         # inclusion box.
         inclusion_ranges = xyi[(xyi[:, 1] < (y + dyc))][:, [0, 2]]
-        for dxc in range(int(dxc_max), int(max(min_width - 1, 1)), -1):
+        for dxc in range(int(dxc_max), int(max(min_width - 1, 0)), -1):
             if (
                 len(inclusion_ranges) == 0
                 or (
-                    (inclusion_ranges[:, 1] < (x + dxc))
-                    | (inclusion_ranges[:, 0] > (x + dxc))
+                    # The inclusion range starts after this point.
+                    (inclusion_ranges[:, 0] >= (x + dxc))
+                    # The inclusion range ends before this point.
+                    | (inclusion_ranges[:, 1] <= (x + dxc))
                 ).all()
             ):
-                if (dxc * dyc) > (dx * dy):
+                if (dxc * dyc) >= (dx * dy):
                     dx, dy = dxc, dyc
                 break
     return dx, dy, (dx > 0 and dy > 0)
@@ -169,7 +182,7 @@ def find_acceptable_crops(
     while True:
         xc1 = yfrontier.argmin()
         yc1 = yfrontier[xc1]
-        dx1, dy1, success = search(
+        dx1, dy1, success1 = search(
             x=xc1,
             y=yc1,
             exclude=exclude,
@@ -178,7 +191,13 @@ def find_acceptable_crops(
             max_width=min(max_width, width - xc1),
         )
         xc2, yc2 = xc1 + dx1, yc1 + dy1
-        dx2, dy2, _ = search(
+        if (yfrontier[xc1:xc2] == yc2).all():
+            # We've made no progress. Stop.
+            break
+        yfrontier[xc1:xc2] = yfrontier[xc1:xc2].clip(min=yc2)
+        if not success1:
+            continue
+        dx2, dy2, success2 = search(
             x=width - (xc1 + dx1),
             y=height - (yc1 + dy1),
             exclude=(width, height, width, height) - exclude[:, [2, 3, 0, 1]],
@@ -188,13 +207,10 @@ def find_acceptable_crops(
             min_height=dy1,
             min_width=dx1,
         )
-        xc1, yc1 = xc2 - dx2, yc2 - dy2
-        if (yfrontier[xc1:xc2] == yc2).all():
-            # We've made no progress. Stop.
-            break
-        yfrontier[xc1:xc2] = yfrontier[xc1:xc2].clip(min=yc2)
-        if success:
-            crops.append([xc1, yc1, xc2, yc2])
+        if success2:
+            xc1, yc1 = xc2 - dx2, yc2 - dy2
+            yfrontier[xc1:xc2] = yfrontier[xc1:xc2].clip(min=yc2)
+        crops.append([xc1, yc1, xc2, yc2])
     crops = np.array(crops).round().astype("int32")
     if cache is not None:
         cache[key] = crops

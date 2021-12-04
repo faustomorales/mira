@@ -155,11 +155,20 @@ def test_find_consensus_crops():
         boxes = scene.bboxes()[:, :4]
         include = boxes[:-2]
         exclude = boxes[-2:]
+        if (
+            len(include) == 0
+            or len(exclude) == 0
+            or core.utils.compute_iou(include, exclude).max() > 0
+        ):
+            continue
         crops = mce.find_acceptable_crops(
             include=include, width=width, height=height, exclude=exclude
         )
         include_coverage = core.utils.compute_coverage(include, crops)
         exclude_coverage = core.utils.compute_coverage(exclude, crops)
-        assert include_coverage.max(axis=1).sum() == len(include)
+        # Crops never include an exclusion box.
         assert (exclude_coverage == 0).all()
+        # Crops never include a partial inclusion box (all or nothing).
         assert ((include_coverage == 1) | (include_coverage == 0)).all()
+        # All inclusion boxes are covered.
+        assert include_coverage.max(axis=1).sum() == len(include)
