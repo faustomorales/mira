@@ -25,10 +25,10 @@ init:  ## Initialize the development environment.
 	poetry install
 
 format-check: ## Make black check source formatting
-	@$(EXEC) black --diff --exclude mira/thirdparty --check .
+	@$(EXEC) black --diff --exclude mira/thirdparty --check $(PKG_NAME) tests
 
 format: ## Make black unabashedly format source code
-	@$(EXEC) black --exclude mira/thirdparty .
+	@$(EXEC) black --exclude mira/thirdparty $(PKG_NAME) tests
 
 package: ## Make a local build of the Python package, source dist and wheel
 	@rm -rf dist
