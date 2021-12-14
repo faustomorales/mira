@@ -56,6 +56,7 @@ sphinx = "3.5.4"
 sphinx_rtd_theme = "0.5.2"
 m2r2 = "0.2.7"
 sphinxcontrib-mermaid = "*"
+torchserve = "^0.5.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
