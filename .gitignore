@@ -124,8 +124,5 @@ dmypy.json
 # Temporary notebooks
 /notebooks
 
-# The lockfile varies between local dev and CI, so we exclude.
-poetry.lock
-
 # IDE settings
 .vscode
