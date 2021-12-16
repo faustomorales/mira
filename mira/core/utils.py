@@ -7,6 +7,7 @@ import collections
 import urllib
 import urllib.request
 
+import typing_extensions
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -356,3 +357,43 @@ def flatten(t):
     """Standard utility function for flattening a nested list taken from
     https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-a-list-of-lists."""
     return [item for sublist in t for item in sublist]
+
+
+def find_largest_unique_boxes(
+    bboxes, threshold=1, method: typing_extensions.Literal["iou", "coverage"] = "iou"
+):
+    """Find the largest entries in a list of bounding boxes that are not duplicative with
+    a larger box.
+
+    Args:
+        bboxes: An array of bounding boxes in x1y1x2y2 format.
+        method: Whether to check overlap by "coverage" (i.e.,
+            is X% of box A contained by some larger box B) or "iou"
+            (intersection-over-union). IoU is, of course, more strict.
+        threshold: The threshold for equality. Boxes are retained if there
+            is no larger box with which the overlap is greater than or
+            equal to this threshold.
+    """
+
+    assert method in ["iou", "coverage"]
+    func = compute_iou if method == "iou" else compute_coverage
+    if len(bboxes) <= 1:
+        # You can't have duplicates if there's only one or None.
+        return np.array([0] if len(bboxes) == 1 else [])
+
+    # Sort by area because we're going to identify duplicates
+    # in order of size.
+    indexes = np.argsort(np.product(bboxes[:, 2:] - bboxes[:, :2], axis=1))
+
+    # Keep only annotations that are not duplicative with a larger (i.e.,
+    # later in our sorted list) annotation. The largest annotation is, of course,
+    # always retained.
+    return np.array(
+        [
+            bidx
+            for bidx, (cidx, coverages) in zip(
+                indexes, enumerate(func(bboxes[indexes], bboxes[indexes]))
+            )
+            if (cidx == len(bboxes) - 1 or coverages[cidx + 1 :].max() < threshold)
+        ]
+    )

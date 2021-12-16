@@ -184,35 +184,21 @@ class Scene:
                 equal to this threshold.
         """
         annotations = []
-        assert method in ["iou", "coverage"]
-        func = utils.compute_iou if method == "iou" else utils.compute_coverage
         for current_category in self.annotation_config:
             current_annotations = [
                 ann for ann in self.annotations if ann.category == current_category
             ]
-            if len(current_annotations) <= 1:
-                # You can't have duplicates if there's only one or None.
-                annotations.extend(current_annotations)
-                continue
-            # Sort by area because we're going to identify duplicates
-            # in order of size.
-            current_annotations = sorted(
-                current_annotations, key=lambda ann: ann.area()
-            )
-            bboxes = self.annotation_config.bboxes_from_group(current_annotations)[
-                :, :4
-            ]
-            # Keep only annotations that are not duplicative with a larger (i.e.,
-            # later in our sorted list) annotation. The largest annotation is, of course,
-            # always retained.
+            # Keep only annotations that are not duplicative with a larger nnotation.
             annotations.extend(
                 [
-                    ann
-                    for idx, (ann, coverages) in enumerate(
-                        zip(current_annotations, func(bboxes, bboxes))
+                    current_annotations[idx]
+                    for idx in utils.find_largest_unique_boxes(
+                        bboxes=self.annotation_config.bboxes_from_group(
+                            current_annotations
+                        )[:, :4],
+                        method=method,
+                        threshold=threshold,
                     )
-                    if idx == len(current_annotations) - 1
-                    or coverages[idx + 1 :].max() < threshold
                 ]
             )
         return self.assign(annotations=annotations)
