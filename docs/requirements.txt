@@ -9,3 +9,4 @@ tqdm
 torch
 torchvision
 albumentations
+mistune<2
