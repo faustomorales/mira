@@ -168,7 +168,9 @@ class DETR(detector.Detector):
         return None
 
     def compute_inputs(self, images):
-        images = np.float32(images) / 255.0
+        mean = np.array([0.485, 0.456, 0.406]) * 255
+        std = np.array([0.229, 0.224, 0.225]) * 255
+        images = (np.float32(images) - mean) / std
         return (
             torch.tensor(images, dtype=torch.float32)
             .permute(0, 3, 1, 2)
