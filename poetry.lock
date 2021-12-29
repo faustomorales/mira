@@ -316,6 +316,14 @@ optional = false
 python-versions = ">=2.7"
 
 [[package]]
+name = "enum-compat"
+version = "0.0.3"
+description = "enum/enum34 compatibility package"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "future"
 version = "0.18.2"
 description = "Clean single-source support for Python 3 and 2"
@@ -1589,6 +1597,18 @@ dataclasses = {version = "*", markers = "python_version < \"3.7\""}
 typing-extensions = "*"
 
 [[package]]
+name = "torch-model-archiver"
+version = "0.5.1"
+description = "Torch Model Archiver is used for creating archives of trained neural net models that can be consumed by TorchServe inference"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+enum-compat = "*"
+future = "*"
+
+[[package]]
 name = "torchserve"
 version = "0.5.0"
 description = "TorchServe is a tool for serving neural net models for inference"
@@ -1770,7 +1790,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.2"
-content-hash = "390bf9f87024e7a541951ce5d035445514038ca9714e886a5b806cb221a8ce59"
+content-hash = "fce216b825dc4b056f4dead9f1e01b1d3d330a4c1ef08c25b5af50f0a75eae83"
 
 [metadata.files]
 alabaster = [
@@ -1990,6 +2010,10 @@ docutils = [
 entrypoints = [
     {file = "entrypoints-0.3-py2.py3-none-any.whl", hash = "sha256:589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19"},
     {file = "entrypoints-0.3.tar.gz", hash = "sha256:c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"},
+]
+enum-compat = [
+    {file = "enum-compat-0.0.3.tar.gz", hash = "sha256:3677daabed56a6f724451d585662253d8fb4e5569845aafa8bb0da36b1a8751e"},
+    {file = "enum_compat-0.0.3-py3-none-any.whl", hash = "sha256:88091b617c7fc3bbbceae50db5958023c48dc40b50520005aa3bf27f8f7ea157"},
 ]
 future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
@@ -2914,6 +2938,9 @@ torch = [
     {file = "torch-1.9.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:35ec703bc535bde7e8790ab9500f02d4413d995ac981520501fde95e268781e1"},
     {file = "torch-1.9.1-cp39-cp39-win_amd64.whl", hash = "sha256:e470697006a4c08e4fb6a645e8ca49b0d36c8e7ccf413deef5161335bd7399f1"},
     {file = "torch-1.9.1-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:a198332e2d344d25e423ae2df98d56d83060f19e9f4cf23164dffc8d403efeb8"},
+]
+torch-model-archiver = [
+    {file = "torch_model_archiver-0.5.1-1-py2.py3-none-any.whl", hash = "sha256:6b55b2aeaad28a2dcdfdc2cab4904ad24c39a7e452ae3ef9a8b8598ecbdf00ba"},
 ]
 torchserve = [
     {file = "torchserve-0.5.0-py2.py3-none-any.whl", hash = "sha256:ebf95be55bf1087aeaa61ffc56ebd150fecbad6c5896fd104f59195dd8628cc3"},
