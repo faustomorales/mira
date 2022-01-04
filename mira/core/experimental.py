@@ -57,9 +57,13 @@ def find_consensus_regions(
             iou = utils.compute_iou(bboxes1, bboxes2)
             exclude.extend(bboxes1[~(iou.max(axis=1) > iou_threshold)])
             exclude.extend(bboxes2[~(iou.max(axis=0) > iou_threshold)])
-    exclude = np.array(exclude) if len(exclude) > 0 else np.empty((0, 4))
+    exclude = np.array(exclude) if len(exclude) > 0 else np.empty((0, 4), dtype="int64")
     include = np.concatenate(
-        [g[:, :-1] if len(g) > 0 else np.empty((0, 4)) for g in bbox_groups], axis=0
+        [
+            g[:, :-1] if len(g) > 0 else np.empty((0, 4), dtype="int64")
+            for g in bbox_groups
+        ],
+        axis=0,
     )
     if len(include) > 0:
         include = np.unique(
