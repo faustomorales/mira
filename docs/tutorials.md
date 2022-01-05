@@ -17,7 +17,7 @@ logging.getLogger().setLevel('INFO')
 ```python
 from mira import datasets
 coco = datasets.load_coco2017(subset='val')
-coco[26].annotated().show()
+coco[26].show()
 ```
 
 .. image:: _static/example_browsing.png
@@ -51,8 +51,8 @@ fig, (ax_original, ax_augmenter) = plt.subplots(ncols=2, figsize=(10, 5))
 ax_original.set_title('Original')
 ax_augmenter.set_title('Augmented')
 
-scene.annotated().show(ax=ax_original)
-scene.augment(augmenter).annotated().show(ax=ax_augmenter)
+scene.show(ax=ax_original)
+scene.augment(augmenter).show(ax=ax_augmenter)
 ```
 
 .. image:: _static/example_augmentation.png
@@ -101,8 +101,8 @@ predicted_faster = scene.assign(
 
 # Plot both predictions. The calls to annotation() get us
 # an image with the bounding boxes drawn.
-_ = predicted_ed.annotated().show(ax=ax_ed)
-_ = predicted_faster.annotated().show(ax=ax_faster)
+_ = predicted_ed.show(ax=ax_ed)
+_ = predicted_faster.show(ax=ax_faster)
 ```
 
 .. image:: _static/example_simple_od.png

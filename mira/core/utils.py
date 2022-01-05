@@ -16,6 +16,10 @@ import cv2
 
 log = logging.getLogger(__name__)
 
+MaskRegion = typing_extensions.TypedDict(
+    "MaskRegion", {"visible": bool, "contour": np.ndarray, "name": str}
+)
+
 
 def _get_channels(image):
     """Get the number of channels in the image"""
@@ -168,7 +172,7 @@ def save(
         cv2.imwrite(filepath_or_buffer, img=image)
 
 
-def show(image, ax: mpl.axes.Axes = None) -> mpl.axes.Axes:
+def imshow(image, ax: mpl.axes.Axes = None) -> mpl.axes.Axes:
     """Show an image
 
     Args:
@@ -397,3 +401,67 @@ def find_largest_unique_boxes(
             if (cidx == len(bboxes) - 1 or coverages[cidx + 1 :].max() < threshold)
         ]
     )
+
+
+def apply_mask(image, masks):
+    """Given an image and a list of masking contours,
+    apply masking in place."""
+    if not masks:
+        return
+    hide = [m for m in masks if not m["visible"]]
+    show = [m for m in masks if m["visible"]]
+    if show:
+        # Assume something is masked, unless it's shown.
+        mask = np.ones(image.shape[:2], dtype="uint8")
+        for m in show:
+            cv2.drawContours(
+                mask,
+                contours=[m["contour"]],
+                contourIdx=-1,
+                color=0,
+                thickness=-1,
+            )
+    else:
+        # Assume something is unmasked, unless it's hidden.
+        mask = np.zeros(image.shape[:2], dtype="uint8")
+    for m in hide:
+        cv2.drawContours(
+            mask,
+            contours=[m["contour"]],
+            contourIdx=-1,
+            color=255,
+            thickness=cv2.FILLED,
+        )
+    image[mask > 0] = 0
+
+
+def transform_bboxes(
+    bboxes: np.ndarray, M: np.ndarray, width: int = None, height: int = None, clip=True
+):
+    """Transform a set of axis-aligned bounding boxes.
+
+    Args:
+        bboxes: An array of shape (N, 4) where each row is (xmin, ymin, xmax, ymax)
+        M: A transform matrix of shape 2x3.
+        width: The width of the output image (for clipping output boxes)
+        height: The height of the output image (for clipping output boxes)
+        clip: Whether to apply clipping.
+    """
+    if len(bboxes) == 0:
+        return bboxes
+    x1, y1, x2, y2 = bboxes.T
+    vertices = np.array([x1, y1, x2, y1, x2, y2, x1, y2]).T.reshape((-1, 4, 2))
+    transformed_vertices = cv2.transform(vertices, m=M)
+    if clip:
+        assert (
+            width is not None and height is not None
+        ), "If clipping, width and height must be provided."
+        transformed_vertices = transformed_vertices.clip(0, [width, height])
+    transformed_bboxes = np.concatenate(
+        [
+            transformed_vertices.min(axis=1).T,
+            transformed_vertices.max(axis=1).T,
+        ],
+        axis=0,
+    ).T
+    return transformed_bboxes

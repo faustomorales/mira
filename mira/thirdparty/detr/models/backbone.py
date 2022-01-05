@@ -56,18 +56,13 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 
 class BackboneBase(nn.Module):
-
-    def __init__(self, backbone: nn.Module, train_backbone: bool, num_channels: int, return_interm_layers: bool):
+    def __init__(self, backbone: nn.Module, return_layer: str):
         super().__init__()
-        for name, parameter in backbone.named_parameters():
-            if not train_backbone or 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
-                parameter.requires_grad_(False)
-        if return_interm_layers:
-            return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
-        else:
-            return_layers = {'layer4': "0"}
+        return_layers = {return_layer: "0"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        self.num_channels = num_channels
+        self.num_channels = [
+            m for m in getattr(backbone, return_layer).modules() if hasattr(m, "out_channels")
+        ][-1].out_channels
 
     def forward(self, tensor_list: NestedTensor):
         xs = self.body(tensor_list.tensors)
@@ -82,17 +77,16 @@ class BackboneBase(nn.Module):
 
 class Backbone(BackboneBase):
     """ResNet backbone with frozen BatchNorm."""
+
     def __init__(self, name: str,
-                 train_backbone: bool,
-                 return_interm_layers: bool,
-                 dilation: bool,
-                 pretrained_backbone: bool,
-                 ):
+        pretrained_backbone: bool,
+        return_layer: str = "layer4",
+    ):
         backbone = getattr(torchvision.models, name)(
-            replace_stride_with_dilation=[False, False, dilation],
-            pretrained=pretrained_backbone and is_main_process(), norm_layer=FrozenBatchNorm2d)
-        num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
-        super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
+            pretrained=pretrained_backbone,
+            norm_layer=FrozenBatchNorm2d,
+        )
+        super().__init__(backbone, return_layer)
 
 
 class Joiner(nn.Sequential):
@@ -113,9 +107,11 @@ class Joiner(nn.Sequential):
 
 def build_backbone(args):
     position_embedding = build_position_encoding(args)
-    train_backbone = args.lr_backbone > 0
-    return_interm_layers = args.masks
-    backbone = Backbone(name=args.backbone, train_backbone=train_backbone, return_interm_layers=return_interm_layers, dilation=args.dilation, pretrained_backbone=args.pretrained_backbone)
+    backbone = Backbone(
+        name=args.backbone,
+        pretrained_backbone=args.pretrained_backbone,
+        return_layer=args.return_layer,
+    )
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
