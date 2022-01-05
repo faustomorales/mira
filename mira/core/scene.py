@@ -3,16 +3,14 @@
 # pylint: disable=invalid-name,len-as-condition,unsupported-assignment-operation
 
 import io
-import os
 import math
 import typing
 import logging
 
-import typing_extensions
+import typing_extensions as tx
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
-import validators
 
 from .annotation import AnnotationConfiguration, Annotation
 from . import utils, augmentations
@@ -34,6 +32,8 @@ class Scene:
             loaded into memory the first time that the image is requested.
             If `False`, image is loaded from the file path or URL whenever
             the image is requested.
+        masks: A list of MaskRegion dictonaries which will determine
+            which parts of images are shown and hidden.
     """
 
     def __init__(
@@ -43,44 +43,49 @@ class Scene:
         image: typing.Union[np.ndarray, str],
         metadata: dict = None,
         cache: bool = False,
+        masks: typing.List[utils.MaskRegion] = None,
     ):
         assert isinstance(
             image, (np.ndarray, str)
         ), "Image must be string or ndarray, not " + str(type(image))
+        if masks is None:
+            masks = []
         self.metadata = metadata
         self._image = image
         self._annotations = annotations
         self._annotation_config = annotation_config
         self.cache = cache
+        self.masks = masks
 
     @property
     def image(self) -> np.ndarray:
         """The image that is being annotated"""
         # Check to see if we have an actual image
         # or just a string
-        if not isinstance(self._image, str):
-            return self._image
-
-        # Check the cache first if image is a URL
-        if (
-            validators.url(self._image)
-            and isinstance(self.cache, str)
-            and os.path.isfile(self.cache)
-        ):
-            self._image = self.cache
-
-        # Load the image
-        log.debug("Reading from %s", self._image)
-        image = utils.read(self._image)
-
+        protect_image = False
+        if isinstance(self._image, str):
+            # Load the image
+            log.debug("Reading from %s", self._image)
+            image = utils.read(self._image)
+        else:
+            protect_image = True
+            log.debug("Reading image from cache.")
+            image = self._image
         # Check how to handle caching the image
         # for future reads
         if self.cache is True:
+            log.debug("Caching image.")
+            protect_image = True
             self._image = image
         elif self.cache is False:
             pass
         else:
             raise ValueError(f"Unsupported cache parameter: {self.cache}.")
+        if self.masks:
+            if protect_image:
+                # We should not modify this image. Work on a copy.
+                image = image.copy()
+            utils.apply_mask(image, masks=self.masks)
         return image
 
     @property
@@ -119,15 +124,16 @@ class Scene:
             "image": self._image,
             "cache": self.cache,
             "metadata": self.metadata,
+            "masks": self.masks,
         }
         kwargs = {**defaults, **kwargs}
         return Scene(**kwargs)
 
-    def show(self, *args, **kwargs) -> mpl.axes.Axes:
+    def show(self, annotation_kwargs=None, **kwargs) -> mpl.axes.Axes:
         """Show an annotated version of the image. All arguments
-        passed to `mira.core.utils.show()`.
+        passed to `mira.core.utils.imshow()`.
         """
-        return utils.show(self.annotated(), *args, **kwargs)
+        return utils.imshow(self.annotated(**(annotation_kwargs or {})), **kwargs)
 
     def scores(self):
         """Obtain an array containing the confidence
@@ -171,7 +177,7 @@ class Scene:
         return fig
 
     def drop_duplicates(
-        self, threshold=1, method: typing_extensions.Literal["iou", "coverage"] = "iou"
+        self, threshold=1, method: tx.Literal["iou", "coverage"] = "iou"
     ):
         """Remove annotations of the same class where one annotation covers similar or equal area as another.
 
@@ -227,7 +233,7 @@ class Scene:
         img = img_raw
         for ann in self.annotations:
             img = ann.draw(img, color=color, opaque=opaque)
-        utils.show(img, ax=ax)
+        utils.imshow(img, ax=ax)
         if labels:
             for ann in self.annotations:
                 x1, y1, _, _ = ann.x1y1x2y2()

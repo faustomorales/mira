@@ -17,7 +17,9 @@ class CallbackProtocol(tx.Protocol):
         pass
 
 
-def best_weights(filepath, metric="loss", method="min") -> CallbackProtocol:
+def best_weights(
+    filepath, metric="loss", method="min", key="saved"
+) -> CallbackProtocol:
     """A callback that saves the best model weights according to a metric.
 
     Args:
@@ -25,6 +27,7 @@ def best_weights(filepath, metric="loss", method="min") -> CallbackProtocol:
             (e.g., val_mAP.{class_name}).
         method: How to handle the metric ("min" minimizes the metric while "max"
             maximizes it).
+        key: What name to use for the saved flag.
     """
 
     def callback(detector, summaries):
@@ -38,7 +41,7 @@ def best_weights(filepath, metric="loss", method="min") -> CallbackProtocol:
         if best_idx == len(summaries_df) - 1:
             torch.save(detector.model.state_dict(), filepath)
             saved = True
-        return {"saved": saved}
+        return {key: saved}
 
     return callback
 

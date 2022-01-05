@@ -32,8 +32,8 @@ numpy = "*"
 tqdm = "*"
 validators = "*"
 albumentations = "*"
-timm = "*"
-omegaconf = "*"
+timm = { version = "*", optional = true }
+omegaconf = { version = "*", optional = true }
 
 [tool.poetry.dev-dependencies]
 black = "*"
@@ -58,11 +58,16 @@ m2r2 = "0.2.7"
 sphinxcontrib-mermaid = "*"
 torchserve = "^0.5.0"
 torch-model-archiver = "^0.5.1"
+timm = "*"
+omegaconf = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
 style = "semver"
+
+[tool.poetry.extras]
+detectors = ["timm", "omegaconf"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=mira --cov-report=term-missing"
@@ -96,3 +101,10 @@ extension-pkg-whitelist = [
 ]
 [tool.pylint.typecheck]
 generated-members = ["torch.*"]
+
+[tool.mypy]
+exclude = [
+  'mira/thirdparty'
+]
+ignore_missing_imports = true
+check_untyped_defs = true

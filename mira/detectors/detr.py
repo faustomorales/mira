@@ -86,6 +86,7 @@ DETRBuildArgs = tx.TypedDict(
         "set_cost_class": int,
         "set_cost_bbox": int,
         "set_cost_giou": int,
+        "return_layer": str,
     },
 )
 
@@ -117,6 +118,7 @@ DEFAULT_DETR_ARGS = DETRBuildArgs(
     set_cost_bbox=5,
     set_cost_giou=2,
     num_classes=100,
+    return_layer="layer4",
 )
 
 
