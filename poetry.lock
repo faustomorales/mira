@@ -432,7 +432,7 @@ test = ["pytest (!=5.3.4)", "pytest-cov", "flaky", "nose", "jedi (<=0.17.2)"]
 
 [[package]]
 name = "ipython"
-version = "7.16.2"
+version = "7.16.3"
 description = "IPython: Productive Interactive Computing"
 category = "dev"
 optional = false
@@ -912,22 +912,6 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 numpy = ">=1.13.3"
-
-[[package]]
-name = "opencv-python-headless"
-version = "4.5.5.62"
-description = "Wrapper package for OpenCV python bindings."
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-numpy = [
-    {version = ">=1.13.3", markers = "python_version < \"3.7\""},
-    {version = ">=1.19.3", markers = "python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\" or python_version >= \"3.9\""},
-    {version = ">=1.14.5", markers = "python_version >= \"3.7\""},
-    {version = ">=1.17.3", markers = "python_version >= \"3.8\""},
-]
 
 [[package]]
 name = "packaging"
@@ -2091,8 +2075,8 @@ ipykernel = [
     {file = "ipykernel-5.5.6.tar.gz", hash = "sha256:4ea44b90ae1f7c38987ad58ea0809562a17c2695a0499644326f334aecd369ec"},
 ]
 ipython = [
-    {file = "ipython-7.16.2-py3-none-any.whl", hash = "sha256:2f644313be4fdc5c8c2a17467f2949c29423c9e283a159d1fc9bf450a1a300af"},
-    {file = "ipython-7.16.2.tar.gz", hash = "sha256:613085f8acb0f35f759e32bea35fba62c651a4a2e409a0da11414618f5eec0c4"},
+    {file = "ipython-7.16.3-py3-none-any.whl", hash = "sha256:c0427ed8bc33ac481faf9d3acf7e84e0010cdaada945e0badd1e2e74cc075833"},
+    {file = "ipython-7.16.3.tar.gz", hash = "sha256:5ac47dc9af66fc2f5530c12069390877ae372ac905edca75a92a6e363b5d7caa"},
 ]
 ipython-genutils = [
     {file = "ipython_genutils-0.2.0-py2.py3-none-any.whl", hash = "sha256:72dd37233799e619666c9f639a9da83c34013a73e8bbc79a7a6348d93c61fab8"},
@@ -2444,13 +2428,6 @@ opencv-python-headless = [
     {file = "opencv_python_headless-4.5.2.54-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:4735a717b770c5c08d267461bdfb8c5f4c9faa82b3fbb1a3ef01bfd0beaf943b"},
     {file = "opencv_python_headless-4.5.2.54-cp39-cp39-win32.whl", hash = "sha256:5312bed3107e35030cfddc6e6e943985f22d165651558a0929a13925e3e154e8"},
     {file = "opencv_python_headless-4.5.2.54-cp39-cp39-win_amd64.whl", hash = "sha256:32303224c4ce8cd362164f90c32bf95bbf131262611d8fe7c061baf73d2d6f05"},
-    {file = "opencv-python-headless-4.5.5.62.tar.gz", hash = "sha256:12aa335156adf62efdaa6dc5966d6c3415a7e2834d336e4f10ee5fccc65202c8"},
-    {file = "opencv_python_headless-4.5.5.62-cp36-abi3-macosx_10_15_x86_64.whl", hash = "sha256:a4b21d055036460e2e1f5d97809c299c21790c59fb382fa2b9f6ef6113a97a68"},
-    {file = "opencv_python_headless-4.5.5.62-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:359989d3aeb7b5d01f7f2f0445d448260b955274b7b1803f38e983eb85431e1f"},
-    {file = "opencv_python_headless-4.5.5.62-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bf84d8e98f6bf38f07fa0ef3a287e087e42fc0d5174ce05292ef322a96c1b4dc"},
-    {file = "opencv_python_headless-4.5.5.62-cp36-abi3-win32.whl", hash = "sha256:d53f70229d23cd0e54de5b8730a79ae92d3d874eedda8c1effb376aa5a4e6ea6"},
-    {file = "opencv_python_headless-4.5.5.62-cp36-abi3-win_amd64.whl", hash = "sha256:e8a8c02ee060ae30a31be27fb65527c9698a6aa0fec967b49d6e56ea4473d6be"},
-    {file = "opencv_python_headless-4.5.5.62-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:5c716001e76ca356d775875f82576c310e9d7cd38d3979a2616eea5e44c8eccd"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
