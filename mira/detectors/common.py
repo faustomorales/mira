@@ -13,7 +13,9 @@ class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
     extra_blocks to None.
     """
 
-    def forward(self, results, x, names):
+    # "results" refers to feature pyramid outputs
+    # "x" refers to convolutional layer outputs.
+    def forward(self, results, x, names):  # pylint: disable=unused-argument
         return results, names
 
 

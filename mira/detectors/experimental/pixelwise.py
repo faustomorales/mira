@@ -149,7 +149,7 @@ class AggregatedSegmentation(md.Detector):
         positive_agg=torch.max,
         negative_agg=torch.max,
     ):
-        super().__init__(device=device, resize_method=resize_method)
+        self.resize_method = resize_method
         self.annotation_config = annotation_config
         self.model = Segmenter(
             n_classes=len(annotation_config),
@@ -158,7 +158,8 @@ class AggregatedSegmentation(md.Detector):
             pretrained=pretrained_backbone,
             positive_agg=positive_agg,
             negative_agg=negative_agg,
-        ).to(self.device)
+        )
+        self.set_device(device)
         self.set_input_shape(width=256, height=256)
 
     @property

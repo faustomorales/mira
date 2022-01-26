@@ -5,14 +5,16 @@ import pandas as pd
 import typing_extensions as tx
 
 if typing.TYPE_CHECKING:
-    from ..detectors import Detector
+    from ..detectors.detector import Detector
 
 # pylint: disable=too-few-public-methods
 class CallbackProtocol(tx.Protocol):
     """A protocol defining how we expect callbacks to behave."""
 
     def __call__(
-        self, detector: "Detector", summaries: typing.List[typing.Dict[str, typing.Any]]
+        self,
+        detector: "Detector",
+        summaries: typing.List[typing.Dict[str, typing.Any]],
     ) -> typing.Dict[str, typing.Any]:
         pass
 
@@ -54,7 +56,7 @@ def csv_logger(filepath) -> CallbackProtocol:
         filepath: The filepath where the logs will be saved.
     """
     # pylint: disable=unused-argument
-    def callback(detector, summaries):
+    def callback(detectorr, summaries):
         pd.json_normalize(summaries).to_csv(filepath, index=False)
         return {}
 

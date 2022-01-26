@@ -109,7 +109,7 @@ class FasterRCNN(detector.Detector):
         detector_kwargs=None,
         anchor_kwargs=None,
     ):
-        super().__init__(device=device, resize_method=resize_method)
+        self.resize_method = resize_method
         self.annotation_config = annotation_config
         if pretrained_top:
             pretrained_backbone = False
@@ -155,6 +155,7 @@ class FasterRCNN(detector.Detector):
                 )
             )
             torchvision.models.detection.faster_rcnn.overwrite_eps(self.model, 0.0)
+        self.set_device(device)
         self.set_input_shape(
             width=min(self.model.transform.min_size),  # type: ignore
             height=min(self.model.transform.min_size),  # type: ignore

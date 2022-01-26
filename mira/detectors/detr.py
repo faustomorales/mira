@@ -143,11 +143,12 @@ class DETR(detector.Detector):
             "pretrained_backbone": pretrained_backbone,
             "device": device,
         }
-        super().__init__(device=device, resize_method=resize_method)
+        self.resize_method = resize_method
         self.model = DETRWrapper(*dm.build(types.SimpleNamespace(**self.build_kwargs)))
         self.backbone = self.model.model.backbone
         self.annotation_config = annotation_config
         self.set_input_shape(width=512, height=512)
+        self.set_device(torch.device(device))
         if pretrained_top:
             assert (
                 annotation_config == mds.COCOAnnotationConfiguration90
@@ -155,7 +156,7 @@ class DETR(detector.Detector):
             self.model.model.load_state_dict(
                 torch.hub.load_state_dict_from_url(
                     url="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth",
-                    map_location="cpu",
+                    map_location=self.device,
                     check_hash=True,
                 )["model"]
             )

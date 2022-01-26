@@ -114,6 +114,7 @@ def load_shapes(
     object_count_bounds=(3, 8),
     object_width_bounds=(20, 40),
     n_scenes=100,
+    polygons=False,
 ) -> core.SceneCollection:
     """A simple dataset for testing.
 
@@ -125,6 +126,8 @@ def load_shapes(
         object_width_bounds: A tuple indicating the minimum and maximum
             widths of the objects in each image
         n_scenes: The number of scenes to generate
+        polygons: Whether to use polygons instead of axis-aligned
+            bounding boxes.
 
     Returns:
         A scene collection of images with circles and rectangles in it.
@@ -165,6 +168,7 @@ def load_shapes(
                     thickness=-1,
                     color=lookup[color],
                 )
+                points = [(x, y), (x + w, y), (x + w, y + w), (x, y + w), (x, y)]
             elif shape == "CIRCLE":
                 r = w // 2
                 w = 2 * r
@@ -175,15 +179,22 @@ def load_shapes(
                     thickness=-1,
                     color=lookup[color],
                 )
-            annotations.append(
-                core.Annotation(
+                t = np.linspace(0, 2 * np.pi, num=20)
+                points = np.array([x + r * (np.cos(t) + 1), y + r * (1 + np.sin(t))]).T
+            if polygons:
+                annotation = core.Annotation(
+                    points=points,
+                    category=annotation_config[" ".join([color, shape])],
+                )
+            else:
+                annotation = core.Annotation(
                     x1=x,
                     y1=y,
                     x2=x + w,
                     y2=y + w,
                     category=annotation_config[" ".join([color, shape])],
                 )
-            )
+            annotations.append(annotation)
         return core.Scene(
             annotations=annotations, image=image, annotation_config=annotation_config
         )

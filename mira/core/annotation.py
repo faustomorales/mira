@@ -31,7 +31,7 @@ class AnnotationCategory:
         return repr(self._name)
 
 
-class Annotation:
+class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tuple-unpacking
     """Defines a single annotation.
 
     Args:
@@ -41,21 +41,51 @@ class Annotation:
         metadata: Metadata to store as part of the annotation
     """
 
+    points: np.ndarray
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+    metadata: dict
+    score: typing.Optional[float]
+
     def __init__(
         self,
-        x1: int,
-        y1: int,
-        x2: int,
-        y2: int,
         category: AnnotationCategory,
+        x1: int = None,
+        y1: int = None,
+        x2: int = None,
+        y2: int = None,
+        points: typing.Union[typing.List[typing.Tuple[int, int]], np.ndarray] = None,
         score: float = None,
         metadata: dict = None,
     ):
-        if category is None:
-            raise ValueError("A category object must be specified.")
-        self.x1, self.y1, self.x2, self.y2 = map(
-            lambda v: int(round(v)), [x1, y1, x2, y2]
-        )
+        is_rect = all(v is not None for v in [x1, y1, x2, y2])
+        is_poly = points is not None
+        if (not is_rect and not is_poly) or (is_rect and is_poly):
+            raise ValueError(
+                "Either all of (x1, y1, x2, y2) or points must be provided (and not both)."
+            )
+        self.is_rect = is_rect
+        if is_rect:
+            self.x1, self.y1, self.x2, self.y2 = map(
+                lambda v: int(round(v)), [x1, y1, x2, y2]  # type: ignore
+            )
+            self.points = np.array(
+                [
+                    [self.x1, self.y1],
+                    [self.x2, self.y1],
+                    [self.x2, self.y2],
+                    [self.x1, self.y2],
+                ]
+            )
+        else:
+            self.points = np.array(points).round().astype("int32")
+            if (self.points[0] != self.points[-1]).any():
+                # Make sure we close the polygon.
+                self.points = np.concatenate([self.points, self.points[:1]], axis=0)
+            self.x1, self.y1 = self.points.min(axis=0).tolist()
+            self.x2, self.y2 = self.points.max(axis=0).tolist()
         self.category = category
         self.score = score
         self.metadata = metadata or {}
@@ -87,6 +117,7 @@ class Annotation:
             typing.Tuple[int, int, int], typing.Tuple[int, int, int, int]
         ],
         opaque: bool = False,
+        thickness: int = 5,
     ) -> np.ndarray:
         """Draw selection onto given image.
 
@@ -94,32 +125,28 @@ class Annotation:
             image: The image to draw on.
             color: The color to use.
             opaque: Whether the box should be filled.
+            thickness: The thickness of the box (for non-opaque cases only).
 
         Returns:
             The image with the selection drawn
         """
-        target = image.copy()
-        pts = np.array(
-            [
-                [self.x1, self.y1],
-                [self.x2, self.y1],
-                [self.x2, self.y2],
-                [self.x1, self.y2],
-            ]
-        )
         if opaque:
-            return cv2.fillPoly(img=target, pts=[pts], color=color)
-        return cv2.polylines(
-            img=target, pts=[pts], isClosed=True, thickness=5, color=color
-        )
+            cv2.fillPoly(img=image, pts=[self.points], color=color)
+        else:
+            cv2.polylines(
+                img=image,
+                pts=[self.points],
+                isClosed=True,
+                thickness=thickness,
+                color=color,
+            )
 
     def extract(self, image):
         """Extract selection from image (i.e., crop the image
         to the selection).
         """
         x1, y1, x2, y2 = self.x1y1x2y2()
-        cropped = image[max(y1, 0) : max(y2, 0), max(x1, 0) : max(0, x2)]
-        return cropped
+        return image[max(y1, 0) : max(y2, 0), max(x1, 0) : max(0, x2)]
 
     def crop(self, width, height):
         """Crop a selection to a given image width
@@ -144,26 +171,38 @@ class Annotation:
     def resize(self, scale: float) -> "Annotation":
         """Obtain a revised selection with a given
         uniform scaling."""
-        return self.assign(
-            **{
-                k: int(getattr(self, k) * scale)
-                for k in [
-                    "x1",
-                    "y1",
-                    "x2",
-                    "y2",
-                ]
-            }
+        return (
+            self.assign(
+                **{
+                    k: int(getattr(self, k) * scale)
+                    for k in (
+                        [
+                            "x1",
+                            "y1",
+                            "x2",
+                            "y2",
+                        ]
+                    )
+                }
+            )
+            if self.is_rect
+            else self.assign(points=self.points * scale)
         )
 
     def assign(self, **kwargs) -> "Annotation":
         """Get a new Annotation with only the supplied
         keyword arguments changed."""
         defaults = {
-            "x1": self.x1,
-            "y1": self.y1,
-            "x2": self.x2,
-            "y2": self.y2,
+            **(
+                {
+                    "x1": self.x1,
+                    "y1": self.y1,
+                    "x2": self.x2,
+                    "y2": self.y2,
+                }
+                if self.is_rect
+                else {"points": self.points}
+            ),
             "category": self.category,
             "score": self.score,
             "metadata": self.metadata,
@@ -181,9 +220,11 @@ class Annotation:
         raise ValueError("%s is not in the new annotation configuration.")
 
     def __eq__(self, other):
-        self_bbox = self.x1y1x2y2()
-        other_bbox = other.x1y1x2y2()
-        return self_bbox == other_bbox and self.category == other.category
+        return (
+            self.points == other.points
+            and self.is_rect == other.is_rect
+            and self.category == other.category
+        )
 
     def __repr__(self):
         return repr(
@@ -193,7 +234,9 @@ class Annotation:
                     "y1": self.y1,
                     "x2": self.x2,
                     "y2": self.y2,
-                },
+                }
+                if self.is_rect
+                else [{"x": x, "y": y} for x, y in self.points],
                 "category": self.category.name,
                 "score": self.score,
                 "metadata": self.metadata,

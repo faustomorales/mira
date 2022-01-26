@@ -229,10 +229,10 @@ class Scene:
         ax.set_ylabel("")
         ax.set_yticks([])
         ax.axis("off")
-        img_raw = self.image
+        img_raw = self.image.copy()
         img = img_raw
         for ann in self.annotations:
-            img = ann.draw(img, color=color, opaque=opaque)
+            ann.draw(img, color=color, opaque=opaque)
         utils.imshow(img, ax=ax)
         if labels:
             for ann in self.annotations:

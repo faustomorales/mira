@@ -21,7 +21,14 @@ class BackboneWithTIMM(torch.nn.Module):
     """An experimental class that operates Like BackboneWithFPN but built using a
     model built using timm.create_model."""
 
-    def __init__(self, model_name: str, pretrained: bool, out_channels=None, **kwargs):
+    def __init__(
+        self,
+        model_name: str,
+        pretrained: bool,
+        out_channels=None,
+        extra_blocks=None,
+        **kwargs,
+    ):
         super().__init__()
         self.body = timm.create_model(
             model_name=model_name, pretrained=pretrained, **kwargs, features_only=True
@@ -31,16 +38,25 @@ class BackboneWithTIMM(torch.nn.Module):
             in_channels_list=self.body.feature_info.channels(),
             out_channels=self.out_channels,
         )
+        if extra_blocks is not None:
+            self.extra_blocks = extra_blocks(
+                in_channels=self.out_channels, out_channels=self.out_channels
+            )
+        else:
+            self.extra_blocks = None
 
     # pylint: disable=missing-function-docstring
     def forward(self, x):
-        features = self.body(x)
-        return self.fpn(
-            collections.OrderedDict(zip(self.body.feature_info.module_name(), features))
-        )
+        names = self.body.feature_info.module_name()
+        c = self.body(x)
+        p = list(self.fpn(collections.OrderedDict(zip(names, c))).values())
+        if self.extra_blocks is not None:
+            p, names = self.extra_blocks(c=c, p=p, names=names)
+        return collections.OrderedDict(zip(names, p))
 
 
 EXTRA_BLOCKS_MAP = {
+    "lastlevelp6p7": lambda: torchvision.ops.feature_pyramid_network.LastLevelP6P7,
     "lastlevelp6p7_256": functools.partial(
         torchvision.ops.feature_pyramid_network.LastLevelP6P7,
         in_channels=256,
@@ -97,7 +113,7 @@ class RetinaNet(detector.Detector):
         detector_kwargs=None,
         anchor_kwargs=None,
     ):
-        super().__init__(device=device, resize_method=resize_method)
+        self.resize_method = resize_method
         self.annotation_config = annotation_config
         if pretrained_top:
             pretrained_backbone = False
@@ -152,6 +168,7 @@ class RetinaNet(detector.Detector):
                 )
             )
             torchvision.models.detection.retinanet.overwrite_eps(self.model, 0.0)
+        self.set_device(device)
         self.set_input_shape(
             width=min(self.model.transform.min_size),  # type: ignore
             height=min(self.model.transform.min_size),  # type: ignore

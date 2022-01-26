@@ -45,17 +45,20 @@ def _loss_from_loss_dict(loss_dict: typing.Dict[str, torch.Tensor]):
     return sum(loss for loss in loss_dict.values())
 
 
-class Detector(abc.ABC):
+class Detector:
     """Abstract base class for a detector."""
+
+    @property
+    @abc.abstractmethod
+    def anchor_boxes(self) -> np.ndarray:
+        """Return the list of anchor boxes in xyxy format."""
 
     model: torch.nn.Module
     backbone: torch.nn.Module
     annotation_config: mc.AnnotationConfiguration
     training_model: torch.nn.Module
-
-    def __init__(self, device="cpu", resize_method: tx.Literal["pad", "fit"] = "fit"):
-        self.device = torch.device(device)
-        self.resize_method = resize_method
+    device: typing.Any
+    resize_method: tx.Literal["pad", "fit"]
 
     def set_device(self, device):
         """Set the device for training and inference tasks."""
@@ -101,59 +104,6 @@ class Detector(abc.ABC):
         padded[: image.shape[0], : image.shape[1]] = image
         return padded, 1
 
-    def detect(self, image: np.ndarray, **kwargs) -> typing.List[mc.Annotation]:
-        """Run detection for a given image. All other args passed to invert_targets()
-
-        Args:
-            image: The image to run detection on
-
-        Returns:
-            A list of annotations
-        """
-        self.model.eval()
-        image, scale = self.resize_to_model_size(image)
-        with torch.no_grad():
-            annotations = self.invert_targets(
-                self.model(self.compute_inputs([image])), **kwargs
-            )[0]
-        return [a.resize(1 / scale) for a in annotations]
-
-    def detect_batch(
-        self,
-        images: typing.List[np.ndarray],
-        batch_size: int = 32,
-        **kwargs,
-    ) -> typing.List[typing.List[mc.Annotation]]:
-        """
-        Perform object detection on a batch of images.
-
-        Args:
-            images: A list of images
-            threshold: The detection threshold for the images
-            batch_size: The batch size to use with the underlying model
-
-        Returns:
-            A list of lists of annotations.
-        """
-        self.model.eval()
-        images, scales = list(
-            zip(*[self.resize_to_model_size(image) for image in images])
-        )
-        annotation_groups = []
-        for start in range(0, len(images), batch_size):
-            annotation_groups.extend(
-                self.invert_targets(
-                    self.model(
-                        self.compute_inputs(images[start : start + batch_size]),
-                    ),
-                    **kwargs,
-                )
-            )
-        return [
-            [a.resize(1 / scale) for a in annotations]
-            for annotations, scale in zip(annotation_groups, scales)
-        ]
-
     @property
     @abc.abstractmethod
     def input_shape(self) -> typing.Tuple[int, int, int]:
@@ -171,11 +121,6 @@ class Detector(abc.ABC):
     @abc.abstractmethod
     def serve_module_index(self) -> dict:
         """Return the class index -> label mapping for TorchServe."""
-
-    @property
-    @abc.abstractmethod
-    def anchor_boxes(self) -> np.ndarray:
-        """Return the list of anchor boxes in xyxy format."""
 
     @abc.abstractmethod
     def compute_inputs(self, images: typing.List[np.ndarray]) -> np.ndarray:
@@ -369,6 +314,59 @@ class Detector(abc.ABC):
                         return summaries
                 t.set_postfix(**summary)
         return summaries
+
+    def detect(self, image: np.ndarray, **kwargs) -> typing.List[mc.Annotation]:
+        """Run detection for a given image. All other args passed to invert_targets()
+
+        Args:
+            image: The image to run detection on
+
+        Returns:
+            A list of annotations
+        """
+        self.model.eval()
+        image, scale = self.resize_to_model_size(image)
+        with torch.no_grad():
+            annotations = self.invert_targets(
+                self.model(self.compute_inputs([image])), **kwargs
+            )[0]
+        return [a.resize(1 / scale) for a in annotations]
+
+    def detect_batch(
+        self,
+        images: typing.List[np.ndarray],
+        batch_size: int = 32,
+        **kwargs,
+    ) -> typing.List[typing.List[mc.Annotation]]:
+        """
+        Perform object detection on a batch of images.
+
+        Args:
+            images: A list of images
+            threshold: The detection threshold for the images
+            batch_size: The batch size to use with the underlying model
+
+        Returns:
+            A list of lists of annotations.
+        """
+        self.model.eval()
+        images, scales = list(
+            zip(*[self.resize_to_model_size(image) for image in images])
+        )
+        annotation_groups = []
+        for start in range(0, len(images), batch_size):
+            annotation_groups.extend(
+                self.invert_targets(
+                    self.model(
+                        self.compute_inputs(images[start : start + batch_size]),
+                    ),
+                    **kwargs,
+                )
+            )
+        return [
+            [a.resize(1 / scale) for a in annotations]
+            for annotations, scale in zip(annotation_groups, scales)
+        ]
 
     def mAP(self, collection: mc.SceneCollection, iou_threshold=0.5, batch_size=32):
         """Compute the mAP metric for a given collection

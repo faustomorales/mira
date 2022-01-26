@@ -24,7 +24,7 @@ class EfficientDet(detector.Detector):
         resize_method: detector.ResizeMethod = "fit",
         **kwargs,
     ):
-        super().__init__(device=device, resize_method=resize_method)
+        self.resize_method = resize_method
         config = effdet.get_efficientdet_config(model_name=model_name)
         if kwargs:
             config = omegaconf.OmegaConf.merge(  # type: ignore
@@ -38,9 +38,10 @@ class EfficientDet(detector.Detector):
             bench_task="",
             pretrained=pretrained_top,
             pretrained_backbone=pretrained_backbone,
-        ).to(self.device)
+        )
         self.backbone = typing.cast(torch.nn.Module, self.model.backbone)
         self.model_name = model_name
+        self.set_device(device)
         self.set_input_shape(width=config.image_size[1], height=config.image_size[0])
 
     def set_input_shape(self, width, height):
