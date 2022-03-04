@@ -1,6 +1,9 @@
 import typing
 
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None  # type: ignore
 import pandas as pd
 import typing_extensions as tx
 
@@ -31,6 +34,8 @@ def best_weights(
             maximizes it).
         key: What name to use for the saved flag.
     """
+    if torch is None:
+        raise ValueError("You must install pytorch to use this callback.")
 
     def callback(detector, summaries):
         saved = False
