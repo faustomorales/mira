@@ -61,7 +61,7 @@ def csv_logger(filepath) -> CallbackProtocol:
         filepath: The filepath where the logs will be saved.
     """
     # pylint: disable=unused-argument
-    def callback(detectorr, summaries):
+    def callback(detector, summaries):
         pd.json_normalize(summaries).to_csv(filepath, index=False)
         return {}
 
