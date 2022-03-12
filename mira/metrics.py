@@ -123,8 +123,8 @@ def precision_recall_curve(
 
         precisions = tp / (tp + fp)
         recalls = tp / pos_cur
-        prs[classIdx] = np.vstack([precisions, recalls, scores]).T
-    return dict(zip([c.name for c in annotation_config], prs))
+        prs[classIdx] = np.vstack([precisions, recalls, scores]).T  # type: ignore
+    return dict(zip([c.name for c in annotation_config], prs))  # type: ignore
 
 
 def mAP(

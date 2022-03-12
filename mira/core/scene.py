@@ -2,16 +2,23 @@
 
 # pylint: disable=invalid-name,len-as-condition,unsupported-assignment-operation
 
+import os
 import io
 import math
+import json
 import typing
 import logging
+import tarfile
+import tempfile
 
+import tqdm
 import typing_extensions as tx
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import cv2
 
+from .protos import scene_pb2 as mps
 from .annotation import AnnotationConfiguration, Annotation
 from . import utils, augmentations
 
@@ -97,6 +104,85 @@ class Scene:
     def annotations(self) -> typing.List[Annotation]:
         """Get the list of annotations"""
         return self._annotations
+
+    @classmethod
+    def fromString(cls, string):
+        """Deserialize scene from string."""
+        deserialized = mps.Scene.FromString(string)
+        annotation_config = AnnotationConfiguration(
+            deserialized.annotation_config.categories
+        )
+        image = cv2.imdecode(
+            np.frombuffer(deserialized.image, dtype="uint8"), cv2.IMREAD_COLOR
+        )
+        annotations = []
+        for annotation in deserialized.annotations:
+            common = {
+                "category": annotation_config[annotation.category],
+                "metadata": json.loads(annotation.metadata),
+            }
+            if annotation.is_rect:
+                annotations.append(
+                    Annotation(
+                        x1=annotation.x1,
+                        y1=annotation.y1,
+                        x2=annotation.x2,
+                        y2=annotation.y2,
+                        **common,
+                    )
+                )
+            else:
+                annotations.append(
+                    Annotation(
+                        points=np.array([[pt.x, pt.y] for pt in annotation.points]),
+                        **common,
+                    )
+                )
+        return cls(
+            image=image,
+            metadata=json.loads(deserialized.metadata),
+            annotations=annotations,
+            annotation_config=annotation_config,
+            masks=[
+                {
+                    "visible": m.visible,
+                    "name": m.name,
+                    "contour": np.array([[p.x, p.y] for p in m.contour]),
+                }
+                for m in deserialized.masks
+            ],
+        )
+
+    def toString(self):
+        """Serialize scene to string."""
+        return mps.Scene(
+            image=cv2.imencode(".png", self.image)[1].tobytes(),
+            annotation_config=mps.AnnotationConfiguration(
+                categories=[c.name for c in self.annotation_config]
+            ),
+            metadata=json.dumps(self.metadata or {}),
+            masks=[
+                mps.Mask(
+                    visible=m["visible"],
+                    name=m["name"],
+                    contour=[mps.Point(x=x, y=y) for x, y in m["contour"]],
+                )
+                for m in (self.masks or [])
+            ],
+            annotations=[
+                mps.Annotation(
+                    category=self.annotation_config.index(ann.category),
+                    x1=ann.x1,
+                    y1=ann.y1,
+                    x2=ann.x2,
+                    y2=ann.y2,
+                    points=[mps.Point(x=x, y=y) for x, y in ann.points],
+                    metadata=json.dumps(ann.metadata or {}),
+                    is_rect=ann.is_rect,
+                )
+                for ann in self.annotations
+            ],
+        ).SerializeToString()
 
     def assign(self, **kwargs) -> "Scene":
         """Get a new scene with only the supplied
@@ -573,6 +659,38 @@ class SceneCollection:
         """Get a random subsample of this collection"""
         selected = np.random.choice(len(self.scenes), n, replace=replace)
         return self.assign(scenes=[self.scenes[i] for i in selected])
+
+    def save(self, filename: str):
+        """Save scene collection a tarball."""
+        with tarfile.open(filename, mode="w") as tar:
+            for idx, scene in enumerate(tqdm.tqdm(self.scenes)):
+                with tempfile.NamedTemporaryFile() as temp:
+                    temp.write(scene.toString())
+                    temp.flush()
+                    tar.add(name=temp.name, arcname=str(idx))
+
+    @classmethod
+    def load(cls, filename: str, directory: str = None):
+        """Load scene collection from a tarball. If a directory
+        is provided, images will be saved into that directory
+        rather than retained in memory."""
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        scenes = []
+        with tarfile.open(filename, mode="r") as tar:
+            for idx, member in enumerate(tqdm.tqdm(tar.getmembers())):
+                data = tar.extractfile(member)
+                if data is None:
+                    raise ValueError("Failed to load data from a file in the tarball.")
+                scene = Scene.fromString(data.read())
+                if directory:
+                    image_filepath = os.path.join(directory, f"{idx}.png")
+                    cv2.imwrite(image_filepath, scene.image)
+                    scene = scene.assign(image=image_filepath)
+                scenes.append(scene)
+        if len(scenes) == 0:
+            raise ValueError("No scenes found.")
+        return cls(scenes=scenes, annotation_config=scenes[0].annotation_config)
 
     def fit(self, **kwargs):
         """Obtain a new scene collection, fitted to the given width

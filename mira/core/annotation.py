@@ -118,7 +118,7 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
         ],
         opaque: bool = False,
         thickness: int = 5,
-    ) -> np.ndarray:
+    ):
         """Draw selection onto given image.
 
         Args:
@@ -201,7 +201,7 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
                     "y2": self.y2,
                 }
                 if self.is_rect
-                else {"points": self.points}
+                else {"points": self.points}  # type: ignore
             ),
             "category": self.category,
             "score": self.score,
@@ -221,9 +221,10 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
 
     def __eq__(self, other):
         return (
-            self.points == other.points
+            (self.points == other.points).all()
             and self.is_rect == other.is_rect
             and self.category == other.category
+            and self.metadata == other.metadata
         )
 
     def __repr__(self):

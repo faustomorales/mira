@@ -275,30 +275,25 @@ class Detector:
                 summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
                 summaries.append(summary)
                 if validation is not None:
-                    summary["val_loss"] = (
-                        np.sum(
-                            [
-                                self.loss_for_batch(
-                                    validation.assign(
-                                        scenes=[
-                                            validation[idx]
-                                            for idx in range(
-                                                vstart,
-                                                min(
-                                                    vstart + batch_size, len(validation)
-                                                ),
-                                            )
-                                        ]
-                                    )
+                    summary["val_loss"] = np.sum(
+                        [
+                            self.loss_for_batch(
+                                validation.assign(
+                                    scenes=[
+                                        validation[idx]
+                                        for idx in range(
+                                            vstart,
+                                            min(vstart + batch_size, len(validation)),
+                                        )
+                                    ]
                                 )
-                                .detach()
-                                .cpu()
-                                .numpy()
-                                for vstart in range(0, len(validation), batch_size)
-                            ]
-                        )
-                        / len(validation)
-                    )
+                            )
+                            .detach()
+                            .cpu()
+                            .numpy()
+                            for vstart in range(0, len(validation), batch_size)
+                        ]
+                    ) / len(validation)
                 scheduler.step(
                     epoch=epoch,
                     metric=avg_loss if validation is None else summary["val_loss"],

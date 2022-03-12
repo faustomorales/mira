@@ -41,7 +41,7 @@ def find_consensus_regions(
     """Given a set of box groups for the same image being
     labeled by different people, find the regions of
     consensus and non-consensus."""
-    exclude = []
+    exclude_list = []
     for (bboxes1, bboxes2), annIdx in itertools.product(
         itertools.combinations(bbox_groups, 2),
         range(max([g[:, -1].max() if len(g) > 0 else 0 for g in bbox_groups]) + 1),
@@ -50,14 +50,18 @@ def find_consensus_regions(
         if not len(bboxes1) > 0 and not len(bboxes2) > 0:
             continue
         if len(bboxes1) > 0 and not len(bboxes2) > 0:
-            exclude.extend(bboxes1)
+            exclude_list.extend(bboxes1)
         elif not len(bboxes1) > 0 and len(bboxes2) > 0:
-            exclude.extend(bboxes2)
+            exclude_list.extend(bboxes2)
         else:
             iou = utils.compute_iou(bboxes1, bboxes2)
-            exclude.extend(bboxes1[~(iou.max(axis=1) > iou_threshold)])
-            exclude.extend(bboxes2[~(iou.max(axis=0) > iou_threshold)])
-    exclude = np.array(exclude) if len(exclude) > 0 else np.empty((0, 4), dtype="int64")
+            exclude_list.extend(bboxes1[~(iou.max(axis=1) > iou_threshold)])
+            exclude_list.extend(bboxes2[~(iou.max(axis=0) > iou_threshold)])
+    exclude = (
+        np.array(exclude_list)
+        if len(exclude_list) > 0
+        else np.empty((0, 4), dtype="int64")
+    )
     include = np.concatenate(
         [
             g[:, :-1] if len(g) > 0 else np.empty((0, 4), dtype="int64")
@@ -184,7 +188,7 @@ def find_acceptable_crops(
     crops = []
     yfrontier = np.zeros(width, dtype="int32")
     while True:
-        xc1 = yfrontier.argmin()
+        xc1 = typing.cast(int, yfrontier.argmin())
         yc1 = yfrontier[xc1]
         dx1, dy1, success1 = search(
             x=xc1,

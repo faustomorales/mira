@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package mira;
+
+message Point {
+    int32 x = 1;
+    int32 y = 2;
+}
+
+message Annotation {
+    int32 category = 1;
+    int32 x1 = 2;
+    int32 x2 = 3;
+    int32 y1 = 4;
+    int32 y2 = 5;
+    bool is_rect = 6;
+    repeated Point points = 7;
+    float score = 8;
+    string metadata = 9;
+}
+
+message AnnotationConfiguration {
+    repeated string categories = 1;
+}
+
+
+
+message Mask {
+    bool visible = 1;
+    string name = 2;
+    repeated Point contour = 3;
+}
+
+message Scene {
+  AnnotationConfiguration annotation_config = 1;
+  repeated Annotation annotations = 2;
+  repeated Mask masks = 3;
+  bytes image = 4;
+  string metadata = 5;
+}

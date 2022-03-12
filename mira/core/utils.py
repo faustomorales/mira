@@ -74,7 +74,7 @@ def get_blank_image(width: int, height: int, n_channels: int, cval=255) -> np.nd
         image = np.zeros((height, width)) + 255
     else:
         image = np.zeros((height, width, n_channels)) + cval
-    return np.uint8(image)
+    return image.astype("uint8")
 
 
 def color(image, n_channels=3):

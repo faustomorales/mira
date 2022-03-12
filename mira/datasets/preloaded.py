@@ -145,7 +145,7 @@ def load_shapes(
             width=width, height=height, n_channels=3, cval=255
         )
         object_count = np.random.randint(*object_count_bounds)
-        ws = np.random.randint(*object_width_bounds, size=object_count)
+        ws = np.random.randint(object_width_bounds[0], object_width_bounds[1], size=object_count)  # type: ignore
         xs = np.random.randint(
             low=0, high=width - object_width_bounds[-1], size=object_count
         )
@@ -180,7 +180,9 @@ def load_shapes(
                     color=lookup[color],
                 )
                 t = np.linspace(0, 2 * np.pi, num=20)
-                points = np.array([x + r * (np.cos(t) + 1), y + r * (1 + np.sin(t))]).T
+                points = np.array(
+                    [x + r * (np.cos(t) + 1), y + r * (1 + np.sin(t))]
+                ).T.tolist()
             if polygons:
                 annotation = core.Annotation(
                     points=points,

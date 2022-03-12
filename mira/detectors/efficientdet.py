@@ -84,10 +84,10 @@ class EfficientDet(detector.Detector):
             for b in bboxes
         ]  # (ymin, xmin, ymax, xmax, class)
         return {
-            "bbox": torch.tensor([b[:, :4] for b in bboxes], dtype=torch.float32).to(
-                self.device
-            ),
-            "cls": torch.tensor([b[:, -1] for b in bboxes]).to(self.device),
+            "bbox": torch.tensor(
+                np.array([b[:, :4] for b in bboxes]), dtype=torch.float32
+            ).to(self.device),
+            "cls": torch.tensor(np.array([b[:, -1] for b in bboxes])).to(self.device),
         }
 
     # pylint: disable=protected-access

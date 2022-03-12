@@ -93,7 +93,7 @@ def test_file_read():
 
 def test_split():
     n = 5000
-    items = np.arange(n)
+    items = np.arange(n).tolist()
     sizes = [0.5, 0.30, 0.20]
     group: typing.List[int] = np.random.choice(500, size=n).tolist()
     stratify: typing.List[int] = np.random.choice(2, size=n).tolist()
@@ -172,3 +172,21 @@ def test_find_consensus_crops():
         assert ((include_coverage == 1) | (include_coverage == 0)).all()
         # All inclusion boxes are covered.
         assert include_coverage.max(axis=1).sum() == len(include)
+
+
+def test_serialization():
+    scene_i = mds.load_shapes(n_scenes=1)[0]
+    scene_i.metadata = {"foo": "bar"}
+    scene_i.annotations[0].metadata = {"baz": "boo"}
+    scene_i.masks = [
+        {
+            "visible": False,
+            "name": "test",
+            "contour": np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
+        }
+    ]
+    scene_o = core.Scene.fromString(scene_i.toString())
+    np.testing.assert_equal(scene_o.image, scene_i.image)
+    np.testing.assert_equal(scene_o.annotated(), scene_i.annotated())
+    assert scene_o.metadata == scene_i.metadata
+    assert scene_o.annotations == scene_i.annotations

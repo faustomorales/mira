@@ -5,4 +5,4 @@ warnings.filterwarnings(
     message=r".*The output shape of `ResNet50\(include_top=False\)` has been changed since Keras 2\.2\.0\..*",
     category=UserWarning,
 )
-__version__ = "0.0.0"
+__version__ = "0.5.21"

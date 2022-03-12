@@ -1,4 +1,4 @@
-.PHONY: docs
+.PHONY: docs protos
 
 PKG_NAME:=mira
 
@@ -20,12 +20,15 @@ help:
 	@echo '- Run `make shell` to activate the project virtualenv in your shell'
 	@echo '  e.g., make test TEST_SCOPE="-m not_integration tests/api/"'
 
+protos: ## Build protobufs.
+	protoc --python_out=mira/core protos/scene.proto
+
 init:  ## Initialize the development environment.
 	pip install poetry-dynamic-versioning poetry
-	poetry install
+	poetry install -E detectors --remove-untracked
 
 format-check: ## Make black check source formatting
-	@$(EXEC) black --diff --exclude mira/thirdparty --check $(PKG_NAME) tests
+	@$(EXEC) black --diff --check $(PKG_NAME) tests
 
 format: ## Make black unabashedly format source code
 	@$(EXEC) black --exclude mira/thirdparty $(PKG_NAME) tests
