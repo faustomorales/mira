@@ -363,12 +363,20 @@ class Detector:
             for annotations, scale in zip(annotation_groups, scales)
         ]
 
-    def mAP(self, collection: mc.SceneCollection, iou_threshold=0.5, batch_size=32):
+    def mAP(
+        self,
+        collection: mc.SceneCollection,
+        iou_threshold=0.5,
+        min_threshold=0.01,
+        batch_size=32,
+    ):
         """Compute the mAP metric for a given collection
         of ground truth scenes.
 
         Args:
             collection: The collection to evaluate
+            min_threshold: The minimum threshold for initial selection
+                of boxes.
             iou_threshold: The IoU threshold required for
                 a match
 
@@ -381,7 +389,9 @@ class Detector:
                 for scene, annotations in zip(
                     collection,
                     self.detect_batch(
-                        images=collection.images, threshold=0.01, batch_size=batch_size
+                        images=collection.images,
+                        threshold=min_threshold,
+                        batch_size=batch_size,
                     ),
                 )
             ]
