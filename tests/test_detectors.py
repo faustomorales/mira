@@ -5,12 +5,11 @@ import numpy as np
 import mira.core as mc
 import mira.detectors as md
 import mira.datasets as mds
-import mira.detectors.experimental.pixelwise as mpx
 
 
 @pytest.mark.parametrize(
     "detector_class",
-    [md.RetinaNet, md.EfficientDet, mpx.AggregatedSegmentation, md.FasterRCNN, md.DETR],
+    [md.RetinaNet, md.EfficientDet, md.FasterRCNN, md.DETR],
 )
 def test_detector_edge_cases(detector_class):
     dataset = mds.load_shapes(width=256, height=256, n_scenes=1)

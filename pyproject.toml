@@ -49,6 +49,7 @@ types-pkg-resources = "*"
 types-six = "*"
 torch = "*"
 torchserve = "*"
+segmentation-models-pytorch = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
