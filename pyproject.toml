@@ -50,6 +50,7 @@ types-six = "*"
 torch = "*"
 torchserve = "*"
 segmentation-models-pytorch = "*"
+jupyterlab = "^3.3.2"
 
 [tool.poetry-dynamic-versioning]
 enable = true

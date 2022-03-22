@@ -11,14 +11,21 @@ from . import utils as mcu
 
 LOGGER = logging.getLogger(__name__)
 
-BboxParams = A.BboxParams(format="pascal_voc", label_fields=["categories"])
+BboxParams = A.BboxParams(
+    format="pascal_voc", label_fields=["bbox_indices"], check_each_transform=False
+)
+KeypointParams = A.KeypointParams(
+    format="xy", label_fields=["keypoint_indices"], remove_invisible=False
+)
 
 AugmentedResult = tx.TypedDict(
     "AugmentedResult",
     {
         "image": np.ndarray,
         "bboxes": typing.List[typing.Tuple[int, int, int, int]],
-        "categories": typing.List[str],
+        "keypoints": typing.List[typing.Tuple[int, int]],
+        "bbox_indices": typing.List[int],
+        "keypoint_indices": typing.List[typing.Tuple[int, int]],
     },
 )
 
@@ -33,7 +40,9 @@ class AugmenterProtocol(tx.Protocol):
         self,
         image: np.ndarray,
         bboxes: typing.List[typing.Tuple[int, int, int, int]],
-        categories: typing.List[str],
+        keypoints: typing.List[typing.Tuple[int, int]],
+        bbox_indices: typing.List[int],
+        keypoint_indices: typing.List[typing.Tuple[int, int]],
     ) -> AugmentedResult:
         pass
 
@@ -49,7 +58,7 @@ class RandomCropBBoxSafe(A.DualTransform):
         cache: A dict-like object to use as a cache for computing
             safe crops.
     Targets:
-        image, bboxes
+        image, bboxes, keypoints
     Image types:
         uint8, float32
     """
@@ -62,6 +71,7 @@ class RandomCropBBoxSafe(A.DualTransform):
         p=1.0,
         prob_box: float = 0.0,
         min_size=1,
+        wiggle=False,
         cache=None,
     ):
         super().__init__(always_apply, p)
@@ -70,6 +80,7 @@ class RandomCropBBoxSafe(A.DualTransform):
         self.cache = cache
         self.min_size = min_size
         self.prob_box = prob_box
+        self.wiggle = wiggle
 
     def apply(self, img, **params):
         x_min, y_min, x_max, y_max = [
@@ -105,20 +116,66 @@ class RandomCropBBoxSafe(A.DualTransform):
         )
         # Make sure we have crops that are at least 1px wide.
         crops = crops[(crops[:, 2:] - crops[:, :2]).min(axis=1) > self.min_size]
-        if len(bboxes) > 0 and len(crops) > 0 and random.random() < self.prob_box:
-            contains_box = mcu.compute_coverage(bboxes, crops).max(axis=0) > 0
+        coverage = None
+        if len(bboxes) > 0 and len(crops) > 0:
+            coverage = mcu.compute_coverage(bboxes, crops)
+        if coverage is not None and random.random() < self.prob_box:
+            contains_box = coverage.max(axis=0) > 0
+            coverage = coverage[:, contains_box] if contains_box.any() else coverage
             crops = crops[contains_box] if contains_box.any() else crops
         if len(crops) == 0:
             raise ValueError("Failed to find a suitable crop.")
         crop_idx = round(random.random() * (max(crops.shape[0] - 1, 0)))
         LOGGER.debug("Selecting %s from list of %s crops.", crop_idx, len(crops))
         crop = crops[crop_idx]
+        if self.wiggle and coverage is not None and (coverage[:, crop_idx] > 0).any():
+            include = bboxes[coverage[:, crop_idx] == 1]
+            exclude = bboxes[coverage[:, crop_idx] == 0]
+            dx1, dy1, success1 = mce.search(
+                x=crop[0],
+                y=crop[1],
+                exclude=exclude,
+                include=include,
+                max_height=img_h - crop[1],
+                max_width=img_w - crop[0],
+            )
+            assert success1, "Unexpected wiggle search failure occurred."
+            offset1 = np.array(
+                [
+                    include[:, :2].min(axis=0) - crop[:2],
+                    np.array([dx1, dy1]) - [self.width, self.height],
+                ]
+            ).min(axis=0)
+            offset1 = (np.random.uniform(size=2) * offset1).round().astype("int32")
+            crop[:2] += offset1
+            crop[2:] += offset1
+
+            dx2, dy2, success2 = mce.search(
+                x=img_w - crop[2],
+                y=img_h - crop[3],
+                exclude=(img_w, img_h, img_w, img_h) - exclude[:, [2, 3, 0, 1]],
+                include=(img_w, img_h, img_w, img_h) - include[:, [2, 3, 0, 1]],
+                max_width=crop[2],
+                max_height=crop[3],
+                min_height=self.height,
+                min_width=self.width,
+            )
+            assert success2, "Unexpected wiggle search failure occurred."
+            offset2 = np.array(
+                [
+                    crop[2:] - include[:, 2:].max(axis=0),
+                    np.array([dx2, dy2]) - [self.width, self.height],
+                ]
+            ).min(axis=0)
+            offset2 = (np.random.uniform(size=2) * offset2).round().astype("int32")
+            crop[:2] -= offset2
+            crop[2:] -= offset2
         crop = crop / (img_w, img_h, img_w, img_h)
         return dict(zip(["x_min", "y_min", "x_max", "y_max"], crop))
 
     @property
     def targets_as_params(self):
-        return ["image", "bboxes"]
+        return ["image", "bboxes", "keypoints"]
 
     def apply_to_bbox(self, bbox, **params):
         x_min, y_min, x_max, y_max = [
@@ -140,7 +197,9 @@ class RandomCropBBoxSafe(A.DualTransform):
         return (x1, y1, x2, y2)
 
     def get_transform_init_args_names(self):
-        return ("width", "height")
+        return ("width", "height", "wiggle", "prob_box", "min_size", "cache")
 
-    def apply_to_keypoint(self, *args, **kwargs):
-        raise NotImplementedError("Keypoints are not supported.")
+    def apply_to_keypoint(self, keypoint, **params):
+        dx = params["x_min"] * params["cols"]
+        dy = params["y_min"] * params["rows"]
+        return (keypoint[0] - dx, keypoint[1] - dy, *keypoint[2:])

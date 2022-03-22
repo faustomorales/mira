@@ -12,6 +12,8 @@ import tarfile
 import tempfile
 
 import tqdm
+import pandas as pd
+import albumentations as A
 import typing_extensions as tx
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -360,8 +362,7 @@ class Scene:
         )
 
     def augment(
-        self,
-        augmenter: augmentations.AugmenterProtocol = None,
+        self, augmenter: augmentations.AugmenterProtocol = None, min_visibility=None
     ) -> "Scene":
         """Obtain an augmented version of the scene using the given augmenter.
 
@@ -373,8 +374,22 @@ class Scene:
         transformed = augmenter(
             image=self.image,
             bboxes=[ann.x1y1x2y2() for ann in self.annotations],
-            categories=[ann.category.name for ann in self.annotations],
+            bbox_indices=[
+                annIdx if ann.is_rect else -1
+                for annIdx, ann in enumerate(self.annotations)
+            ],
+            keypoints=utils.flatten(
+                [ann.points.tolist() for ann in self.annotations if not ann.is_rect]
+            ),
+            keypoint_indices=utils.flatten(
+                [
+                    [(annIdx, keyIdx) for keyIdx in range(len(ann.points))]
+                    for annIdx, ann in enumerate(self.annotations)
+                    if not ann.is_rect
+                ]
+            ),
         )
+
         image = transformed["image"]
         annotations = [
             Annotation(
@@ -382,12 +397,46 @@ class Scene:
                 y1=y1,
                 x2=x2,
                 y2=y2,
-                category=self.annotation_config[category],
+                category=self.annotations[annIdx].category,
+                metadata=self.annotations[annIdx].metadata,
             )
-            for (x1, y1, x2, y2), category in zip(
-                transformed["bboxes"], transformed["categories"]
+            for (x1, y1, x2, y2), annIdx in zip(
+                transformed["bboxes"], transformed["bbox_indices"]
             )
+            if annIdx > -1
+        ] + [
+            Annotation(
+                points=keypoints.sort_values("keyIdx")[["x", "y"]].values,
+                category=self.annotations[annIdx].category,
+                metadata=self.annotations[annIdx].metadata,
+            )
+            for annIdx, keypoints in pd.concat(
+                [
+                    pd.DataFrame(
+                        transformed["keypoint_indices"], columns=["annIdx", "keyIdx"]
+                    ),
+                    pd.DataFrame(transformed["keypoints"], columns=["x", "y"]),
+                ],
+                axis=1,
+            ).groupby(["annIdx"])
         ]
+        recropped = [
+            ann.crop(width=image.shape[1], height=image.shape[0]) for ann in annotations
+        ]
+        if min_visibility is None:
+            min_visibility = (
+                augmenter.processors["bboxes"].params.min_visibility
+                if isinstance(augmenter, A.Compose)
+                else 0.0
+            )
+        annotations = utils.flatten(
+            [
+                anns
+                for ann, anns in zip(annotations, recropped)
+                if ann.area() > 0
+                and (sum((a.area() for a in anns), 0) / ann.area()) >= min_visibility
+            ]
+        )
         annotations = [ann for ann in annotations if ann.area() > 0]
         return self.assign(
             image=image,
@@ -496,7 +545,6 @@ class SceneCollection:
         scenes: typing.List[Scene],
         annotation_config: AnnotationConfiguration = None,
     ):
-        assert len(scenes) > 0, "A scene collection must have at least one scene"
         if annotation_config is None:
             annotation_config = scenes[0].annotation_config
         for i, s in enumerate(scenes):

@@ -45,6 +45,7 @@ scene = dataset[15]
 augmenter = A.Compose(
     [A.HorizontalFlip(p=1), A.GaussianBlur()],
     bbox_params=core.augmentations.BboxParams,
+    keypoint_params=core.augmentations.KeypointParams,
 )
 
 fig, (ax_original, ax_augmenter) = plt.subplots(ncols=2, figsize=(10, 5))
@@ -141,6 +142,7 @@ training, validation = trainval.train_test_split(
 augmenter = A.Compose(
     [A.HorizontalFlip(p=1), A.GaussianBlur()],
     bbox_params=core.augmentations.BboxParams,
+    keypoint_params=core.augmentations.KeypointParams,
 )
 
 # Run training job

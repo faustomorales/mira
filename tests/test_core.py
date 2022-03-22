@@ -8,7 +8,9 @@ import tempfile
 import os
 import io
 
+import cv2
 import numpy as np
+import albumentations as A
 
 from mira import core
 from mira.core import experimental as mce
@@ -190,3 +192,54 @@ def test_serialization():
     np.testing.assert_equal(scene_o.annotated(), scene_i.annotated())
     assert scene_o.metadata == scene_i.metadata
     assert scene_o.annotations == scene_i.annotations
+
+
+def test_safe_crop():
+    size = 8
+    config = core.AnnotationConfiguration(["square"])
+    canvas = np.zeros((256, 256, 3), dtype="uint8")
+    annotations = []
+    for x, y in itertools.permutations(np.arange(32, 256, 64), 2):
+        annotations.append(
+            core.Annotation(
+                x1=x - size,
+                y1=y - size,
+                x2=x + size,
+                y2=y + size,
+                category=config["square"],
+            )
+        )
+        cv2.rectangle(
+            canvas,
+            pt1=(x - size, y - size),
+            pt2=(x + size, y + size),
+            color=(0, 0, 255),
+            thickness=-1,
+        )
+    scene = core.Scene(annotation_config=config, image=canvas, annotations=annotations)
+
+    for wiggle in [True, False]:
+        augmenter = A.Compose(
+            transforms=[
+                core.augmentations.RandomCropBBoxSafe(
+                    width=size * 4, height=size * 4, prob_box=1.0, wiggle=wiggle
+                )
+            ],
+            bbox_params=core.augmentations.BboxParams,
+            keypoint_params=core.augmentations.KeypointParams,
+        )
+        positions = []
+        for _ in range(25):
+            augmented = scene.augment(augmenter)
+            assert len(augmented.annotations) == 1
+            x1, y1, x2, y2 = augmented.annotations[0].x1y1x2y2()
+            positions.append([x1, y1, x2, y2])
+            image = augmented.image.copy()
+            assert (image[y1 : y2 + 1, x1 : x2 + 1, -1] == 255).all()
+            image[y1 : y2 + 1, x1 : x2 + 1, -1] = 0
+            assert (image == 0).all()
+        variety = np.unique(np.array(positions)[:, 0]).shape[0]
+        if wiggle:
+            assert variety > 5
+        else:
+            assert variety == 1

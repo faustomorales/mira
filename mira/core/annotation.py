@@ -92,7 +92,9 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
 
     def area(self) -> int:
         """Compute the area of the selection."""
-        return (self.y2 - self.y1) * (self.x2 - self.x1)
+        if self.is_rect:
+            return (self.y2 - self.y1) * (self.x2 - self.x1)
+        return cv2.contourArea(self.points)
 
     def xywh(self) -> typing.Tuple[int, int, int, int]:
         """Get the bounding box as x, y, width
@@ -156,17 +158,45 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
             width: The width of the image
             height: The height of the image
         """
-        return self.assign(
-            **{
-                k: max(0, min(getattr(self, k), d))
-                for d, k in [
-                    (width, "x1"),
-                    (height, "y1"),
-                    (width, "x2"),
-                    (height, "y2"),
-                ]
-            }
+        if self.is_rect:
+            crop = self.assign(
+                **{
+                    k: max(0, min(getattr(self, k), d))
+                    for d, k in [
+                        (width, "x1"),
+                        (height, "y1"),
+                        (width, "x2"),
+                        (height, "y2"),
+                    ]
+                }
+            )
+            if crop.area() > 0:
+                return [crop]
+            return []
+        baseline = self.points.min(axis=0)
+        offseted = (self.points - baseline).round().astype("int32")
+        redrawn = cv2.drawContours(
+            np.zeros(offseted.max(axis=0)[::-1], dtype="uint8"),
+            contours=offseted[np.newaxis],
+            contourIdx=-1,
+            color=255,
+            thickness=-1,
         )
+        redrawn = redrawn[-min(baseline[1], 0) :, -min(baseline[0], 0) :]
+        redrawn = redrawn[
+            : (height - baseline[1].clip(0) + 1).clip(0),
+            : (width - baseline[0].clip(0) + 1).clip(0),
+        ]
+        if redrawn.shape[0] == 0 or redrawn.shape[1] == 0 or (redrawn == 0).all():
+            return []
+        return [
+            self.assign(
+                points=c[:, 0, :] + baseline.clip(0),
+            )
+            for c in cv2.findContours(
+                redrawn, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE
+            )[-2]
+        ]
 
     def resize(self, scale: float) -> "Annotation":
         """Obtain a revised selection with a given
