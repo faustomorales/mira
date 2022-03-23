@@ -4,7 +4,6 @@
 
 import os
 import io
-import math
 import json
 import typing
 import logging
@@ -236,20 +235,6 @@ class Scene:
         # there are no annotations.
         return self.annotation_config.bboxes_from_group(self.annotations)
 
-    def fit(self, width, height):
-        """Obtain a new scene fitted to the given width and height.
-
-        Args:
-            width: The new width
-            height: The new height
-
-        Returns:
-            The new scene and the scale
-        """
-        image, scale = utils.fit(self.image, width=width, height=height)
-        annotations = [ann.resize(scale=scale) for ann in self.annotations]
-        return self.assign(image=image, annotations=annotations), scale
-
     def show_annotations(self, **kwargs):
         """Show annotations as individual plots. All arguments
         passed to plt.subplots."""
@@ -349,17 +334,6 @@ class Scene:
         img = img[:, :, :3]
         raw.close()
         return img
-
-    def resize(self, scale) -> "Scene":
-        """Obtain a resized version of the scene.
-
-        Args:
-            scale: The scale for the new scene.
-        """
-        return self.assign(
-            image=self.image.resize(scale),
-            annotations=[ann.resize(scale) for ann in self.annotations],
-        )
 
     def augment(
         self, augmenter: augmentations.AugmenterProtocol = None, min_visibility=None
@@ -739,59 +713,3 @@ class SceneCollection:
         if len(scenes) == 0:
             raise ValueError("No scenes found.")
         return cls(scenes=scenes, annotation_config=scenes[0].annotation_config)
-
-    def fit(self, **kwargs):
-        """Obtain a new scene collection, fitted to the given width
-        and height. All arguments passed to `scene.fit()`
-
-        Returns:
-            The new scene collection and list of scales.
-        """
-        scales = []
-        scenes = []
-        for s in self.scenes:
-            scene, scale = s.fit(**kwargs)
-            scenes.append(scene)
-            scales.append(scale)
-        return self.assign(scenes=scenes), scales
-
-    def thumbnails(self, n=10, width=200, height=200, ncols=2):
-        """Get a thumbnail sample of the images in the collection.
-
-        Args:
-            n: The number of images to include
-            width: The width of each thumbnail
-            height: The height of each thumbnail
-            ncols: The number of columsn in which to arrange the
-                thumbnails.
-
-        Returns:
-            The thumbnail image with width ncols*width and height
-            (n / ncols)*height
-        """
-        if n > len(self.scenes):
-            log.warning(
-                "Collection only has %s scenes but you requested %s thumbnails.",
-                len(self.scenes),
-                n,
-            )
-            n = len(self.scenes)
-        nrows = math.ceil(n / ncols)
-        sample_indices = np.random.choice(len(self.scenes), n, replace=False)
-        sample = [self.scenes[i] for i in sample_indices]
-        thumbnails = [scene.annotated() for scene in sample]
-        thumbnails = [
-            utils.fit(image=t, width=width, height=height)[0] for t in thumbnails
-        ]
-        thumbnail = utils.get_blank_image(
-            width=ncols * width, height=nrows * height, n_channels=3
-        )
-        for rowIdx in range(nrows):
-            for colIdx in range(ncols):
-                if len(thumbnails) == 0:
-                    break
-                thumbnail[
-                    rowIdx * width : (rowIdx + 1) * width,
-                    colIdx * height : (colIdx + 1) * height,
-                ] = thumbnails.pop()
-        return thumbnail

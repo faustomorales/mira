@@ -24,6 +24,7 @@ except ImportError:
 
 from .. import metrics as mm
 from .. import core as mc
+from . import common as mdc
 
 DEFAULT_SCHEDULER_PARAMS = dict(
     sched="cosine",
@@ -58,7 +59,8 @@ class Detector:
     annotation_config: mc.AnnotationConfiguration
     training_model: torch.nn.Module
     device: typing.Any
-    resize_method: tx.Literal["pad", "fit"]
+    resize_method: tx.Literal["pad", "fit", "pad_to_multiple"]
+    resize_base: typing.Optional[int]
 
     def set_device(self, device):
         """Set the device for training and inference tasks."""
@@ -77,32 +79,20 @@ class Detector:
         """Compute a list of annotation groups from model output."""
 
     def resize_to_model_size(
-        self, image: np.ndarray
-    ) -> typing.Tuple[np.ndarray, float]:
-        """Resize image to model size."""
-        if self.resize_method == "fit":
-            return self.fit_to_model_size(image)
-        if self.resize_method == "pad":
-            return self.pad_to_model_size(image)
-        raise NotImplementedError(f"Unknown resize method: {self.resize_method}")
-
-    def fit_to_model_size(self, image: np.ndarray) -> typing.Tuple[np.ndarray, float]:
-        """Fit an image to model size by up-or-downsampling the constraining dimension
-        and then padding the the other dimension to size."""
+        self, images: typing.List[np.ndarray]
+    ) -> typing.Tuple[np.ndarray, np.ndarray]:
+        """Resize a series of images to the current model's size."""
         height, width = self.input_shape[:2]
-        image, scale = mc.utils.fit(image=image, width=width, height=height)
-        return image, scale
-
-    def pad_to_model_size(self, image: np.ndarray) -> typing.Tuple[np.ndarray, float]:
-        """Pad images to model size."""
-        height, width = self.input_shape[:2]
-        assert image.shape[0] <= height, "Cannot pad image."
-        assert image.shape[1] <= width, "Cannot pad image."
-        padded = mc.utils.get_blank_image(
-            width=width, height=height, n_channels=3, cval=0
+        padded, scales, _ = mdc.resize(
+            images,
+            resize_method=self.resize_method,
+            height=height,
+            width=width,
+            base=getattr(self, "resize_base", None),
         )
-        padded[: image.shape[0], : image.shape[1]] = image
-        return padded, 1
+        # Ensure that scaling maintains aspect ratio.
+        np.testing.assert_allclose(*scales.T)
+        return padded, scales[:, 0]
 
     @property
     @abc.abstractmethod
@@ -123,7 +113,7 @@ class Detector:
         """Return the class index -> label mapping for TorchServe."""
 
     @abc.abstractmethod
-    def compute_inputs(self, images: typing.List[np.ndarray]) -> np.ndarray:
+    def compute_inputs(self, images: np.ndarray) -> np.ndarray:
         """Convert images into suitable model inputs. *You
         usually should not need this method*. For training,
         use `detector.train()`. For detection, use
@@ -180,9 +170,7 @@ class Detector:
     def loss_for_batch(self, batch):
         """Compute the loss for a batch of scenes."""
         assert self.training_model.training, "Model not in training mode."
-        images, scales = list(
-            zip(*[self.resize_to_model_size(s.image) for s in batch.scenes])
-        )
+        images, scales = self.resize_to_model_size(batch.images)
         annotation_groups = [
             [ann.resize(scale) for ann in scene.annotations]
             for scene, scale in zip(batch, scales)
@@ -320,12 +308,12 @@ class Detector:
             A list of annotations
         """
         self.model.eval()
-        image, scale = self.resize_to_model_size(image)
+        images, scales = self.resize_to_model_size([image])
         with torch.no_grad():
             annotations = self.invert_targets(
-                self.model(self.compute_inputs([image])), **kwargs
+                self.model(self.compute_inputs(images)), **kwargs
             )[0]
-        return [a.resize(1 / scale) for a in annotations]
+        return [a.resize(1 / scales[0]) for a in annotations]
 
     def detect_batch(
         self,
@@ -345,23 +333,26 @@ class Detector:
             A list of lists of annotations.
         """
         self.model.eval()
-        images, scales = list(
-            zip(*[self.resize_to_model_size(image) for image in images])
-        )
         annotation_groups = []
         for start in range(0, len(images), batch_size):
-            annotation_groups.extend(
-                self.invert_targets(
-                    self.model(
-                        self.compute_inputs(images[start : start + batch_size]),
-                    ),
-                    **kwargs,
-                )
+            current_images, current_scales = self.resize_to_model_size(
+                images[start : start + batch_size]
             )
-        return [
-            [a.resize(1 / scale) for a in annotations]
-            for annotations, scale in zip(annotation_groups, scales)
-        ]
+            annotation_groups.extend(
+                [
+                    [a.resize(1 / scale) for a in annotations]
+                    for scale, annotations in zip(
+                        current_scales,
+                        self.invert_targets(
+                            self.model(
+                                self.compute_inputs(current_images),
+                            ),
+                            **kwargs,
+                        ),
+                    )
+                ]
+            )
+        return annotation_groups
 
     def mAP(
         self,

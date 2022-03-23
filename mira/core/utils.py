@@ -21,20 +21,6 @@ MaskRegion = typing_extensions.TypedDict(
 )
 
 
-def _get_channels(image):
-    """Get the number of channels in the image"""
-    return 0 if len(image.shape) == 2 else image.shape[2]
-
-
-def _rbswap(image):
-    """Swap the red and blue channels for reading and writing
-    images."""
-    if _get_channels(image) != 3:
-        log.info("Not swapping red and blue due to number of channels.")
-        return image
-    return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-
 def read(filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO]):
     """Read a file into an image object
 
@@ -53,7 +39,7 @@ def read(filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO]):
             filepath_or_buffer  # type: ignore
         ), "Could not find image at path: " + str(filepath_or_buffer)
         image = cv2.imread(filepath_or_buffer)
-    return _rbswap(image)
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB) if len(image.shape) == 3 else image
 
 
 def get_blank_image(width: int, height: int, n_channels: int, cval=255) -> np.ndarray:
@@ -77,79 +63,6 @@ def get_blank_image(width: int, height: int, n_channels: int, cval=255) -> np.nd
     return image.astype("uint8")
 
 
-def color(image, n_channels=3):
-    """Convert to color image if it is not already."""
-    if len(image.shape) == 3 and image.shape[2] == 1:
-        return cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-    if len(image.shape) == 2:
-        image = image[:, :, np.newaxis]
-        return image.repeat(n_channels, axis=2)
-    return image
-
-
-def scaled(image, minimum: float = -1, maximum: float = 1):
-    """Obtain a scaled version of the image with values between
-    minimum and maximum.
-
-    Args:
-        minimum: The minimum value
-        maximum: The maximum value
-
-    Returns:
-        An array of same shape as image but of dtype `np.float32` with
-        values scaled appropriately.
-    """
-    assert maximum > minimum
-    x = np.float32(image)
-    x /= 255
-    x *= maximum - minimum
-    x += minimum
-    return x
-
-
-def fit(image, width: int, height, cval: int = 255) -> typing.Tuple[np.ndarray, float]:
-    """Obtain a new image, fit to the specified size.
-
-    Args:
-        width: The new width
-        height: The new height
-        cval: The constant value to use to fill the remaining areas of
-            the image
-
-    Returns:
-        The new image and the scaling that was applied.
-    """
-    if width == image.shape[1] and height == image.shape[0]:
-        return image, 1
-    scale = min(width / image.shape[1], height / image.shape[0])
-    fitted = get_blank_image(
-        width=width, height=height, n_channels=_get_channels(image), cval=cval
-    )
-    image = resize(image, scale=scale)
-    fitted[: image.shape[0], : image.shape[1]] = image[:height, :width]
-    return fitted, scale
-
-
-def resize(image, scale: float, interpolation=cv2.INTER_NEAREST):
-    """Obtain resized version of image with a given scale
-
-    Args:
-        scale: The scale by which to resize the image
-        interpolation: The interpolation method to use
-
-    Returns:
-        The scaled image
-    """
-    width = int(np.ceil(scale * image.shape[1]))
-    height = int(np.ceil(scale * image.shape[0]))
-    resized = cv2.resize(image, dsize=(width, height), interpolation=interpolation)
-    if len(resized.shape) == 2 and len(image.shape) == 3:
-        # This was a grayscale image and we need it to be returned
-        # as such.
-        resized = resized[:, :, np.newaxis]
-    return resized
-
-
 def save(
     image,
     filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO],
@@ -164,7 +77,7 @@ def save(
         esxtension: The extension for the format to use
             if writing to buffer
     """
-    image = _rbswap(image)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) if len(image.shape) == 3 else image
     if hasattr(filepath_or_buffer, "write"):
         data = cv2.imencode(extension, image)[1].tobytes()
         filepath_or_buffer.write(data)  # type: ignore

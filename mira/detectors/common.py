@@ -1,5 +1,6 @@
 # pylint: disable=unexpected-keyword-arg
 import typing
+import cv2
 import torch
 import numpy as np
 import torchvision
@@ -19,16 +20,20 @@ class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
         return results, names
 
 
+ArrayType = typing.TypeVar("ArrayType", torch.Tensor, np.ndarray)
+
+
 def fit(
-    image: torch.Tensor, height: int, width: int
-) -> typing.Tuple[torch.Tensor, float, typing.Tuple[int, int]]:
+    image: ArrayType, height: int, width: int
+) -> typing.Tuple[ArrayType, float, typing.Tuple[int, int]]:
     """Fit an image to a specific size, padding where necessary to maintain
     aspect ratio.
 
     Args:
-        image: A tensor with shape (C, H, W)
+        image: A tensor with shape (C, H, W) or a numpy array with shape (H, W, C)
     """
-    input_height, input_width = image.shape[1:]
+    use_torch_ops = isinstance(image, torch.Tensor)
+    input_height, input_width = image.shape[1:] if use_torch_ops else image.shape[:2]
     if width == input_width and height == input_height:
         return image, 1.0, (height, width)
     scale = min(width / input_width, height / input_height)
@@ -36,30 +41,45 @@ def fit(
     target_width = int(scale * input_width)
     pad_y = height - target_height
     pad_x = width - target_width
-    resized = tvtf.resize(image, size=[target_height, target_width])
+    resized = (
+        tvtf.resize(image, size=[target_height, target_width])
+        if use_torch_ops
+        else cv2.resize(image, (target_width, target_height))
+    )
     if pad_y > 0 or pad_x > 0:
-        padded = torch.nn.functional.pad(resized, (0, pad_x, 0, pad_y))
+        padded = (
+            torch.nn.functional.pad(resized, (0, pad_x, 0, pad_y))
+            if use_torch_ops
+            else np.pad(resized, ((0, pad_y), (0, pad_x), (0, 0)))
+        )
     else:
         padded = resized
     return padded, scale, (target_height, target_width)
 
 
 def resize(
-    x: typing.Union[typing.List[torch.Tensor], torch.Tensor],
+    x: typing.List[ArrayType],
     resize_method: typing.Optional[str],
     height: int = None,
     width: int = None,
     base: int = None,
-):
+) -> typing.Tuple[ArrayType, ArrayType, ArrayType]:
     """Resize a list of images using a specified method.
 
     Args:
-        x: A list of arrays of shape (C, H, W) or an array of
-           shape (N, C, H, W)
+        x: A list of tensors of shape (C, H, W) or a tensor of
+           shape (N, C, H, W) or a list of ndarrays of shape (H, W, C)
+           or an ndarray of shape (N, H, W, C).
         resize_method: One of fit (distort image to fit), pad (pad to
             target height and width) or pad_to_multiple (pad to multiple
             of some given base integer).
     """
+    assert (
+        not isinstance(x, list) or len(x) > 0
+    ), "When providing a list, it must not be empty."
+    use_torch_ops = isinstance(x, torch.Tensor) or (
+        isinstance(x, list) and isinstance(x[0], torch.Tensor)
+    )
     if resize_method is not None and resize_method == "fit":
         assert (
             height is not None and width is not None
@@ -68,13 +88,27 @@ def resize(
             *[fit(image, height=height, width=width) for image in x]
         )
         return (
-            torch.cat([r.unsqueeze(0) for r in resized_list]),
-            torch.tensor(scale_list).unsqueeze(1).repeat((1, 2)),
-            torch.tensor(size_list),
+            (  # type: ignore
+                torch.cat([r.unsqueeze(0) for r in resized_list]),
+                torch.tensor(scale_list).unsqueeze(1).repeat((1, 2)),
+                torch.tensor(size_list),
+            )
+            if use_torch_ops
+            else (
+                np.concatenate([r[np.newaxis] for r in resized_list]),
+                np.array(scale_list)[:, np.newaxis].repeat(repeats=2, axis=1),
+                np.array(size_list),
+            )
         )
-    img_dimensions = np.array([i.shape[1:3] for i in x])
-    scales = torch.tensor(np.ones_like(img_dimensions))
-    sizes = torch.tensor(img_dimensions)
+    img_dimensions = np.array(
+        [i.shape[1:3] if use_torch_ops else i.shape[:2] for i in x]
+    )
+    scales = (
+        torch.tensor(np.ones_like(img_dimensions))
+        if use_torch_ops
+        else np.ones_like(img_dimensions)
+    )
+    sizes = torch.tensor(img_dimensions) if use_torch_ops else np.array(img_dimensions)
     pad_dimensions = None
     if resize_method is not None and resize_method == "pad":
         assert (
@@ -96,18 +130,28 @@ def resize(
     assert (
         pad_dimensions >= 0
     ).all(), "Input image is larger than target size, but resize_method is 'pad.'"
-    padded = torch.cat(
-        [
-            torch.nn.functional.pad(i, (0, pad_x, 0, pad_y)).unsqueeze(0)
-            for i, (pad_y, pad_x) in zip(x, pad_dimensions)
-        ]
+    padded = (
+        torch.cat(
+            [
+                torch.nn.functional.pad(i, (0, pad_x, 0, pad_y)).unsqueeze(0)  # type: ignore
+                for i, (pad_y, pad_x) in zip(x, pad_dimensions)
+            ]
+        )
+        if use_torch_ops
+        else np.concatenate(
+            [
+                np.pad(i, ((0, pad_y), (0, pad_x), (0, 0)))[np.newaxis]
+                for i, (pad_y, pad_x) in zip(x, pad_dimensions)
+            ],
+            axis=0,
+        )
     )
-    return padded, scales, sizes
+    return padded, scales, sizes  # type: ignore
 
 
 def torchvision_serve_inference(
     model,
-    x: typing.Union[typing.List[torch.Tensor], torch.Tensor],
+    x: typing.List[torch.Tensor],
     resize_method: typing.Optional[str],
     height: int = None,
     width: int = None,

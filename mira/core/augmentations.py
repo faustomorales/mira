@@ -47,6 +47,51 @@ class AugmenterProtocol(tx.Protocol):
         pass
 
 
+def wiggle_crop(crop, bboxes, coverage, img_w, img_h, width, height):
+    """Wiggle a bbox-safe crop without overlapping new bboxes."""
+    include = bboxes[coverage == 1]
+    exclude = bboxes[coverage == 0]
+    print("size1", crop[2:] - crop[:2])
+    dx1, dy1, success1 = mce.search(
+        x=crop[0],
+        y=crop[1],
+        exclude=exclude,
+        include=include,
+        max_height=img_h - crop[1],
+        max_width=img_w - crop[0],
+    )
+    assert success1, "Unexpected failure when performing first-pass crop wiggle."
+    offset1 = np.array(
+        [
+            # Don't go into the box.
+            include[:, :2].min(axis=0) - crop[:2],
+            # Don't let the bottom right edge go
+            # further than the safe area.
+            (np.array([dx1, dy1]) - [width, height]).clip(0),
+        ]
+    ).min(axis=0)
+    offset1 = (np.random.uniform(size=2) * offset1).round().astype("int32")
+    crop = crop + np.tile(offset1, 2)
+    dx2, dy2, success2 = mce.search(
+        x=img_w - crop[2],
+        y=img_h - crop[3],
+        exclude=(img_w, img_h, img_w, img_h) - exclude[:, [2, 3, 0, 1]],
+        include=(img_w, img_h, img_w, img_h) - include[:, [2, 3, 0, 1]],
+        max_width=crop[2],
+        max_height=crop[3],
+    )
+    assert success2, "Unexpected failure when performing second-pass crop wiggle."
+    offset2 = np.array(
+        [
+            crop[2:] - include[:, 2:].max(axis=0),
+            (np.array([dx2, dy2]) - [width, height]).clip(0),
+        ]
+    ).min(axis=0)
+    offset2 = (np.random.uniform(size=2) * offset2).round().astype("int32")
+    crop = crop - np.tile(offset2, 2)
+    return crop
+
+
 class RandomCropBBoxSafe(A.DualTransform):
     """Crop an image and avoid splitting bounding boxes.
 
@@ -129,47 +174,15 @@ class RandomCropBBoxSafe(A.DualTransform):
         LOGGER.debug("Selecting %s from list of %s crops.", crop_idx, len(crops))
         crop = crops[crop_idx]
         if self.wiggle and coverage is not None and (coverage[:, crop_idx] > 0).any():
-            include = bboxes[coverage[:, crop_idx] == 1]
-            exclude = bboxes[coverage[:, crop_idx] == 0]
-            dx1, dy1, success1 = mce.search(
-                x=crop[0],
-                y=crop[1],
-                exclude=exclude,
-                include=include,
-                max_height=img_h - crop[1],
-                max_width=img_w - crop[0],
+            crop = wiggle_crop(
+                crop=crop,
+                bboxes=bboxes,
+                coverage=coverage[:, crop_idx],
+                img_w=img_w,
+                img_h=img_h,
+                width=self.width,
+                height=self.height,
             )
-            assert success1, "Unexpected wiggle search failure occurred."
-            offset1 = np.array(
-                [
-                    include[:, :2].min(axis=0) - crop[:2],
-                    np.array([dx1, dy1]) - [self.width, self.height],
-                ]
-            ).min(axis=0)
-            offset1 = (np.random.uniform(size=2) * offset1).round().astype("int32")
-            crop[:2] += offset1
-            crop[2:] += offset1
-
-            dx2, dy2, success2 = mce.search(
-                x=img_w - crop[2],
-                y=img_h - crop[3],
-                exclude=(img_w, img_h, img_w, img_h) - exclude[:, [2, 3, 0, 1]],
-                include=(img_w, img_h, img_w, img_h) - include[:, [2, 3, 0, 1]],
-                max_width=crop[2],
-                max_height=crop[3],
-                min_height=self.height,
-                min_width=self.width,
-            )
-            assert success2, "Unexpected wiggle search failure occurred."
-            offset2 = np.array(
-                [
-                    crop[2:] - include[:, 2:].max(axis=0),
-                    np.array([dx2, dy2]) - [self.width, self.height],
-                ]
-            ).min(axis=0)
-            offset2 = (np.random.uniform(size=2) * offset2).round().astype("int32")
-            crop[:2] -= offset2
-            crop[2:] -= offset2
         crop = crop / (img_w, img_h, img_w, img_h)
         return dict(zip(["x_min", "y_min", "x_max", "y_max"], crop))
 

@@ -51,6 +51,7 @@ torch = "*"
 torchserve = "*"
 segmentation-models-pytorch = "*"
 jupyterlab = "^3.3.2"
+torch-model-archiver = "^0.5.3"
 
 [tool.poetry-dynamic-versioning]
 enable = true

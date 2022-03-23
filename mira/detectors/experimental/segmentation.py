@@ -26,6 +26,7 @@ class SMPWrapper(torch.nn.Module):
         return y.sigmoid()
 
 
+# pylint: disable=too-many-instance-attributes
 class SMP(mdd.Detector):
     """A detector that uses segmentation-models-pytorch
     under the hood to build quasi-object-detection models.
@@ -47,7 +48,7 @@ class SMP(mdd.Detector):
         annotation_config: mc.AnnotationConfiguration,
         arch=None,
         device="cpu",
-        resize_method="fit",
+        resize_method="pad_to_multiple",
         encoder_name="efficientnet-b0",
         loss=None,
     ):
@@ -65,10 +66,11 @@ class SMP(mdd.Detector):
         self.backbone = self.model.backbone
         self.set_device(device)
         self.annotation_config = annotation_config
+        self.resize_base = 64
         self.preprocessing_fn = smp.encoders.get_preprocessing_fn(
             encoder_name, pretrained="imagenet"
         )
-        self.set_input_shape(512, 512)
+        self.set_input_shape(None, None)
 
     def compute_inputs(self, images):
         return torch.tensor(

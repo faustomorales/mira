@@ -12,24 +12,24 @@ import cv2
 import numpy as np
 import albumentations as A
 
-from mira import core
-from mira.core import experimental as mce
+import mira.core as mc
+import mira.core.experimental as mce
 import mira.datasets as mds
 
 
 def test_blank_and_properties():
     """Make sure creating new images works."""
-    image = core.utils.get_blank_image(width=200, height=100, n_channels=2, cval=125)
+    image = mc.utils.get_blank_image(width=200, height=100, n_channels=2, cval=125)
     assert image.shape == (100, 200, 2)
     assert (image[:, :, :] == 125).all()
 
 
 def test_scene_deduplication():
-    ac = core.AnnotationConfiguration(["foo", "bar"])
-    scene = core.Scene(
-        image=core.utils.get_blank_image(width=200, height=100, n_channels=2, cval=125),
+    ac = mc.AnnotationConfiguration(["foo", "bar"])
+    scene = mc.Scene(
+        image=mc.utils.get_blank_image(width=200, height=100, n_channels=2, cval=125),
         annotations=[
-            core.Annotation(
+            mc.Annotation(
                 category=ac["foo"],
                 x1=0,
                 y1=0,
@@ -37,7 +37,7 @@ def test_scene_deduplication():
                 y2=10,
                 metadata={"tag": "drop-me-coverage"},
             ),
-            core.Annotation(
+            mc.Annotation(
                 category=ac["foo"],
                 x1=0,
                 y1=0,
@@ -45,7 +45,7 @@ def test_scene_deduplication():
                 y2=20,
                 metadata={"tag": "drop-me-always"},
             ),
-            core.Annotation(
+            mc.Annotation(
                 category=ac["foo"],
                 x1=0,
                 y1=0,
@@ -53,7 +53,7 @@ def test_scene_deduplication():
                 y2=20,
                 metadata={"tag": "keep-me"},
             ),
-            core.Annotation(
+            mc.Annotation(
                 category=ac["bar"],
                 x1=0,
                 y1=0,
@@ -79,18 +79,18 @@ def test_scene_deduplication():
 
 def test_file_read():
     """Make sure reading files works."""
-    image = core.utils.get_blank_image(width=200, height=100, n_channels=3, cval=125)
+    image = mc.utils.get_blank_image(width=200, height=100, n_channels=3, cval=125)
     image[40:60, 40:60, 0] = 0
     with tempfile.TemporaryDirectory() as tempdir:
         fpath = os.path.join(tempdir, "test.png")
-        core.utils.save(image, fpath)
-        np.testing.assert_allclose(core.utils.read(fpath), image)
+        mc.utils.save(image, fpath)
+        np.testing.assert_allclose(mc.utils.read(fpath), image)
         with open(fpath, "rb") as buffer:
-            np.testing.assert_allclose(core.utils.read(buffer), image)
+            np.testing.assert_allclose(mc.utils.read(buffer), image)
         with io.BytesIO() as buffer:
-            core.utils.save(image, buffer, ".png")
+            mc.utils.save(image, buffer, ".png")
             buffer.seek(0)
-            np.testing.assert_allclose(core.utils.read(buffer), image)
+            np.testing.assert_allclose(mc.utils.read(buffer), image)
 
 
 def test_split():
@@ -100,15 +100,15 @@ def test_split():
     group: typing.List[int] = np.random.choice(500, size=n).tolist()
     stratify: typing.List[int] = np.random.choice(2, size=n).tolist()
 
-    splits1A = core.utils.split(
+    splits1A = mc.utils.split(
         items=items, sizes=sizes, stratify=stratify, group=group, random_state=42
     )
 
-    splits1B = core.utils.split(
+    splits1B = mc.utils.split(
         items=items, sizes=sizes, stratify=stratify, group=group, random_state=42
     )
 
-    splits2 = core.utils.split(
+    splits2 = mc.utils.split(
         items=items, sizes=sizes, stratify=stratify, group=group, random_state=10
     )
 
@@ -160,14 +160,14 @@ def test_find_consensus_crops():
         if (
             len(include) == 0
             or len(exclude) == 0
-            or core.utils.compute_iou(include, exclude).max() > 0
+            or mc.utils.compute_iou(include, exclude).max() > 0
         ):
             continue
         crops = mce.find_acceptable_crops(
             include=include, width=width, height=height, exclude=exclude
         )
-        include_coverage = core.utils.compute_coverage(include, crops)
-        exclude_coverage = core.utils.compute_coverage(exclude, crops)
+        include_coverage = mc.utils.compute_coverage(include, crops)
+        exclude_coverage = mc.utils.compute_coverage(exclude, crops)
         # Crops never include an exclusion box.
         assert (exclude_coverage == 0).all()
         # Crops never include a partial inclusion box (all or nothing).
@@ -187,7 +187,7 @@ def test_serialization():
             "contour": np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
         }
     ]
-    scene_o = core.Scene.fromString(scene_i.toString())
+    scene_o = mc.Scene.fromString(scene_i.toString())
     np.testing.assert_equal(scene_o.image, scene_i.image)
     np.testing.assert_equal(scene_o.annotated(), scene_i.annotated())
     assert scene_o.metadata == scene_i.metadata
@@ -196,12 +196,12 @@ def test_serialization():
 
 def test_safe_crop():
     size = 8
-    config = core.AnnotationConfiguration(["square"])
+    config = mc.AnnotationConfiguration(["square"])
     canvas = np.zeros((256, 256, 3), dtype="uint8")
     annotations = []
     for x, y in itertools.permutations(np.arange(32, 256, 64), 2):
         annotations.append(
-            core.Annotation(
+            mc.Annotation(
                 x1=x - size,
                 y1=y - size,
                 x2=x + size,
@@ -216,17 +216,17 @@ def test_safe_crop():
             color=(0, 0, 255),
             thickness=-1,
         )
-    scene = core.Scene(annotation_config=config, image=canvas, annotations=annotations)
+    scene = mc.Scene(annotation_config=config, image=canvas, annotations=annotations)
 
     for wiggle in [True, False]:
         augmenter = A.Compose(
             transforms=[
-                core.augmentations.RandomCropBBoxSafe(
+                mc.augmentations.RandomCropBBoxSafe(
                     width=size * 4, height=size * 4, prob_box=1.0, wiggle=wiggle
                 )
             ],
-            bbox_params=core.augmentations.BboxParams,
-            keypoint_params=core.augmentations.KeypointParams,
+            bbox_params=mc.augmentations.BboxParams,
+            keypoint_params=mc.augmentations.KeypointParams,
         )
         positions = []
         for _ in range(25):
