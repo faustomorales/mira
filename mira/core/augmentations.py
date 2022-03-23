@@ -51,7 +51,6 @@ def wiggle_crop(crop, bboxes, coverage, img_w, img_h, width, height):
     """Wiggle a bbox-safe crop without overlapping new bboxes."""
     include = bboxes[coverage == 1]
     exclude = bboxes[coverage == 0]
-    print("size1", crop[2:] - crop[:2])
     dx1, dy1, success1 = mce.search(
         x=crop[0],
         y=crop[1],
