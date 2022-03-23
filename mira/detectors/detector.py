@@ -130,6 +130,8 @@ class Detector:
     def compute_targets(
         self,
         annotation_groups: typing.List[typing.List[mc.Annotation]],
+        width: int,
+        height: int,
     ) -> typing.Union[typing.List[np.ndarray], np.ndarray]:
         """Compute the expected outputs for a model. *You
         usually should not need this method*. For training,
@@ -178,7 +180,11 @@ class Detector:
         return _loss_from_loss_dict(
             self.training_model(
                 self.compute_inputs(images),
-                self.compute_targets(annotation_groups=annotation_groups),
+                self.compute_targets(
+                    annotation_groups=annotation_groups,
+                    width=images.shape[2],
+                    height=images.shape[1],
+                ),
             )
         )
 

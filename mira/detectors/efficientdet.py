@@ -66,7 +66,7 @@ class EfficientDet(detector.Detector):
             .to(self.device)
         )
 
-    def compute_targets(self, annotation_groups):
+    def compute_targets(self, annotation_groups, width, height):
         bboxes = [
             self.annotation_config.bboxes_from_group(g)[
                 : self.model.config.max_det_per_image  # type: ignore

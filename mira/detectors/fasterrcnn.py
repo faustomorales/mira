@@ -237,7 +237,7 @@ class FasterRCNN(detector.Detector):
     def input_shape(self):
         return self._input_shape
 
-    def compute_targets(self, annotation_groups):
+    def compute_targets(self, annotation_groups, width, height):
         return [
             {
                 "boxes": torch.tensor(b[:, :4], dtype=torch.float32).to(self.device),

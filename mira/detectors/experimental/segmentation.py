@@ -79,10 +79,9 @@ class SMP(mdd.Detector):
             device=self.device,
         ).permute(0, 3, 1, 2)
 
-    def compute_targets(self, annotation_groups):
+    def compute_targets(self, annotation_groups, width, height):
         segmaps = np.zeros(
-            (len(annotation_groups), len(self.annotation_config))
-            + self.input_shape[:2],
+            (len(annotation_groups), len(self.annotation_config), height, width),
             dtype="float32",
         )
         for annotations, segmap in zip(annotation_groups, segmaps):
