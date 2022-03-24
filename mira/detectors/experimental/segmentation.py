@@ -105,9 +105,15 @@ class SMP(mdd.Detector):
                             score=catmap[
                                 contour[:, 0, 1]
                                 .min(axis=0) : contour[:, 0, 1]
-                                .max(axis=0),
-                                contour[:, 0, 0].min() : contour[:, 0, 0].max(),
-                            ].max(),
+                                .max(axis=0)
+                                + 1,
+                                contour[:, 0, 0].min() : contour[:, 0, 0].max() + 1,
+                            ].max()
+                            if np.product(
+                                contour[:, 0].max(axis=0) - contour[:, 0].min(axis=0)
+                            )
+                            > 0
+                            else threshold,
                         )
                         for contour in cv2.findContours(
                             (catmap > threshold).astype("uint8"),
