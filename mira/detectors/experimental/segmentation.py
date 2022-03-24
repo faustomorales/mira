@@ -100,7 +100,14 @@ class SMP(mdd.Detector):
                 [
                     [
                         mc.Annotation(
-                            points=contour[:, 0], category=category, score=threshold
+                            points=contour[:, 0],
+                            category=category,
+                            score=catmap[
+                                contour[:, 0, 1]
+                                .min(axis=0) : contour[:, 0, 1]
+                                .max(axis=0),
+                                contour[:, 0, 0].min() : contour[:, 0, 0].max(),
+                            ].max(),
                         )
                         for contour in cv2.findContours(
                             (catmap > threshold).astype("uint8"),
