@@ -29,10 +29,12 @@ from . import common as mdc
 DEFAULT_SCHEDULER_PARAMS = dict(
     sched="cosine",
     min_lr=1e-5,
-    decay_rate=0.1,
-    warmup_lr=1e-4,
-    warmup_epochs=5,
-    cooldown_epochs=10,
+    decay_rate=1,
+    warmup_lr=0,
+    warmup_epochs=0,
+    cooldown_epochs=0,
+    epochs=100,
+    lr_cycle_limit=0,
 )
 
 DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
@@ -228,22 +230,26 @@ class Detector:
         optimizer = timm.optim.create_optimizer_v2(
             training_model, **(optimizer_params or DEFAULT_OPTIMIZER_PARAMS)
         )
-        scheduler, num_epochs = timm.scheduler.create_scheduler(
-            types.SimpleNamespace(
-                **{**(scheduler_params or DEFAULT_SCHEDULER_PARAMS), "epochs": epochs}
-            ),
+        scheduler, _ = timm.scheduler.create_scheduler(
+            types.SimpleNamespace(**(scheduler_params or DEFAULT_SCHEDULER_PARAMS)),
             optimizer=optimizer,
         )
         train_index = np.arange(len(training)).tolist()
         summaries = []
-        for epoch in range(num_epochs):
+        for epoch in range(epochs):
             with tqdm.trange(len(training) // batch_size) as t:
                 training_model.train()
                 if not train_backbone:
                     self.freeze_backbone()
                 else:
                     self.unfreeze_backbone(batchnorm=train_backbone_bn)
-                t.set_description(f"Epoch {epoch + 1} / {num_epochs}")
+                t.set_description(f"Epoch {epoch + 1} / {epochs}")
+                scheduler.step(
+                    epoch=epoch,
+                    metric=None
+                    if not summaries
+                    else summaries[-1].get("val_loss", summaries[-1]["loss"]),
+                )
                 cum_loss = 0
                 for batchIdx, start in enumerate(range(0, len(training), batch_size)):
                     if batchIdx == 0 and shuffle:
@@ -288,10 +294,7 @@ class Detector:
                             for vstart in range(0, len(validation), batch_size)
                         ]
                     ) / len(validation)
-                scheduler.step(
-                    epoch=epoch,
-                    metric=avg_loss if validation is None else summary["val_loss"],
-                )
+                summary["lr"] = next(g["lr"] for g in optimizer.param_groups)
                 if callbacks is not None:
                     try:
                         for callback in callbacks:
