@@ -217,7 +217,6 @@ def test_safe_crop():
             thickness=-1,
         )
     scene = mc.Scene(annotation_config=config, image=canvas, annotations=annotations)
-
     for wiggle in [True, False]:
         augmenter = A.Compose(
             transforms=[
@@ -243,3 +242,5 @@ def test_safe_crop():
             assert variety > 5
         else:
             assert variety == 1
+        # Make sure it works on empty images.
+        scene.assign(annotations=[]).augment(augmenter)

@@ -47,10 +47,8 @@ class AugmenterProtocol(tx.Protocol):
         pass
 
 
-def wiggle_crop(crop, bboxes, coverage, img_w, img_h, width, height):
+def wiggle_crop(crop, include, exclude, img_w, img_h, width, height):
     """Wiggle a bbox-safe crop without overlapping new bboxes."""
-    include = bboxes[coverage == 1]
-    exclude = bboxes[coverage == 0]
     dx1, dy1, success1 = mce.search(
         x=crop[0],
         y=crop[1],
@@ -63,7 +61,9 @@ def wiggle_crop(crop, bboxes, coverage, img_w, img_h, width, height):
     offset1 = np.array(
         [
             # Don't go into the box.
-            include[:, :2].min(axis=0) - crop[:2],
+            include[:, :2].min(axis=0) - crop[:2]
+            if len(include) > 0
+            else [np.inf, np.inf],
             # Don't let the bottom right edge go
             # further than the safe area.
             (np.array([dx1, dy1]) - [width, height]).clip(0),
@@ -71,7 +71,7 @@ def wiggle_crop(crop, bboxes, coverage, img_w, img_h, width, height):
     ).min(axis=0)
     offset1 = (np.random.uniform(size=2) * offset1).round().astype("int32")
     crop = crop + np.tile(offset1, 2)
-    dx2, dy2, success2 = mce.search(
+    params2 = dict(
         x=img_w - crop[2],
         y=img_h - crop[3],
         exclude=(img_w, img_h, img_w, img_h) - exclude[:, [2, 3, 0, 1]],
@@ -79,10 +79,15 @@ def wiggle_crop(crop, bboxes, coverage, img_w, img_h, width, height):
         max_width=crop[2],
         max_height=crop[3],
     )
-    assert success2, "Unexpected failure when performing second-pass crop wiggle."
+    dx2, dy2, success2 = mce.search(**params2)
+    if not success2:
+        LOGGER.warning("Second pass crop wiggle failed with paramters: %s", params2)
+        return crop
     offset2 = np.array(
         [
-            crop[2:] - include[:, 2:].max(axis=0),
+            crop[2:] - include[:, 2:].max(axis=0)
+            if len(include) > 0
+            else [np.inf, np.inf],
             (np.array([dx2, dy2]) - [width, height]).clip(0),
         ]
     ).min(axis=0)
@@ -160,23 +165,24 @@ class RandomCropBBoxSafe(A.DualTransform):
         )
         # Make sure we have crops that are at least 1px wide.
         crops = crops[(crops[:, 2:] - crops[:, :2]).min(axis=1) > self.min_size]
-        coverage = None
         if len(bboxes) > 0 and len(crops) > 0:
             coverage = mcu.compute_coverage(bboxes, crops)
-        if coverage is not None and random.random() < self.prob_box:
-            contains_box = coverage.max(axis=0) > 0
-            coverage = coverage[:, contains_box] if contains_box.any() else coverage
-            crops = crops[contains_box] if contains_box.any() else crops
+            if random.random() < self.prob_box:
+                contains_box = coverage.max(axis=0) > 0
+                coverage = coverage[:, contains_box] if contains_box.any() else coverage
+                crops = crops[contains_box] if contains_box.any() else crops
+        else:
+            coverage = np.empty((len(bboxes), len(crops)))
         if len(crops) == 0:
             raise ValueError("Failed to find a suitable crop.")
         crop_idx = round(random.random() * (max(crops.shape[0] - 1, 0)))
         LOGGER.debug("Selecting %s from list of %s crops.", crop_idx, len(crops))
         crop = crops[crop_idx]
-        if self.wiggle and coverage is not None and (coverage[:, crop_idx] > 0).any():
+        if self.wiggle:
             crop = wiggle_crop(
                 crop=crop,
-                bboxes=bboxes,
-                coverage=coverage[:, crop_idx],
+                include=bboxes[coverage[:, crop_idx] == 1],
+                exclude=bboxes[coverage[:, crop_idx] == 0],
                 img_w=img_w,
                 img_h=img_h,
                 width=self.width,

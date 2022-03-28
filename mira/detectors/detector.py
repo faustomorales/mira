@@ -235,7 +235,7 @@ class Detector:
             optimizer=optimizer,
         )
         train_index = np.arange(len(training)).tolist()
-        summaries = []
+        summaries: typing.List[typing.Dict[str, typing.Any]] = []
         for epoch in range(epochs):
             with tqdm.trange(len(training) // batch_size) as t:
                 training_model.train()
