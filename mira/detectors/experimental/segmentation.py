@@ -51,6 +51,7 @@ class SMP(mdd.Detector):
         resize_method="pad_to_multiple",
         encoder_name="efficientnet-b0",
         loss=None,
+        max_detections: int = None,
     ):
         if arch is None:
             arch = smp.UnetPlusPlus
@@ -67,6 +68,7 @@ class SMP(mdd.Detector):
         self.set_device(device)
         self.annotation_config = annotation_config
         self.resize_base = 64
+        self.max_detections = max_detections
         self.preprocessing_fn = smp.encoders.get_preprocessing_fn(
             encoder_name, pretrained="imagenet"
         )
@@ -119,7 +121,7 @@ class SMP(mdd.Detector):
                             (catmap > threshold).astype("uint8"),
                             mode=cv2.RETR_LIST,
                             method=cv2.CHAIN_APPROX_SIMPLE,
-                        )[0]
+                        )[0][: self.max_detections]
                     ]
                     for catmap, category in zip(
                         segmap.detach().cpu().numpy(), self.annotation_config
