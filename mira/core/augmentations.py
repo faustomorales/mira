@@ -81,7 +81,7 @@ def wiggle_crop(crop, include, exclude, img_w, img_h, width, height):
     )
     dx2, dy2, success2 = mce.search(**params2)
     if not success2:
-        LOGGER.warning("Second pass crop wiggle failed with paramters: %s", params2)
+        LOGGER.warning("Second pass crop wiggle failed with parameters: %s", params2)
         return crop
     offset2 = np.array(
         [
