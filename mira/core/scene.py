@@ -704,10 +704,27 @@ class SceneCollection:
                 data = tar.extractfile(member)
                 if data is None:
                     raise ValueError("Failed to load data from a file in the tarball.")
-                scene = Scene.fromString(data.read())
-                if directory:
-                    image_filepath = os.path.join(directory, f"{idx}.png")
-                    cv2.imwrite(image_filepath, scene.image)
+                if not directory:
+                    scene = Scene.fromString(data.read())
+                else:
+                    label_filepath = os.path.join(directory, str(idx))
+                    image_filepath = label_filepath + ".png"
+                    if os.path.isfile(label_filepath) and os.path.isfile(
+                        image_filepath
+                    ):
+                        with open(label_filepath, "rb") as f:
+                            scene = Scene.fromString(f.read()).assign(
+                                image=image_filepath
+                            )
+                    else:
+                        scene = Scene.fromString(data.read())
+                        cv2.imwrite(image_filepath, scene.image)
+                        with open(label_filepath, "wb") as f:
+                            f.write(
+                                scene.assign(
+                                    image=np.ones((1, 1, 3), dtype="uint8")
+                                ).toString()
+                            )
                     scene = scene.assign(image=image_filepath)
                 scenes.append(scene)
         if len(scenes) == 0:
