@@ -52,6 +52,7 @@ class SMP(mdd.Detector):
         encoder_name="efficientnet-b0",
         loss=None,
         max_detections: int = None,
+        preprocessing_fn=None,
     ):
         if arch is None:
             arch = smp.UnetPlusPlus
@@ -69,7 +70,7 @@ class SMP(mdd.Detector):
         self.annotation_config = annotation_config
         self.resize_base = 64
         self.max_detections = max_detections
-        self.preprocessing_fn = smp.encoders.get_preprocessing_fn(
+        self.preprocessing_fn = preprocessing_fn or smp.encoders.get_preprocessing_fn(
             encoder_name, pretrained="imagenet"
         )
         self.set_input_shape(None, None)
