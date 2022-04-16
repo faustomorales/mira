@@ -143,11 +143,13 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
                 color=color,
             )
 
-    def extract(self, image):
+    def extract(self, image, pad=0):
         """Extract selection from image (i.e., crop the image
         to the selection).
         """
-        x1, y1, x2, y2 = self.x1y1x2y2()
+        x1, y1, x2, y2 = [
+            v + p for v, p in zip(self.x1y1x2y2(), [-pad, -pad, pad, pad])
+        ]
         return image[max(y1, 0) : max(y2, 0), max(x1, 0) : max(0, x2)]
 
     def crop(self, width, height):
