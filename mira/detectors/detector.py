@@ -5,8 +5,10 @@ import json
 import types
 import typing
 import random
+import logging
 import tempfile
 
+import cv2
 import torch
 import tqdm
 import numpy as np
@@ -41,11 +43,7 @@ DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
 
 ResizeMethod = tx.Literal["fit", "pad"]
 
-
-def _loss_from_loss_dict(loss_dict: typing.Dict[str, torch.Tensor]):
-    if "loss" in loss_dict:
-        return loss_dict["loss"]
-    return sum(loss for loss in loss_dict.values())
+LOGGER = logging.getLogger(__name__)
 
 
 class Detector:
@@ -171,7 +169,13 @@ class Detector:
                 for p in m.parameters():
                     p.requires_grad = True
 
-    def loss_for_batch(self, batch):
+    def loss_for_batch(
+        self,
+        batch,
+        data_dir: str = None,
+        transforms: np.ndarray = None,
+        indices: typing.List[int] = None,
+    ):
         """Compute the loss for a batch of scenes."""
         assert self.training_model.training, "Model not in training mode."
         images, scales = self.resize_to_model_size(batch.images)
@@ -179,16 +183,56 @@ class Detector:
             [ann.resize(scale) for ann in scene.annotations]
             for scene, scale in zip(batch, scales)
         ]
-        return _loss_from_loss_dict(
-            self.training_model(
-                self.compute_inputs(images),
-                self.compute_targets(
-                    annotation_groups=annotation_groups,
-                    width=images.shape[2],
-                    height=images.shape[1],
-                ),
-            )
+        output = self.training_model(
+            self.compute_inputs(images),
+            self.compute_targets(
+                annotation_groups=annotation_groups,
+                width=images.shape[2],
+                height=images.shape[1],
+            ),
         )
+        if data_dir is not None:
+            assert transforms is not None, "Transforms are required for data caching."
+            assert indices is not None, "Image indices are required for data caching."
+            os.makedirs(data_dir, exist_ok=True)
+            for outputIdx, (idx, image, anns, transform, scale, metadata) in enumerate(
+                zip(
+                    indices or np.arange(len(images)),
+                    images,
+                    annotation_groups,
+                    transforms,
+                    scales,
+                    [s.metadata for s in batch],
+                )
+            ):
+                assert cv2.imwrite(
+                    os.path.join(data_dir, str(idx) + ".png"), image[..., ::-1]
+                )
+
+                with open(
+                    os.path.join(data_dir, str(idx) + ".png.metadata.json"),
+                    "w",
+                    encoding="utf8",
+                ) as f:
+                    f.write(json.dumps(metadata or {}))
+                np.savez(
+                    os.path.join(data_dir, str(idx) + ".png.output.npz"),
+                    **{
+                        k: v.detach().cpu()
+                        for k, v in output["output"][outputIdx].items()
+                    },
+                )
+                np.savez(
+                    os.path.join(data_dir, str(idx) + ".png.bboxes.npz"),
+                    bboxes=batch.annotation_config.bboxes_from_group(anns),
+                )
+                np.savez(
+                    os.path.join(data_dir, str(idx) + ".png.transform.npz"),
+                    transform=np.matmul(
+                        np.array([[scale, 0, 0], [0, scale, 0], [0, 0, 1]]), transform
+                    ),
+                )
+        return output["loss"]
 
     def train(
         self,
@@ -204,6 +248,8 @@ class Detector:
         optimizer_params=None,
         scheduler_params=None,
         clip_grad_norm_params=None,
+        data_dir_prefix=None,
+        validation_transforms: np.ndarray = None,
     ):
         """Run training job.
         Args:
@@ -235,9 +281,18 @@ class Detector:
             optimizer=optimizer,
         )
         train_index = np.arange(len(training)).tolist()
+        if validation is not None and validation_transforms is None:
+            LOGGER.warning(
+                "No validation transforms were provided. Assuming identity matrix."
+            )
+            validation_transforms = np.eye(3, 3)[np.newaxis].repeat(
+                len(validation), axis=0
+            )
         summaries: typing.List[typing.Dict[str, typing.Any]] = []
         for epoch in range(epochs):
-            with tqdm.trange(len(training) // batch_size) as t:
+            with tqdm.trange(
+                len(training) // batch_size
+            ) as t, tempfile.TemporaryDirectory(prefix=data_dir_prefix) as tdir:
                 training_model.train()
                 if not train_backbone:
                     self.freeze_backbone()
@@ -255,13 +310,21 @@ class Detector:
                     if batchIdx == 0 and shuffle:
                         random.shuffle(train_index)
                     end = min(start + batch_size, len(train_index))
+                    train_indices = [train_index[idx] for idx in range(start, end)]
                     batch = training.assign(
-                        scenes=[training[train_index[idx]] for idx in range(start, end)]
+                        scenes=[training[idx] for idx in train_indices]
                     )
                     if augmenter is not None:
-                        batch = batch.augment(augmenter=augmenter)
+                        batch, transforms = batch.augment(augmenter=augmenter)
+                    else:
+                        transforms = np.eye(3, 3)[np.newaxis].repeat(len(batch), axis=0)
                     optimizer.zero_grad()
-                    loss = self.loss_for_batch(batch)
+                    loss = self.loss_for_batch(
+                        batch,
+                        data_dir=os.path.join(tdir, "train", str(batchIdx)),
+                        transforms=transforms,
+                        indices=train_indices,
+                    )
                     loss.backward()
                     if clip_grad_norm_params is not None:
                         torch.nn.utils.clip_grad_norm_(
@@ -273,7 +336,6 @@ class Detector:
                     t.set_postfix(loss=avg_loss)
                     t.update()
                 summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
-                summaries.append(summary)
                 if validation is not None:
                     summary["val_loss"] = np.sum(
                         [
@@ -286,12 +348,19 @@ class Detector:
                                             min(vstart + batch_size, len(validation)),
                                         )
                                     ]
-                                )
+                                ),
+                                data_dir=os.path.join(tdir, "val", str(batchIdx)),
+                                transforms=validation_transforms,
+                                indices=np.arange(
+                                    start=vstart, stop=vstart + batch_size
+                                ).tolist(),
                             )
                             .detach()
                             .cpu()
                             .numpy()
-                            for vstart in range(0, len(validation), batch_size)
+                            for batchIdx, vstart in enumerate(
+                                range(0, len(validation), batch_size)
+                            )
                         ]
                     ) / len(validation)
                 summary["lr"] = next(g["lr"] for g in optimizer.param_groups)
@@ -299,12 +368,15 @@ class Detector:
                     try:
                         for callback in callbacks:
                             for k, v in callback(
-                                detector=self, summaries=summaries
+                                detector=self,
+                                summaries=summaries + [summary],
+                                data_dir=tdir,
                             ).items():
                                 summary[k] = v
                     except StopIteration:
                         return summaries
                 t.set_postfix(**summary)
+                summaries.append(summary)
         return summaries
 
     def detect(self, image: np.ndarray, **kwargs) -> typing.List[mc.Annotation]:

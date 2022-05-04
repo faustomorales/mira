@@ -25,6 +25,7 @@ class DETRWrapper(torch.nn.Module):
     def forward(self, samples, targets=None):
         """Forward pass with return specified by whether we are in training."""
         outputs = self.model(samples)
+        loss = None
         if self.training:
             assert targets is not None
             targets_transformed = [
@@ -40,20 +41,22 @@ class DETRWrapper(torch.nn.Module):
             ]
             loss_dict = self.criterion(outputs, targets_transformed)
             weight_dict = self.criterion.weight_dict
-            return {
-                "loss": sum(
-                    loss_dict[k] * weight_dict[k]
-                    for k in loss_dict.keys()
-                    if k in weight_dict
-                )
-            }
-        assert targets is None
-        return self.postprocessors["bbox"](
-            outputs,
-            torch.tensor(
-                np.array([s.shape[-2:] for s in samples]), device=samples.device
+            loss = sum(
+                loss_dict[k] * weight_dict[k]
+                for k in loss_dict.keys()
+                if k in weight_dict
+            )
+        else:
+            loss = None
+        return {
+            "loss": loss,
+            "output": self.postprocessors["bbox"](
+                outputs,
+                torch.tensor(
+                    np.array([s.shape[-2:] for s in samples]), device=samples.device
+                ),
             ),
-        )
+        }
 
 
 DETRBuildArgs = tx.TypedDict(
@@ -213,7 +216,7 @@ class DETR(detector.Detector):
                 )
                 if score > threshold
             ]
-            for labels in y
+            for labels in y["output"]
         ]
 
     @property

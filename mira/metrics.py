@@ -4,7 +4,7 @@ import typing
 
 import numpy as np
 
-from .core import SceneCollection, utils
+from .core import SceneCollection, Annotation, utils
 
 # pylint: disable=unsubscriptable-object
 def precision_recall_curve(
@@ -172,7 +172,7 @@ def crop_error_examples(
     pred_collection: SceneCollection,
     threshold=0.3,
     iou_threshold=0.1,
-):
+) -> typing.List[typing.Dict[str, typing.List[Annotation]]]:
     """Get crops of true positives, false negatives, and false positives.
     Args:
         true_collection: A collection of the ground truth scenes.
@@ -181,7 +181,7 @@ def crop_error_examples(
             scenes.
         iou_threhsold: The IoU threshold for counting a box as a true positive.
     Returns:
-        A list of dicts with "true_positives", "false_positives", and "false_negatives"
+        A list of dicts with "tps", "fps", and "fns"
         with the same length of the input collections. The values in each dict
         are crops from the original image.
     """
@@ -199,7 +199,7 @@ def crop_error_examples(
         iou = utils.compute_iou(boxes_pred, boxes_true)
         examples.append(
             {
-                "true_positives": [
+                "tps": [
                     ann.assign(score=pred_scene.annotations[predIdx].score)
                     for ann, iou, predIdx in zip(
                         true_scene.annotations, iou.max(axis=0), iou.argmax(axis=0)
@@ -208,7 +208,7 @@ def crop_error_examples(
                 ]
                 if (pred_scene.annotations and true_scene.annotations)
                 else [],
-                "false_positives": [
+                "fps": [
                     ann
                     for ann, iou in zip(
                         pred_scene.annotations,
@@ -220,7 +220,7 @@ def crop_error_examples(
                 ]
                 if len(pred_scene.annotations) > 0
                 else [],
-                "false_negatives": [
+                "fns": [
                     ann
                     for ann, iou in zip(
                         true_scene.annotations,

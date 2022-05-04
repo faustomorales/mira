@@ -53,7 +53,7 @@ ax_original.set_title('Original')
 ax_augmenter.set_title('Augmented')
 
 scene.show(ax=ax_original)
-scene.augment(augmenter).show(ax=ax_augmenter)
+scene.augment(augmenter)[0].show(ax=ax_augmenter)
 ```
 
 .. image:: _static/example_augmentation.png

@@ -337,25 +337,36 @@ class Scene:
 
     def augment(
         self, augmenter: augmentations.AugmenterProtocol = None, min_visibility=None
-    ) -> "Scene":
+    ) -> typing.Tuple["Scene", np.ndarray]:
         """Obtain an augmented version of the scene using the given augmenter.
 
         Returns:
             The augmented scene
         """
         if augmenter is None:
-            return self
+            return self, np.eye(3)
+        base_image = self.image
+        base_points = np.array(
+            [
+                [0, 0],
+                [base_image.shape[1], 0],
+                [base_image.shape[1], base_image.shape[0]],
+                [0, base_image.shape[0]],
+            ]
+        )
         transformed = augmenter(
-            image=self.image,
+            image=base_image,
             bboxes=[ann.x1y1x2y2() for ann in self.annotations],
             bbox_indices=[
                 annIdx if ann.is_rect else -1
                 for annIdx, ann in enumerate(self.annotations)
             ],
-            keypoints=utils.flatten(
+            keypoints=base_points.tolist()
+            + utils.flatten(
                 [ann.points.tolist() for ann in self.annotations if not ann.is_rect]
             ),
-            keypoint_indices=utils.flatten(
+            keypoint_indices=[(None, None)] * 4
+            + utils.flatten(
                 [
                     [(annIdx, keyIdx) for keyIdx in range(len(ann.points))]
                     for annIdx, ann in enumerate(self.annotations)
@@ -365,6 +376,7 @@ class Scene:
         )
 
         image = transformed["image"]
+
         annotations = [
             Annotation(
                 x1=x1,
@@ -387,9 +399,10 @@ class Scene:
             for annIdx, keypoints in pd.concat(
                 [
                     pd.DataFrame(
-                        transformed["keypoint_indices"], columns=["annIdx", "keyIdx"]
+                        transformed["keypoint_indices"][4:],
+                        columns=["annIdx", "keyIdx"],
                     ),
-                    pd.DataFrame(transformed["keypoints"], columns=["x", "y"]),
+                    pd.DataFrame(transformed["keypoints"][4:], columns=["x", "y"]),
                 ],
                 axis=1,
             ).groupby(["annIdx"])
@@ -415,6 +428,9 @@ class Scene:
         return self.assign(
             image=image,
             annotations=annotations,
+        ), cv2.getPerspectiveTransform(
+            src=np.array(base_points, dtype="float32")[:4],
+            dst=np.array(transformed["keypoints"][:4], dtype="float32"),
         )
 
     def to_subcrops(self, max_size: int) -> typing.List["Scene"]:
@@ -597,9 +613,10 @@ class SceneCollection:
     def augment(self, augmenter: augmentations.AugmenterProtocol, **kwargs):
         """Obtained an augmented version of the given collection.
         All arguments passed to `Scene.augment`"""
-        return self.assign(
-            scenes=[s.augment(augmenter=augmenter, **kwargs) for s in self.scenes]
+        scenes, transforms = zip(
+            *[s.augment(augmenter=augmenter, **kwargs) for s in self.scenes]
         )
+        return self.assign(scenes=scenes), np.stack(transforms)
 
     def split(
         self,

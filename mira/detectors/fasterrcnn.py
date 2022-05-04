@@ -92,6 +92,80 @@ BACKBONE_TO_PARAMS = {
 }
 
 
+class ModifiedFasterRCNN(torchvision.models.detection.faster_rcnn.FasterRCNN):
+    """Modified version of Faster RCNN that always computes inferences."""
+
+    def forward(self, images, targets=None):
+        if self.training:
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    if isinstance(boxes, torch.Tensor):
+                        torch._assert(
+                            len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                        )
+                    else:
+                        torch._assert(
+                            False,
+                            f"Expected target boxes to be of type Tensor, got {type(boxes)}.",
+                        )
+
+        original_image_sizes: typing.List[typing.Tuple[int, int]] = []
+        for img in images:
+            val = img.shape[-2:]
+            torch._assert(
+                len(val) == 2,
+                f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}",
+            )
+            original_image_sizes.append((val[0], val[1]))
+
+        images, targets = self.transform(images, targets)
+
+        # Check for degenerate boxes
+        if targets is not None:
+            for target_idx, target in enumerate(targets):
+                boxes = target["boxes"]
+                degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
+                if degenerate_boxes.any():
+                    # print the first degenerate box
+                    bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
+                    degen_bb: typing.List[float] = boxes[bb_idx].tolist()
+                    torch._assert(
+                        False,
+                        "All bounding boxes should have positive height and width."
+                        f" Found invalid box {degen_bb} for target at index {target_idx}.",
+                    )
+
+        features = self.backbone(images.tensors)
+        if isinstance(features, torch.Tensor):
+            features = typing.OrderedDict([("0", features)])
+        proposals, proposal_losses = self.rpn(images, features, targets)
+        if self.training:
+            self.roi_heads.training = False
+            detections, _ = self.roi_heads(features, proposals, images.image_sizes)
+            self.roi_heads.training = True
+            _, detector_losses = self.roi_heads(
+                features, proposals, images.image_sizes, targets
+            )
+        else:
+            detections, detector_losses = self.roi_heads(
+                features, proposals, images.image_sizes, targets
+            )
+
+        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)  # type: ignore[operator]
+
+        losses = {}
+        losses.update(detector_losses)
+        losses.update(proposal_losses)
+        return {
+            "loss": sum(loss for loss in losses.values()) if losses else None,
+            "output": detections,
+        }
+
+
 class FasterRCNN(detector.Detector):
     """A wrapper around the FasterRCNN models in torchvision."""
 
@@ -139,7 +213,7 @@ class FasterRCNN(detector.Detector):
                 for k, v in self.backbone_kwargs.items()
             }
         )
-        self.model = torchvision.models.detection.faster_rcnn.FasterRCNN(
+        self.model = ModifiedFasterRCNN(
             self.backbone,
             len(annotation_config) + 1,
             rpn_anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
@@ -224,7 +298,7 @@ class FasterRCNN(detector.Detector):
                 )
                 if score > threshold
             ]
-            for labels in y
+            for labels in y["output"]
         ]
 
     def set_input_shape(self, width, height):

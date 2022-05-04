@@ -26,14 +26,15 @@ version = "0.0.0"
 
 # See https://python-poetry.org/docs/versions/ for allowed version specification formats
 [tool.poetry.dependencies]
-python = ">=3.7.2,<3.11"
+python = ">=3.7.10,<3.9"
 pandas = "*"
 protobuf = "*"
-albumentations = "*"
+albumentations = ">=1.1.0"
 numpy = "*"
 tqdm = "*"
 matplotlib = "*"
 validators = "*"
+segmentation-models-pytorch = {version = "*", optional = true}
 timm = {version = "*", optional = true}
 omegaconf = {version = "*", optional = true}
 torchvision = {version = "*", optional = true}
@@ -49,9 +50,8 @@ types-pkg-resources = "*"
 types-six = "*"
 torch = "*"
 torchserve = "*"
-segmentation-models-pytorch = "*"
-jupyterlab = "^3.3.2"
-torch-model-archiver = "^0.5.3"
+jupyterlab = "*"
+torch-model-archiver = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -59,7 +59,7 @@ vcs = "git"
 style = "semver"
 
 [tool.poetry.extras]
-detectors = ["timm", "omegaconf", "torchvision"]
+detectors = ["timm", "omegaconf", "torchvision", "segmentation-models-pytorch"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=mira --cov-report=term-missing"
@@ -86,7 +86,9 @@ disable = [
     "too-many-arguments",
     "too-many-branches",
     "too-many-statements",
-    "duplicate-code"
+    "duplicate-code",
+    "protected-access",
+    "wrong-import-position"
 ]
 extension-pkg-whitelist = [
     "cv2"

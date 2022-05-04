@@ -21,9 +21,12 @@ class SMPWrapper(torch.nn.Module):
         if in training mode, otherwise returning the
         sigmoid outputs."""
         y = self.model(x)
-        if self.training:
-            return {"loss": self.loss(y_pred=y.contiguous(), y_true=targets)}
-        return y.sigmoid()
+        return {
+            "loss": self.loss(y_pred=y.contiguous(), y_true=targets)
+            if self.training
+            else None,
+            "output": [{"map": yi} for yi in y.sigmoid()],
+        }
 
 
 # pylint: disable=too-many-instance-attributes
@@ -125,11 +128,11 @@ class SMP(mdd.Detector):
                         )[0][: self.max_detections]
                     ]
                     for catmap, category in zip(
-                        segmap.detach().cpu().numpy(), self.annotation_config
+                        segmap["map"].detach().cpu().numpy(), self.annotation_config
                     )
                 ]
             )
-            for segmap in y
+            for segmap in y["output"]
         ]
 
     @property

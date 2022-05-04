@@ -88,12 +88,20 @@ class EfficientDet(detector.Detector):
                 np.array([b[:, :4] for b in bboxes]), dtype=torch.float32
             ).to(self.device),
             "cls": torch.tensor(np.array([b[:, -1] for b in bboxes])).to(self.device),
+            "img_scale": None,
+            "img_size": None,
         }
 
     # pylint: disable=protected-access
     def invert_targets(self, y, threshold=0.5, **kwargs):
         config = self.model.config
-        class_out, box_out = y
+        class_out, box_out = [
+            [
+                torch.stack([yi[f"{k}_{level}"] for yi in y["output"]])
+                for level in range(len(y["output"][0].keys()) // 2)
+            ]
+            for k in ["class_out", "box_out"]
+        ]
         class_out, box_out, indices, classes = effdet.bench._post_process(
             class_out,
             box_out,
@@ -103,9 +111,9 @@ class EfficientDet(detector.Detector):
         )
         img_scale, img_size = None, None
         detections = effdet.bench._batch_detection(
-            class_out.shape[0],
-            class_out.cpu(),
-            box_out.cpu(),
+            typing.cast(torch.Tensor, class_out).shape[0],
+            typing.cast(torch.Tensor, class_out).cpu(),
+            typing.cast(torch.Tensor, box_out).cpu(),
             self.anchors.boxes.cpu(),
             indices.cpu(),
             classes.cpu(),

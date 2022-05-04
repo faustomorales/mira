@@ -364,7 +364,11 @@ def transform_bboxes(
         return bboxes
     x1, y1, x2, y2 = bboxes.T
     vertices = np.array([x1, y1, x2, y1, x2, y2, x1, y2]).T.reshape((-1, 4, 2))
-    transformed_vertices = cv2.transform(vertices, m=M)
+    transformed_vertices = (
+        cv2.transform(vertices, m=M)
+        if M.shape == (2, 3)
+        else cv2.perspectiveTransform(vertices.astype("float32"), m=M)
+    )
     if clip:
         assert (
             width is not None and height is not None

@@ -229,7 +229,7 @@ def test_safe_crop():
         )
         positions = []
         for _ in range(25):
-            augmented = scene.augment(augmenter)
+            augmented = scene.augment(augmenter)[0]
             assert len(augmented.annotations) == 1
             x1, y1, x2, y2 = augmented.annotations[0].x1y1x2y2()
             positions.append([x1, y1, x2, y2])
