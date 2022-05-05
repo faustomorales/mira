@@ -303,7 +303,7 @@ graph = ["objgraph (>=1.7.2)"]
 
 [[package]]
 name = "efficientnet-pytorch"
-version = "0.7.1"
+version = "0.6.3"
 description = "EfficientNet implemented in PyTorch."
 category = "main"
 optional = true
@@ -1004,7 +1004,7 @@ python-versions = ">=3.6"
 [package.dependencies]
 numpy = [
     {version = ">=1.21.2", markers = "python_version >= \"3.6\" and platform_system == \"Darwin\" and platform_machine == \"arm64\""},
-    {version = ">=1.19.3", markers = "python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\""},
+    {version = ">=1.19.3", markers = "python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\" or python_version >= \"3.9\""},
     {version = ">=1.14.5", markers = "python_version >= \"3.7\""},
     {version = ">=1.17.3", markers = "python_version >= \"3.8\""},
 ]
@@ -1445,16 +1445,17 @@ numpy = ">=1.16.5,<1.23.0"
 
 [[package]]
 name = "segmentation-models-pytorch"
-version = "0.1.0"
+version = "0.2.1"
 description = "Image segmentation models with pre-trained backbones. PyTorch."
 category = "main"
 optional = true
 python-versions = ">=3.0.0"
 
 [package.dependencies]
-efficientnet-pytorch = ">=0.5.1"
+efficientnet-pytorch = "0.6.3"
 pretrainedmodels = "0.7.4"
-torchvision = ">=0.3.0"
+timm = "0.4.12"
+torchvision = ">=0.5.0"
 
 [package.extras]
 test = ["pytest"]
@@ -1552,7 +1553,7 @@ all = ["imagecodecs (>=2021.7.30)", "matplotlib (>=3.2)", "lxml"]
 
 [[package]]
 name = "timm"
-version = "0.5.4"
+version = "0.4.12"
 description = "(Unofficial) PyTorch Image Models"
 category = "main"
 optional = true
@@ -1789,8 +1790,8 @@ detectors = ["timm", "omegaconf", "torchvision", "segmentation-models-pytorch"]
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.7.10,<3.9"
-content-hash = "a43d7ab79960914ae84dfb553fbb5535a1edabc3e59aafc9b2b3b4582518d9cd"
+python-versions = ">=3.7.10,<3.10"
+content-hash = "9365c9c40725bef9bea1a393d3be0a4ef699dabda705b905db8b8560fa7fea8a"
 
 [metadata.files]
 albumentations = [
@@ -2036,7 +2037,7 @@ dill = [
     {file = "dill-0.3.4.zip", hash = "sha256:9f9734205146b2b353ab3fec9af0070237b6ddae78452af83d2fca84d739e675"},
 ]
 efficientnet-pytorch = [
-    {file = "efficientnet_pytorch-0.7.1.tar.gz", hash = "sha256:00b9b261effce59d2d47aae2ad238c29a2a65175470f41ada7ecac439b7c1ee1"},
+    {file = "efficientnet_pytorch-0.6.3.tar.gz", hash = "sha256:6667459336893e9bf6367de3788ba449fed97f65da3b6782bf2204b6273a319f"},
 ]
 entrypoints = [
     {file = "entrypoints-0.4-py3-none-any.whl", hash = "sha256:f174b5ff827504fd3cd97cc3f8649f3693f51538c7e4bdf3ef002c8429d42f9f"},
@@ -2897,8 +2898,8 @@ scipy = [
     {file = "scipy-1.7.3.tar.gz", hash = "sha256:ab5875facfdef77e0a47d5fd39ea178b58e60e454a4c85aa1e52fcb80db7babf"},
 ]
 segmentation-models-pytorch = [
-    {file = "segmentation_models_pytorch-0.1.0-py3-none-any.whl", hash = "sha256:e328af0998363cd2d03b936e224e08c68e87da3f03f19a3f1f5fe78262f43c77"},
-    {file = "segmentation_models_pytorch-0.1.0.tar.gz", hash = "sha256:dd4500710d9150c8b11b4f0c4e8c2020c8310aa257a1d1a7df8a19b9dbb4fd04"},
+    {file = "segmentation_models_pytorch-0.2.1-py3-none-any.whl", hash = "sha256:98822571470867fb0f416c112c32f7f1d21702dd32195ec8f7736932c2de0486"},
+    {file = "segmentation_models_pytorch-0.2.1.tar.gz", hash = "sha256:86744552b04c6bedf7e10f7928791894d8d9b399b9ed58ed1a3236d2bf69ead6"},
 ]
 send2trash = [
     {file = "Send2Trash-1.8.0-py3-none-any.whl", hash = "sha256:f20eaadfdb517eaca5ce077640cb261c7d2698385a6a0f072a4a5447fd49fa08"},
@@ -2933,8 +2934,8 @@ tifffile = [
     {file = "tifffile-2021.11.2.tar.gz", hash = "sha256:153e31fa1d892f482fabb2ae9f2561fa429ee42d01a6f67e58cee13637d9285b"},
 ]
 timm = [
-    {file = "timm-0.5.4-py3-none-any.whl", hash = "sha256:0592c8fd2d46d0769c0b7e954b3dacea93769eee40dabb4bd7f2acb85243b588"},
-    {file = "timm-0.5.4.tar.gz", hash = "sha256:5d7b92e66a76c432009aba90d515ea7a882aae573415a7c5269e3617df901c1f"},
+    {file = "timm-0.4.12-py3-none-any.whl", hash = "sha256:dba6b1702b7d24bf9f0f1c2fc394b4ee28f93cde5404f1dc732d63ccd00533b6"},
+    {file = "timm-0.4.12.tar.gz", hash = "sha256:b14be70dbd4528b5ca8657cf5bc2672c7918c3d9ebfbffe80f4785b54e884b1e"},
 ]
 tinycss2 = [
     {file = "tinycss2-1.1.1-py3-none-any.whl", hash = "sha256:fe794ceaadfe3cf3e686b22155d0da5780dd0e273471a51846d0a02bc204fec8"},
