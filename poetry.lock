@@ -1790,8 +1790,8 @@ detectors = ["timm", "omegaconf", "torchvision", "segmentation-models-pytorch"]
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.7.10,<3.10"
-content-hash = "9365c9c40725bef9bea1a393d3be0a4ef699dabda705b905db8b8560fa7fea8a"
+python-versions = ">=3.7.9,<3.10"
+content-hash = "9ba47e0c684e3c2dc185c9ce0aaae81177493353b015f8d1221d76bbba0d7a05"
 
 [metadata.files]
 albumentations = [
