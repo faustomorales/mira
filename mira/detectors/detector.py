@@ -21,8 +21,7 @@ try:
     import model_archiver.model_packaging as marmp
     import model_archiver.model_packaging_utils as marmpu
 except ImportError:
-    marmp = None
-    marmpu = None
+    marmp, marmpu = None, None
 
 from .. import metrics as mm
 from .. import core as mc
@@ -41,33 +40,22 @@ DEFAULT_SCHEDULER_PARAMS = dict(
 
 DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
 
-ResizeMethod = tx.Literal["fit", "pad"]
-
 LOGGER = logging.getLogger(__name__)
 
 
 class Detector:
     """Abstract base class for a detector."""
 
-    @property
-    @abc.abstractmethod
-    def anchor_boxes(self) -> np.ndarray:
-        """Return the list of anchor boxes in xyxy format."""
-
     model: torch.nn.Module
     backbone: torch.nn.Module
     annotation_config: mc.AnnotationConfiguration
-    training_model: torch.nn.Module
     device: typing.Any
-    resize_method: tx.Literal["pad", "fit", "pad_to_multiple"]
-    resize_base: typing.Optional[int]
+    resize_config: mdc.ResizeConfig
 
     def set_device(self, device):
         """Set the device for training and inference tasks."""
         self.device = torch.device(device)
         self.model.to(self.device)
-        if hasattr(self, "training_model"):
-            self.training_model.to(self.device)  # type: ignore
 
     @abc.abstractmethod
     def invert_targets(
@@ -82,35 +70,12 @@ class Detector:
         self, images: typing.List[np.ndarray]
     ) -> typing.Tuple[np.ndarray, np.ndarray]:
         """Resize a series of images to the current model's size."""
-        height, width = self.input_shape[:2]
-        padded, scales, _ = mdc.resize(
-            images,
-            resize_method=self.resize_method,
-            height=height,
-            width=width,
-            base=getattr(self, "resize_base", None),
-        )
-        # Ensure that scaling maintains aspect ratio.
-        np.testing.assert_allclose(*scales.T)
-        return padded, scales[:, 0]
-
-    @property
-    @abc.abstractmethod
-    def input_shape(self) -> typing.Tuple[int, int, int]:
-        """Obtain the input shape for this model."""
+        padded, scales, _ = mdc.resize(images, self.resize_config)
+        return padded, scales
 
     @abc.abstractmethod
-    def set_input_shape(self, width: int, height: int):
-        """Set the input shape for this model."""
-
-    @abc.abstractmethod
-    def serve_module_string(self, enable_flexible_size: bool) -> str:
+    def serve_module_string(self) -> str:
         """Return the module string used as part of TorchServe."""
-
-    @property
-    @abc.abstractmethod
-    def serve_module_index(self) -> dict:
-        """Return the class index -> label mapping for TorchServe."""
 
     @abc.abstractmethod
     def compute_inputs(self, images: np.ndarray) -> np.ndarray:
@@ -169,6 +134,10 @@ class Detector:
                 for p in m.parameters():
                     p.requires_grad = True
 
+    @abc.abstractmethod
+    def compute_anchor_boxes(self, width: int, height: int) -> np.ndarray:
+        """Return the list of anchor boxes in xyxy format."""
+
     def loss_for_batch(
         self,
         batch,
@@ -177,13 +146,19 @@ class Detector:
         indices: typing.List[int] = None,
     ):
         """Compute the loss for a batch of scenes."""
-        assert self.training_model.training, "Model not in training mode."
+        assert self.model.training, "Model not in training mode."
         images, scales = self.resize_to_model_size(batch.images)
+        LOGGER.debug(
+            "Obtained images array with size %s and scales varying from %s to %s",
+            images.shape,
+            scales.min(),
+            scales.max(),
+        )
         annotation_groups = [
             [ann.resize(scale) for ann in scene.annotations]
-            for scene, scale in zip(batch, scales)
+            for scene, scale in zip(batch, scales[:, ::-1])
         ]
-        output = self.training_model(
+        output = self.model(
             self.compute_inputs(images),
             self.compute_targets(
                 annotation_groups=annotation_groups,
@@ -195,7 +170,14 @@ class Detector:
             assert transforms is not None, "Transforms are required for data caching."
             assert indices is not None, "Image indices are required for data caching."
             os.makedirs(data_dir, exist_ok=True)
-            for outputIdx, (idx, image, anns, transform, scale, metadata) in enumerate(
+            for outputIdx, (
+                idx,
+                image,
+                anns,
+                transform,
+                (scaley, scalex),
+                metadata,
+            ) in enumerate(
                 zip(
                     indices or np.arange(len(images)),
                     images,
@@ -229,10 +211,11 @@ class Detector:
                 np.savez(
                     os.path.join(data_dir, str(idx) + ".png.transform.npz"),
                     transform=np.matmul(
-                        np.array([[scale, 0, 0], [0, scale, 0], [0, 0, 1]]), transform
+                        np.array([[scalex, 0, 0], [0, scaley, 0], [0, 0, 1]]),
+                        transform,
                     ),
                 )
-        return output["loss"]
+        return {"loss": output["loss"], "shape": images.shape}
 
     def train(
         self,
@@ -269,12 +252,8 @@ class Detector:
             scheduler_params: Passed to timm.schduler.create_scheduler to build
                 the scheduler.
         """
-        training_model = (
-            self.training_model if hasattr(self, "training_model") else self.model
-        )
-        assert training_model is not None
         optimizer = timm.optim.create_optimizer_v2(
-            training_model, **(optimizer_params or DEFAULT_OPTIMIZER_PARAMS)
+            self.model, **(optimizer_params or DEFAULT_OPTIMIZER_PARAMS)
         )
         scheduler, _ = timm.scheduler.create_scheduler(
             types.SimpleNamespace(**(scheduler_params or DEFAULT_SCHEDULER_PARAMS)),
@@ -293,7 +272,7 @@ class Detector:
             with tqdm.trange(
                 len(training) // batch_size
             ) as t, tempfile.TemporaryDirectory(prefix=data_dir_prefix) as tdir:
-                training_model.train()
+                self.model.train()
                 if not train_backbone:
                     self.freeze_backbone()
                 else:
@@ -319,18 +298,26 @@ class Detector:
                     else:
                         transforms = np.eye(3, 3)[np.newaxis].repeat(len(batch), axis=0)
                     optimizer.zero_grad()
-                    loss = self.loss_for_batch(
+                    batch_loss = self.loss_for_batch(
                         batch,
                         data_dir=os.path.join(tdir, "train", str(batchIdx)),
                         transforms=transforms,
                         indices=train_indices,
                     )
-                    loss.backward()
+                    try:
+                        batch_loss["loss"].backward()
+                    except RuntimeError as e:
+                        LOGGER.warning(
+                            "Failed to process batch with size %s due to: %s.",
+                            batch_loss["shape"],
+                            e,
+                        )
+                        continue
                     if clip_grad_norm_params is not None:
                         torch.nn.utils.clip_grad_norm_(
-                            training_model.parameters(), **clip_grad_norm_params
+                            self.model.parameters(), **clip_grad_norm_params
                         )
-                    cum_loss += loss.detach().cpu().numpy()
+                    cum_loss += batch_loss["loss"].detach().cpu().numpy()
                     avg_loss = cum_loss / end
                     optimizer.step()
                     t.set_postfix(loss=avg_loss)
@@ -354,7 +341,7 @@ class Detector:
                                 indices=np.arange(
                                     start=vstart, stop=vstart + batch_size
                                 ).tolist(),
-                            )
+                            )["loss"]
                             .detach()
                             .cpu()
                             .numpy()
@@ -379,61 +366,51 @@ class Detector:
                 summaries.append(summary)
         return summaries
 
-    def detect(self, image: np.ndarray, **kwargs) -> typing.List[mc.Annotation]:
-        """Run detection for a given image. All other args passed to invert_targets()
-
-        Args:
-            image: The image to run detection on
-
-        Returns:
-            A list of annotations
-        """
-        self.model.eval()
-        images, scales = self.resize_to_model_size([image])
-        with torch.no_grad():
-            annotations = self.invert_targets(
-                self.model(self.compute_inputs(images)), **kwargs
-            )[0]
-        return [a.resize(1 / scales[0]) for a in annotations]
-
-    def detect_batch(
+    def detect(
         self,
-        images: typing.List[np.ndarray],
+        images: typing.Union[typing.List[np.ndarray], np.ndarray],
         batch_size: int = 32,
         **kwargs,
-    ) -> typing.List[typing.List[mc.Annotation]]:
+    ) -> typing.Union[
+        typing.List[typing.List[mc.Annotation]], typing.List[mc.Annotation]
+    ]:
         """
-        Perform object detection on a batch of images.
+        Perform object detection on a batch of images or single image.
 
         Args:
-            images: A list of images
+            images: A list of images or a single image.
             threshold: The detection threshold for the images
             batch_size: The batch size to use with the underlying model
 
         Returns:
             A list of lists of annotations.
         """
+        single = isinstance(images, np.ndarray) and len(images.shape) == 3
         self.model.eval()
         annotation_groups = []
-        for start in range(0, len(images), batch_size):
-            current_images, current_scales = self.resize_to_model_size(
-                images[start : start + batch_size]
-            )
-            annotation_groups.extend(
-                [
-                    [a.resize(1 / scale) for a in annotations]
-                    for scale, annotations in zip(
-                        current_scales,
-                        self.invert_targets(
-                            self.model(
-                                self.compute_inputs(current_images),
-                            ),
-                            **kwargs,
-                        ),
+        with torch.no_grad():
+            for start in range(0, 1 if single else len(images), batch_size):
+                current_images, current_scales = self.resize_to_model_size(
+                    typing.cast(
+                        typing.List[np.ndarray],
+                        [images] if single else images[start : start + batch_size],
                     )
-                ]
-            )
-        return annotation_groups
+                )
+                annotation_groups.extend(
+                    [
+                        [a.resize(1 / scale) for a in annotations]
+                        for scale, annotations in zip(
+                            current_scales[:, ::-1],
+                            self.invert_targets(
+                                self.model(
+                                    self.compute_inputs(current_images),
+                                ),
+                                **kwargs,
+                            ),
+                        )
+                    ]
+                )
+        return annotation_groups[0] if single else annotation_groups
 
     def mAP(
         self,
@@ -460,7 +437,7 @@ class Detector:
                 scene.assign(annotations=annotations)
                 for scene, annotations in zip(
                     collection,
-                    self.detect_batch(
+                    self.detect(
                         images=collection.images,
                         threshold=min_threshold,
                         batch_size=batch_size,
@@ -480,7 +457,6 @@ class Detector:
         directory=".",
         archive_format: tx.Literal["default", "no-archive"] = "default",
         score_threshold: float = 0.5,
-        enable_flexible_size=False,
         model_version="1.0",
     ):
         """Build a TorchServe-compatible MAR file for this model."""
@@ -495,11 +471,19 @@ class Detector:
             handler_file = os.path.join(tdir, "object_detector.py")
             torch.save(self.model.state_dict(prefix="model."), serialized_file)
             with open(index_to_name_file, "w", encoding="utf8") as f:
-                f.write(json.dumps(self.serve_module_index))
-            with open(model_file, "w", encoding="utf8") as f:
                 f.write(
-                    self.serve_module_string(enable_flexible_size=enable_flexible_size)
+                    json.dumps(
+                        {
+                            **{0: "__background__"},
+                            **{
+                                str(idx + 1): label.name
+                                for idx, label in enumerate(self.annotation_config)
+                            },
+                        }
+                    )
                 )
+            with open(model_file, "w", encoding="utf8") as f:
+                f.write(self.serve_module_string())
             with open(handler_file, "w", encoding="utf8") as f:
                 f.write(
                     pkg_resources.resource_string(
@@ -525,10 +509,10 @@ class Detector:
                 args=args, manifest=marmpu.ModelExportUtils.generate_manifest_json(args)
             )
 
-    @property
-    def anchor_sizes(self):
-        """Get an array of anchor sizes (i.e., width and height)."""
-        return np.diff(
-            self.anchor_boxes.reshape((-1, 2, 2)),
-            axis=1,
-        )[:, 0, :]
+    def load_weights(self, filepath: str):
+        """Load weights from disk."""
+        self.model.load_state_dict(torch.load(filepath, map_location=self.device))
+
+    def save_weights(self, filepath: str):
+        """Save weights to disk."""
+        torch.save(self.model.state_dict(), filepath)

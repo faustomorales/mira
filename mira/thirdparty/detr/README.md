@@ -1,1 +1,0 @@
-This submodule was downloaded from https://github.com/facebookresearch/detr. It is included in this package because the original repository was not pip-installable.

@@ -43,24 +43,7 @@ class RetinaNetObjectDetector(torch.nn.Module):
             ),
             **self.detector_kwargs,
         )
-        self.set_input_shape(width=INPUT_WIDTH, height=INPUT_HEIGHT)
-
-    @property
-    def input_shape(self):
-        return self._input_shape
-
-    def set_input_shape(self, width, height):
-        self._input_shape = (height, width, 3)
-        self.model.transform.fixed_size = (height, width)  # type: ignore
-        self.model.transform.min_size = (min(width, height),)  # type: ignore
-        self.model.transform.max_size = max(height, width)  # type: ignore
+        self.model.transform = mdc.convert_rcnn_transform(self.model.transform)
 
     def forward(self, x):
-        return mdc.torchvision_serve_inference(
-            self,
-            x=x,
-            resize_method=RESIZE_METHOD,
-            height=INPUT_HEIGHT,
-            width=INPUT_WIDTH,
-            base=None,
-        )
+        return mdc.torchvision_serve_inference(self, x=x, resize_config=RESIZE_CONFIG)

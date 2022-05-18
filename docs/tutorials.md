@@ -77,23 +77,23 @@ dataset = datasets.load_voc2012(subset='val')
 # set up to use COCO labels.
 detector_faster = detectors.FasterRCNN(pretrained_top=True)
 
-detector_ed = detectors.EfficientDet(pretrained_top=True)
+detector_retina = detectors.RetinaNet(pretrained_top=True)
 
 # Pick an example scene
 scene = dataset[5]
 
 # Set up side-by-side plots
-fig, (ax_ed, ax_faster) = plt.subplots(ncols=2, figsize=(10, 5))
-ax_ed.set_title('EfficientDet')
+fig, (ax_retinanet, ax_faster) = plt.subplots(ncols=2, figsize=(10, 5))
+ax_retinanet.set_title('EfficientDet')
 ax_faster.set_title('FasterRCNN')
 
 # We get predicted scenes from each detector. Detectors return
 # lists of annotations for a given image. So we can just replace
 # (assign) those new annotations to the scene to get a new scene
 # reflecting the detector's prediction.
-predicted_ed = scene.assign(
-    annotations=detector_ed.detect(scene.image),
-    annotation_config=detector_ed.annotation_config
+predicted_retinanet = scene.assign(
+    annotations=detector_retina.detect(scene.image),
+    annotation_config=detector_retina.annotation_config
 )
 predicted_faster = scene.assign(
     annotations=detector_faster.detect(scene.image, threshold=0.4),
@@ -102,7 +102,7 @@ predicted_faster = scene.assign(
 
 # Plot both predictions. The calls to annotation() get us
 # an image with the bounding boxes drawn.
-_ = predicted_ed.show(ax=ax_ed)
+_ = predicted_retinanet.show(ax=ax_retinanet)
 _ = predicted_faster.show(ax=ax_faster)
 ```
 

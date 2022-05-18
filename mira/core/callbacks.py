@@ -45,9 +45,6 @@ def best_weights(
             maximizes it).
         key: What name to use for the saved flag.
     """
-    if torch is None:
-        raise ValueError("You must install pytorch to use this callback.")
-
     # pylint: disable=unused-argument
     def callback(detector, summaries, data_dir):
         saved = False
@@ -58,7 +55,7 @@ def best_weights(
             else summaries_df[metric].idxmin()
         )
         if best_idx == len(summaries_df) - 1:
-            torch.save(detector.model.state_dict(), filepath)
+            detector.save_weights(filepath)
             saved = True
         return {key: saved}
 

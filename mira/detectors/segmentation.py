@@ -2,8 +2,9 @@ import torch
 import cv2
 import numpy as np
 import segmentation_models_pytorch as smp
-from .. import detector as mdd
-from ... import core as mc
+from . import detector as mdd
+from . import common as mdc
+from .. import core as mc
 
 
 class SMPWrapper(torch.nn.Module):
@@ -21,6 +22,8 @@ class SMPWrapper(torch.nn.Module):
         if in training mode, otherwise returning the
         sigmoid outputs."""
         y = self.model(x)
+        if torch.jit.is_tracing():
+            return y.sigmoid()
         return {
             "loss": self.loss(y_pred=y.contiguous(), y_true=targets)
             if self.training
@@ -39,7 +42,6 @@ class SMP(mdd.Detector):
         arch: A segmentation_models_pytorch model class to use.
             Defaults to smp.UnetPlusPlus.
         device: The device to load the model onto.
-        resize_method: The method to use for resizing images.
         encoder_name: The name of the encoder to use with the
             smp model.
         loss: The loss function use. Defaults to
@@ -49,34 +51,41 @@ class SMP(mdd.Detector):
     def __init__(
         self,
         annotation_config: mc.AnnotationConfiguration,
-        arch=None,
+        pretrained_backbone: bool = True,
+        arch="UnetPlusPlus",
         device="cpu",
-        resize_method="pad_to_multiple",
-        encoder_name="efficientnet-b0",
-        loss=None,
         max_detections: int = None,
+        detector_kwargs=None,
+        backbone_kwargs=None,
         preprocessing_fn=None,
+        resize_config: mdc.ResizeConfig = None,
     ):
-        if arch is None:
-            arch = smp.UnetPlusPlus
-        self.resize_method = resize_method
-        self.model = SMPWrapper(
-            model=arch(encoder_name=encoder_name, classes=len(annotation_config)),
-            loss=loss
-            or smp.losses.DiceLoss(
+        self.backbone_kwargs = {
+            "encoder_name": "efficientnet-b0",
+            **(backbone_kwargs or {}),
+        }
+        self.detector_kwargs = {
+            "loss": smp.losses.DiceLoss(
                 smp.losses.MULTILABEL_MODE,
             ),
+            **(detector_kwargs or {}),
+        }
+        self.model = SMPWrapper(
+            model=getattr(smp, arch)(
+                **self.backbone_kwargs,
+                classes=len(annotation_config),
+                encoder_weights="imagenet" if pretrained_backbone else None,
+            ),
+            **self.detector_kwargs,
         )
-        self.training_model = self.model
         self.backbone = self.model.backbone
         self.set_device(device)
         self.annotation_config = annotation_config
-        self.resize_base = 64
         self.max_detections = max_detections
         self.preprocessing_fn = preprocessing_fn or smp.encoders.get_preprocessing_fn(
-            encoder_name, pretrained="imagenet"
+            self.backbone_kwargs["encoder_name"], pretrained="imagenet"
         )
-        self.set_input_shape(None, None)
+        self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 64}
 
     def compute_inputs(self, images):
         return torch.tensor(
@@ -95,10 +104,6 @@ class SMP(mdd.Detector):
                 index = self.annotation_config.index(annotation.category)
                 annotation.draw(segmap[index], color=1, opaque=True)
         return torch.tensor(segmaps, device=self.device)
-
-    @property
-    def input_shape(self):
-        return self._input_shape
 
     def invert_targets(self, y, threshold=0.5, **kwargs):
         return [
@@ -121,11 +126,15 @@ class SMP(mdd.Detector):
                             > 0
                             else threshold,
                         )
-                        for contour in cv2.findContours(
-                            (catmap > threshold).astype("uint8"),
-                            mode=cv2.RETR_LIST,
-                            method=cv2.CHAIN_APPROX_SIMPLE,
-                        )[0][: self.max_detections]
+                        for contour in sorted(
+                            cv2.findContours(
+                                (catmap > threshold).astype("uint8"),
+                                mode=cv2.RETR_LIST,
+                                method=cv2.CHAIN_APPROX_SIMPLE,
+                            )[0],
+                            key=cv2.contourArea,
+                            reverse=True,
+                        )[: self.max_detections]
                     ]
                     for catmap, category in zip(
                         segmap["map"].detach().cpu().numpy(), self.annotation_config
@@ -135,12 +144,5 @@ class SMP(mdd.Detector):
             for segmap in y["output"]
         ]
 
-    @property
-    def serve_module_index(self):
+    def serve_module_string(self):
         raise NotImplementedError
-
-    def serve_module_string(self, enable_flexible_size=False):
-        raise NotImplementedError
-
-    def set_input_shape(self, width, height):
-        self._input_shape = (height, width, 3)

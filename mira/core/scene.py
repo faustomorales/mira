@@ -311,7 +311,7 @@ class Scene:
             for ann in self.annotations:
                 x1, y1, _, _ = ann.x1y1x2y2()
                 ax.annotate(
-                    text=ann.category.name,
+                    ann.category.name,
                     xy=(x1, y1),
                     fontsize=fontsize,
                     backgroundcolor=(1, 1, 1, 0.5),

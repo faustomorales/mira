@@ -1,5 +1,6 @@
 # pylint: disable=too-many-instance-attributes
 import typing
+import logging
 import functools
 import collections
 
@@ -13,7 +14,9 @@ import typing_extensions as tx
 from .. import datasets as mds
 from .. import core as mc
 from . import detector
-from . import common
+from . import common as mdc
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ModifiedRetinaNet(torchvision.models.detection.retinanet.RetinaNet):
@@ -47,6 +50,7 @@ class ModifiedRetinaNet(torchvision.models.detection.retinanet.RetinaNet):
 
         # transform the input
         images, targets = self.transform(images, targets)
+        LOGGER.debug("Transformed images to shapes %s", images.tensors.shape)
 
         # Check for degenerate boxes
         if targets is not None:
@@ -162,7 +166,7 @@ EXTRA_BLOCKS_MAP = {
         in_channels=256,
         out_channels=256,
     ),
-    "noop": common.LastLevelNoop,
+    "noop": mdc.LastLevelNoop,
 }
 
 DEFAULT_ANCHOR_KWARGS = {
@@ -208,12 +212,12 @@ class RetinaNet(detector.Detector):
         pretrained_top: bool = False,
         backbone: tx.Literal["resnet50"] = "resnet50",
         device="cpu",
-        resize_method: detector.ResizeMethod = "fit",
         backbone_kwargs=None,
         detector_kwargs=None,
         anchor_kwargs=None,
+        resize_config: mdc.ResizeConfig = None,
     ):
-        self.resize_method = resize_method
+        super().__init__()
         self.annotation_config = annotation_config
         if pretrained_top:
             pretrained_backbone = False
@@ -243,6 +247,7 @@ class RetinaNet(detector.Detector):
                 for k, v in self.backbone_kwargs.items()
             }
         )
+        self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 128}
         # In mira, backbone has meaning because we use it to skip
         # training these weights. But the FPN includes feature extraction
         # layers that we likely we want to change, so we distinguish
@@ -256,6 +261,7 @@ class RetinaNet(detector.Detector):
             ),
             **self.detector_kwargs,
         )
+        self.model.transform = mdc.convert_rcnn_transform(self.model.transform)
         if pretrained_top:
             if "weights_url" not in BACKBONE_TO_PARAMS[backbone]:
                 raise ValueError(
@@ -269,45 +275,21 @@ class RetinaNet(detector.Detector):
             )
             torchvision.models.detection.retinanet.overwrite_eps(self.model, 0.0)
         self.set_device(device)
-        self.set_input_shape(
-            width=min(self.model.transform.min_size),  # type: ignore
-            height=min(self.model.transform.min_size),  # type: ignore
-        )
         self.backbone_name = backbone
 
-    @property
-    def training_model(self):
-        """Training model for this detector."""
-        return self.model
-
-    def serve_module_string(self, enable_flexible_size=False):
+    def serve_module_string(self):
         return (
             pkg_resources.resource_string("mira", "detectors/assets/serve/retinanet.py")
             .decode("utf-8")
             .replace("NUM_CLASSES", str(len(self.annotation_config) + 1))
-            .replace("INPUT_WIDTH", str(self.input_shape[1]))
-            .replace("INPUT_HEIGHT", str(self.input_shape[0]))
             .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
-            .replace(
-                "RESIZE_METHOD",
-                "None" if enable_flexible_size else f"'{self.resize_method}'",
-            )
+            .replace("RESIZE_CONFIG", str(self.resize_config))
             .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
             .replace("ANCHOR_KWARGS", str(self.anchor_kwargs))
             .replace(
                 "BACKBONE_KWARGS", str({**self.backbone_kwargs, "pretrained": False})
             )
         )
-
-    @property
-    def serve_module_index(self):
-        return {
-            **{0: "__background__"},
-            **{
-                str(idx + 1): label.name
-                for idx, label in enumerate(self.annotation_config)
-            },
-        }
 
     def compute_inputs(self, images):
         images = np.float32(images) / 255.0
@@ -338,16 +320,6 @@ class RetinaNet(detector.Detector):
             for labels in y["output"]
         ]
 
-    def set_input_shape(self, width, height):
-        self._input_shape = (height, width, 3)
-        self.model.transform.fixed_size = (height, width)  # type: ignore
-        self.model.transform.min_size = (min(width, height),)  # type: ignore
-        self.model.transform.max_size = max(height, width)  # type: ignore
-
-    @property
-    def input_shape(self):
-        return self._input_shape
-
     def compute_targets(self, annotation_groups, width, height):
         return [
             {
@@ -359,24 +331,7 @@ class RetinaNet(detector.Detector):
             ]
         ]
 
-    @property
-    def anchor_boxes(self):
-        image_list = torchvision.models.detection.image_list.ImageList(
-            tensors=torch.tensor(
-                np.random.randn(1, *self.input_shape).transpose(0, 3, 1, 2),
-                dtype=torch.float32,
-            ).to(self.device),
-            image_sizes=[self.input_shape[:2]],
-        )
-        feature_maps = self.model.backbone(image_list.tensors)  # type: ignore
-        assert len(feature_maps) == len(
-            self.model.anchor_generator.sizes  # type: ignore
-        ), f"Number of feature maps ({len(feature_maps)}) does not match number of anchor sizes ({len(self.model.anchor_generator.sizes)}). This model is misconfigured."  # type: ignore
-        return np.concatenate(
-            [
-                a.cpu()
-                for a in self.model.anchor_generator(  # type: ignore
-                    image_list=image_list, feature_maps=list(feature_maps.values())
-                )
-            ]
+    def compute_anchor_boxes(self, width, height):
+        return mdc.get_torchvision_anchor_boxes(
+            model=self.model, device=self.device, height=height, width=width
         )

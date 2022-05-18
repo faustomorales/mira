@@ -200,20 +200,23 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
             )[-2]
         ]
 
-    def resize(self, scale: float) -> "Annotation":
+    def resize(self, scale: typing.Union[float, np.ndarray]) -> "Annotation":
         """Obtain a revised selection with a given
         uniform scaling."""
         return (
             self.assign(
                 **{
-                    k: int(getattr(self, k) * scale)
-                    for k in (
+                    k: int(getattr(self, k) * s)
+                    for k, s in zip(
                         [
                             "x1",
                             "y1",
                             "x2",
                             "y2",
-                        ]
+                        ],
+                        [scale[0], scale[1], scale[0], scale[1]]
+                        if isinstance(scale, np.ndarray)
+                        else [scale, scale, scale, scale],
                     )
                 }
             )
