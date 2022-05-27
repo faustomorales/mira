@@ -132,7 +132,7 @@ def train(
                 summary["lr"] = next(g["lr"] for g in optimizer.param_groups)
                 if on_epoch_end:
                     try:
-                        summary = {**summary, **on_epoch_end(summaries)}
+                        summary = {**summary, **on_epoch_end(summaries + [summary])}
                     except StopIteration:
                         terminated = True
                 t.set_postfix(**summary)
