@@ -76,7 +76,7 @@ def test_detector_edge_cases(detector_class):
     detector.model.train()
 
     # Verify that we can handle a batch of all edge cases.
-    detector.loss_for_batch(dataset)
+    detector.loss(dataset)
     for scene in dataset:
         # Verify that we can handle each edge case on its own.
-        detector.loss_for_batch(dataset.assign(scenes=[scene]))
+        detector.loss(dataset.assign(scenes=[scene]))

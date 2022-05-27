@@ -149,7 +149,11 @@ def data_dir_to_collections(data_dir: str, threshold: float, detector: "Detector
                 [np.load(f + ".transform.npz")["transform"] for f in images],
             )
             for split, images in [
-                (split, glob.glob(os.path.join(data_dir, split, "*", "*.png")))
+                (
+                    split,
+                    glob.glob(os.path.join(data_dir, split, "*.png"))
+                    + glob.glob(os.path.join(data_dir, split, "*", "*.png")),
+                )
                 for split in ["train", "val"]
             ]
         ]

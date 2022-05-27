@@ -4,16 +4,12 @@ import abc
 import json
 import types
 import typing
-import random
 import logging
 import tempfile
 
 import cv2
 import torch
-import tqdm
 import numpy as np
-import timm.optim
-import timm.scheduler
 import pkg_resources
 import typing_extensions as tx
 
@@ -27,20 +23,18 @@ from .. import metrics as mm
 from .. import core as mc
 from . import common as mdc
 
-DEFAULT_SCHEDULER_PARAMS = dict(
-    sched="cosine",
-    min_lr=1e-5,
-    decay_rate=1,
-    warmup_lr=0,
-    warmup_epochs=0,
-    cooldown_epochs=0,
-    epochs=100,
-    lr_cycle_limit=0,
-)
-
-DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
-
 LOGGER = logging.getLogger(__name__)
+
+TrainItem = typing.NamedTuple(
+    "TrainItem",
+    [
+        ("split", tx.Literal["train", "val"]),
+        ("index", int),
+        ("transform", np.ndarray),
+        ("scene", mc.Scene),
+    ],
+)
+TrainState = tx.TypedDict("TrainState", {"directory": tempfile.TemporaryDirectory})
 
 
 class Detector:
@@ -138,13 +132,13 @@ class Detector:
     def compute_anchor_boxes(self, width: int, height: int) -> np.ndarray:
         """Return the list of anchor boxes in xyxy format."""
 
-    def loss_for_batch(
+    def loss(
         self,
-        batch,
+        batch: mc.SceneCollection,
         data_dir: str = None,
         transforms: np.ndarray = None,
         indices: typing.List[int] = None,
-    ):
+    ) -> torch.Tensor:
         """Compute the loss for a batch of scenes."""
         assert self.model.training, "Model not in training mode."
         images, scales = self.resize_to_model_size(batch.images)
@@ -179,7 +173,7 @@ class Detector:
                 metadata,
             ) in enumerate(
                 zip(
-                    indices or np.arange(len(images)),
+                    indices,
                     images,
                     annotation_groups,
                     transforms,
@@ -187,184 +181,133 @@ class Detector:
                     [s.metadata for s in batch],
                 )
             ):
-                assert cv2.imwrite(
-                    os.path.join(data_dir, str(idx) + ".png"), image[..., ::-1]
-                )
+                base_path = os.path.join(data_dir, str(idx))
+                assert cv2.imwrite(base_path + ".png", image[..., ::-1])
 
                 with open(
-                    os.path.join(data_dir, str(idx) + ".png.metadata.json"),
+                    base_path + ".png.metadata.json",
                     "w",
                     encoding="utf8",
                 ) as f:
                     f.write(json.dumps(metadata or {}))
                 np.savez(
-                    os.path.join(data_dir, str(idx) + ".png.output.npz"),
+                    base_path + ".png.output.npz",
                     **{
                         k: v.detach().cpu()
                         for k, v in output["output"][outputIdx].items()
                     },
                 )
                 np.savez(
-                    os.path.join(data_dir, str(idx) + ".png.bboxes.npz"),
+                    base_path + ".png.bboxes.npz",
                     bboxes=batch.annotation_config.bboxes_from_group(anns),
                 )
                 np.savez(
-                    os.path.join(data_dir, str(idx) + ".png.transform.npz"),
+                    base_path + ".png.transform.npz",
                     transform=np.matmul(
                         np.array([[scalex, 0, 0], [0, scaley, 0], [0, 0, 1]]),
                         transform,
                     ),
                 )
-        return {"loss": output["loss"], "shape": images.shape}
+        return output["loss"]
 
+    # pylint: disable=consider-using-with
     def train(
         self,
         training: mc.SceneCollection,
         validation: mc.SceneCollection = None,
-        batch_size: int = 1,
         augmenter: mc.augmentations.AugmenterProtocol = None,
         train_backbone: bool = True,
         train_backbone_bn: bool = True,
-        epochs=100,
-        shuffle=True,
         callbacks: typing.List[mc.callbacks.CallbackProtocol] = None,
-        optimizer_params=None,
-        scheduler_params=None,
-        clip_grad_norm_params=None,
         data_dir_prefix=None,
         validation_transforms: np.ndarray = None,
+        **kwargs,
     ):
-        """Run training job.
+        """Run training job. All other arguments passed to mira.core.training.train.
+
         Args:
             training: The collection of training images
             validation: The collection of validation images
-            batch_size: The batch size to use for training
             augmenter: The augmenter for generating samples
             train_backbone: Whether to fit the backbone.
-            epochs: The number of epochs to train.
-            shuffle: Whether to shuffle the training data on each epoch.
-            callbacks: A list of functions that accept the detector as well
-                as a list of previous summaries and returns a dict of summary keys
-                and values which will be added to the current summary. It can raise
-                StopIteration to stop training early.
-            optimizer_params: Passed to timm.optim.create_optimizer_v2 to build
-                the optimizer.
-            scheduler_params: Passed to timm.schduler.create_scheduler to build
-                the scheduler.
+            train_backbone_bn: Whether to fit backbone batchnorm layers.
+            callbacks: A list of training callbacks.
+            data_dir_prefix: Prefix for the intermediate model artifacts directory.
+            validation_transforms: A list of transforms for the images in the validation
+                set. If not provided, we assume the identity transform.
         """
-        optimizer = timm.optim.create_optimizer_v2(
-            self.model, **(optimizer_params or DEFAULT_OPTIMIZER_PARAMS)
-        )
-        scheduler, _ = timm.scheduler.create_scheduler(
-            types.SimpleNamespace(**(scheduler_params or DEFAULT_SCHEDULER_PARAMS)),
-            optimizer=optimizer,
-        )
-        train_index = np.arange(len(training)).tolist()
-        if validation is not None and validation_transforms is None:
-            LOGGER.warning(
-                "No validation transforms were provided. Assuming identity matrix."
+        state: TrainState = {
+            "directory": tempfile.TemporaryDirectory(prefix=data_dir_prefix),
+        }
+
+        def loss(items: typing.List[TrainItem]) -> torch.Tensor:
+            return self.loss(
+                training.assign(scenes=[i.scene for i in items]),
+                data_dir=os.path.join(state["directory"].name, items[0].split),
+                transforms=np.stack([i.transform for i in items]),
+                indices=[i.index for i in items],
             )
-            validation_transforms = np.eye(3, 3)[np.newaxis].repeat(
-                len(validation), axis=0
-            )
-        summaries: typing.List[typing.Dict[str, typing.Any]] = []
-        for epoch in range(epochs):
-            with tqdm.trange(
-                len(training) // batch_size
-            ) as t, tempfile.TemporaryDirectory(prefix=data_dir_prefix) as tdir:
-                self.model.train()
-                if not train_backbone:
-                    self.freeze_backbone()
-                else:
-                    self.unfreeze_backbone(batchnorm=train_backbone_bn)
-                t.set_description(f"Epoch {epoch + 1} / {epochs}")
-                scheduler.step(
-                    epoch=epoch,
-                    metric=None
-                    if not summaries
-                    else summaries[-1].get("val_loss", summaries[-1]["loss"]),
+
+        def augment(items: typing.List[TrainItem]):
+            if not augmenter:
+                return items
+            return [
+                TrainItem(
+                    split=base.split,
+                    index=base.index,
+                    scene=scene,
+                    transform=np.matmul(transform, base.transform),
                 )
-                cum_loss = 0
-                for batchIdx, start in enumerate(range(0, len(training), batch_size)):
-                    if batchIdx == 0 and shuffle:
-                        random.shuffle(train_index)
-                    end = min(start + batch_size, len(train_index))
-                    train_indices = [train_index[idx] for idx in range(start, end)]
-                    batch = training.assign(
-                        scenes=[training[idx] for idx in train_indices]
-                    )
-                    if augmenter is not None:
-                        batch, transforms = batch.augment(augmenter=augmenter)
-                    else:
-                        transforms = np.eye(3, 3)[np.newaxis].repeat(len(batch), axis=0)
-                    optimizer.zero_grad()
-                    batch_loss = self.loss_for_batch(
-                        batch,
-                        data_dir=os.path.join(tdir, "train", str(batchIdx)),
-                        transforms=transforms,
-                        indices=train_indices,
-                    )
-                    try:
-                        batch_loss["loss"].backward()
-                    except RuntimeError as e:
-                        LOGGER.warning(
-                            "Failed to process batch with size %s due to: %s.",
-                            batch_loss["shape"],
-                            e,
+                for (scene, transform), base in zip(
+                    [i.scene.augment(augmenter) for i in items], items
+                )
+            ]
+
+        def on_epoch_end(summaries: typing.List[dict]):
+            summary: typing.Dict[str, typing.Any] = {}
+            if callbacks:
+                for callback in callbacks:
+                    for k, v in callback(
+                        detector=self,
+                        summaries=summaries + [summary],
+                        data_dir=state["directory"].name,
+                    ).items():
+                        summary[k] = v
+            state["directory"] = tempfile.TemporaryDirectory(prefix=data_dir_prefix)
+            return summary
+
+        def on_epoch_start():
+            if train_backbone:
+                self.unfreeze_backbone(batchnorm=train_backbone_bn)
+            else:
+                self.freeze_backbone()
+
+        mc.training.train(
+            model=self.model,
+            training=[
+                TrainItem(split="train", index=index, transform=np.eye(3), scene=scene)
+                for index, scene in enumerate(training)
+            ],
+            validation=[
+                TrainItem(split="val", index=index, transform=transform, scene=scene)
+                for index, (scene, transform) in enumerate(
+                    zip(
+                        validation or [],
+                        (
+                            validation_transforms
+                            or np.eye(3, 3)[np.newaxis].repeat(len(validation), axis=0)
                         )
-                        continue
-                    if clip_grad_norm_params is not None:
-                        torch.nn.utils.clip_grad_norm_(
-                            self.model.parameters(), **clip_grad_norm_params
-                        )
-                    cum_loss += batch_loss["loss"].detach().cpu().numpy()
-                    avg_loss = cum_loss / end
-                    optimizer.step()
-                    t.set_postfix(loss=avg_loss)
-                    t.update()
-                summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
-                if validation is not None:
-                    summary["val_loss"] = np.sum(
-                        [
-                            self.loss_for_batch(
-                                validation.assign(
-                                    scenes=[
-                                        validation[idx]
-                                        for idx in range(
-                                            vstart,
-                                            min(vstart + batch_size, len(validation)),
-                                        )
-                                    ]
-                                ),
-                                data_dir=os.path.join(tdir, "val", str(batchIdx)),
-                                transforms=validation_transforms,
-                                indices=np.arange(
-                                    start=vstart, stop=vstart + batch_size
-                                ).tolist(),
-                            )["loss"]
-                            .detach()
-                            .cpu()
-                            .numpy()
-                            for batchIdx, vstart in enumerate(
-                                range(0, len(validation), batch_size)
-                            )
-                        ]
-                    ) / len(validation)
-                summary["lr"] = next(g["lr"] for g in optimizer.param_groups)
-                if callbacks is not None:
-                    try:
-                        for callback in callbacks:
-                            for k, v in callback(
-                                detector=self,
-                                summaries=summaries + [summary],
-                                data_dir=tdir,
-                            ).items():
-                                summary[k] = v
-                    except StopIteration:
-                        return summaries
-                t.set_postfix(**summary)
-                summaries.append(summary)
-        return summaries
+                        if validation
+                        else [],
+                    )
+                )
+            ],
+            loss=loss,
+            augment=augment,
+            on_epoch_start=on_epoch_start,
+            on_epoch_end=on_epoch_end,
+            **kwargs,
+        )
 
     def detect(
         self,
