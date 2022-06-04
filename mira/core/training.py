@@ -110,9 +110,9 @@ def train(
                     optimizer.step()
                     t.set_postfix(loss=avg_loss)
                     t.update()
-                summary: typing.Dict[str, typing.Any] = {"loss": avg_loss}
+                summaries.append({"loss": avg_loss})
                 if validation:
-                    summary["val_loss"] = np.sum(
+                    summaries[-1]["val_loss"] = np.sum(
                         [
                             loss(
                                 [
@@ -129,14 +129,13 @@ def train(
                             for vstart in range(0, len(validation), batch_size)
                         ]
                     ) / len(validation)
-                summary["lr"] = next(g["lr"] for g in optimizer.param_groups)
+                summaries[-1]["lr"] = next(g["lr"] for g in optimizer.param_groups)
                 if on_epoch_end:
                     try:
-                        summary = {**summary, **on_epoch_end(summaries + [summary])}
+                        summaries[-1] = {**summaries[-1], **on_epoch_end(summaries)}
                     except StopIteration:
                         terminated = True
-                t.set_postfix(**summary)
-                summaries.append(summary)
+                t.set_postfix(**summaries[-1])
             if terminated:
                 break
     except KeyboardInterrupt:

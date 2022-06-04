@@ -4,6 +4,8 @@ import typing
 import cv2
 import numpy as np
 
+from . import utils
+
 log = logging.getLogger(__name__)
 
 
@@ -71,14 +73,7 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
             self.x1, self.y1, self.x2, self.y2 = map(
                 lambda v: int(round(v)), [x1, y1, x2, y2]  # type: ignore
             )
-            self.points = np.array(
-                [
-                    [self.x1, self.y1],
-                    [self.x2, self.y1],
-                    [self.x2, self.y2],
-                    [self.x1, self.y2],
-                ]
-            )
+            self.points = utils.box2pts(self.x1, self.y1, self.x2, self.y2)
         else:
             self.points = np.array(points).round().astype("int32")
             if (self.points[0] != self.points[-1]).any():

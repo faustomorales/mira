@@ -42,11 +42,7 @@ import albumentations as A
 dataset = datasets.load_voc2012(subset='val')
 scene = dataset[15]
 
-augmenter = A.Compose(
-    [A.HorizontalFlip(p=1), A.GaussianBlur()],
-    bbox_params=core.augmentations.BboxParams,
-    keypoint_params=core.augmentations.KeypointParams,
-)
+augmenter = core.augmentations.compose([A.HorizontalFlip(p=1), A.GaussianBlur()])
 
 fig, (ax_original, ax_augmenter) = plt.subplots(ncols=2, figsize=(10, 5))
 ax_original.set_title('Original')
@@ -139,11 +135,7 @@ training, validation = trainval.train_test_split(
 )
 
 # Create an augmenter
-augmenter = A.Compose(
-    [A.HorizontalFlip(p=1), A.GaussianBlur()],
-    bbox_params=core.augmentations.BboxParams,
-    keypoint_params=core.augmentations.KeypointParams,
-)
+augmenter = core.augmentations.compose([A.HorizontalFlip(p=1), A.GaussianBlur()])
 
 # Run training job
 detector.train(

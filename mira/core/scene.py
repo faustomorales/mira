@@ -354,12 +354,14 @@ class Scene:
                 [0, base_image.shape[0]],
             ]
         )
+        # We include bbox placeholders for polygon annotations in order to
+        # support mira.core.augmentations.RandomCropBboxSafe for now.
         transformed = augmenter(
             image=base_image,
             bboxes=[ann.x1y1x2y2() for ann in self.annotations],
             bbox_indices=[
-                annIdx if ann.is_rect else -1
-                for annIdx, ann in enumerate(self.annotations)
+                annIdx if ann.is_rect else -annIdx
+                for annIdx, ann in enumerate(self.annotations, start=1)
             ],
             keypoints=base_points.tolist()
             + utils.flatten(
@@ -369,7 +371,7 @@ class Scene:
             + utils.flatten(
                 [
                     [(annIdx, keyIdx) for keyIdx in range(len(ann.points))]
-                    for annIdx, ann in enumerate(self.annotations)
+                    for annIdx, ann in enumerate(self.annotations, start=1)
                     if not ann.is_rect
                 ]
             ),
@@ -383,18 +385,18 @@ class Scene:
                 y1=y1,
                 x2=x2,
                 y2=y2,
-                category=self.annotations[annIdx].category,
-                metadata=self.annotations[annIdx].metadata,
+                category=self.annotations[annIdx - 1].category,
+                metadata=self.annotations[annIdx - 1].metadata,
             )
             for (x1, y1, x2, y2), annIdx in zip(
                 transformed["bboxes"], transformed["bbox_indices"]
             )
-            if annIdx > -1
+            if annIdx > 0
         ] + [
             Annotation(
                 points=keypoints.sort_values("keyIdx")[["x", "y"]].values,
-                category=self.annotations[annIdx].category,
-                metadata=self.annotations[annIdx].metadata,
+                category=self.annotations[annIdx - 1].category,
+                metadata=self.annotations[annIdx - 1].metadata,
             )
             for annIdx, keypoints in pd.concat(
                 [

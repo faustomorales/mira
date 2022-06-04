@@ -2,7 +2,9 @@ import random
 import typing
 import logging
 
+import cv2
 import numpy as np
+import pandas as pd
 import albumentations as A
 import typing_extensions as tx
 
@@ -18,6 +20,15 @@ KeypointParams = A.KeypointParams(
     format="xy", label_fields=["keypoint_indices"], remove_invisible=False
 )
 
+CoarseDropoutExpansion = tx.TypedDict(
+    "CoarseDropoutExpansion",
+    {
+        "holes": typing.List[typing.Tuple[int, int, int, int]],
+        "holes_cnt": typing.List[np.ndarray],
+        "holes_ids": typing.Iterable[int],
+    },
+)
+
 AugmentedResult = tx.TypedDict(
     "AugmentedResult",
     {
@@ -28,6 +39,11 @@ AugmentedResult = tx.TypedDict(
         "keypoint_indices": typing.List[typing.Tuple[int, int]],
     },
 )
+
+
+def compose(transforms: typing.List[A.BasicTransform]):
+    """Build a list of augmenters into an augmentation pipeline."""
+    return A.Compose(transforms, bbox_params=BboxParams, keypoint_params=KeypointParams)
 
 
 # pylint: disable=too-few-public-methods
@@ -221,3 +237,176 @@ class RandomCropBBoxSafe(A.DualTransform):
         dx = params["x_min"] * params["cols"]
         dy = params["y_min"] * params["rows"]
         return (keypoint[0] - dx, keypoint[1] - dy, *keypoint[2:])
+
+
+def expand_dropout(
+    holes_bbox: typing.List[typing.Tuple[int, int, int, int]],
+    bboxes_and_ids: typing.List[typing.Tuple[int, np.ndarray]],
+    contours_and_ids: typing.List[typing.Tuple[int, np.ndarray]],
+) -> CoarseDropoutExpansion:
+    """Expand holes from coarse dropout to incorporate bounding boxes and contours."""
+    bboxes = np.array([box for _, box in bboxes_and_ids])
+    contours = [contour for _, contour in contours_and_ids]
+    bboxes_contours = [mcu.box2pts(*b) for b in bboxes]
+    include_bbox_prev = np.zeros(len(bboxes), dtype="bool")
+    include_cont_prev = np.zeros(len(contours), dtype="bool")
+    holes_cont: typing.List[np.ndarray] = []
+    while True:
+        combined_hole_contours = [
+            mcu.box2pts(*hole) for hole in holes_bbox
+        ] + holes_cont
+        include_bbox = (
+            (
+                mcu.compute_contour_iou(
+                    bboxes_contours,
+                    combined_hole_contours,
+                ).max(axis=1)
+                > 0
+            )
+            if bboxes_and_ids and combined_hole_contours
+            else include_bbox_prev
+        )
+        include_cont = (
+            mcu.compute_contour_iou(contours, combined_hole_contours).max(axis=1) > 0
+            if contours_and_ids and combined_hole_contours
+            else np.zeros(len(contours), dtype="bool")
+        )
+        if np.array_equal(include_bbox_prev, include_bbox) and np.array_equal(
+            include_cont_prev, include_cont
+        ):
+            break
+        holes_bbox = holes_bbox + [
+            typing.cast(
+                typing.Tuple[int, int, int, int], (bbox.round().astype("int32"))
+            )
+            for bbox, include in zip(bboxes, include_bbox & ~include_bbox_prev)
+            if include
+        ]
+        holes_cont = holes_cont + [
+            cont
+            for cont, include in zip(contours, include_cont & ~include_cont_prev)
+            if include
+        ]
+        include_bbox_prev = include_bbox
+        include_cont_prev = include_cont
+    return {
+        "holes": holes_bbox,
+        "holes_cnt": holes_cont,
+        "holes_ids": set(
+            [
+                annId
+                for (annId, _), include in zip(bboxes_and_ids, include_bbox)
+                if include
+            ]
+            + [
+                annId
+                for (annId, _), include in zip(contours_and_ids, include_cont)
+                if include
+            ]
+        ),
+    }
+
+
+# pylint: disable=no-member,arguments-renamed,signature-differs
+class CoarseDropout(A.CoarseDropout):
+    """CoarseDropout of the rectangular regions in the image. Same
+    as albumentations.CoarseDropout but modified to support
+    bounding boxes and keypoints.
+    """
+
+    def apply(
+        self,
+        image: np.ndarray,
+        fill_value: typing.Union[int, float],
+        holes: typing.Iterable[typing.Tuple[int, int, int, int]],
+        **params
+    ) -> np.ndarray:
+        holes_cnt = params["holes_cnt"]
+        image = image.copy()
+        image = A.functional.cutout(image, holes, fill_value)
+        cv2.drawContours(
+            image, holes_cnt, contourIdx=-1, color=fill_value, thickness=-1
+        )
+        return image
+
+    def apply_to_mask(
+        self,
+        mask: np.ndarray,
+        mask_fill_value: typing.Union[int, float],
+        holes: typing.Iterable[typing.Tuple[int, int, int, int]],
+        **params
+    ) -> np.ndarray:
+        if mask_fill_value is None:
+            return mask
+        holes_cnt = params["holes_cnt"]
+        mask = mask.copy()
+        mask = A.functional.cutout(mask, holes, mask_fill_value)
+        cv2.drawContours(
+            mask, holes_cnt, contourIdx=-1, color=mask_fill_value, thickness=-1
+        )
+        return mask
+
+    def get_params_dependent_on_targets(self, params):
+        img_h, img_w = params["image"].shape[:2]
+        scale = np.array([img_w, img_h, img_w, img_h])
+        keypoint_df = pd.DataFrame(
+            [
+                (x, y, angle, scale, annIdx, keyIdx)
+                for x, y, angle, scale, (annIdx, keyIdx) in params["keypoints"]
+            ],
+            columns=["x", "y", "angle", "scale", "annIdx", "keyIdx"],
+        )
+        assert (
+            keypoint_df[["angle", "scale"]].eq(0).all(axis=None)
+        ), "Detected incompatible keypoint."
+        initial = super().get_params_dependent_on_targets({"image": params["image"]})
+        # The dropna here ignores the sentinel keypoints that we use to detect transformation.
+        return {
+            **initial,
+            **expand_dropout(
+                initial["holes"],
+                bboxes_and_ids=[
+                    (bbox[-1], bbox[:4] * scale)
+                    for bbox in np.array(params["bboxes"])
+                    if bbox[-1] > 0
+                ],
+                contours_and_ids=[
+                    (annIdx, g[["x", "y"]].values)
+                    for annIdx, g in keypoint_df.dropna(
+                        subset=["annIdx", "keyIdx"]
+                    ).groupby("annIdx")
+                ],
+            ),
+        }
+
+    @property
+    def targets_as_params(self):
+        return ["image", "bboxes", "keypoints"]
+
+    def apply_to_keypoints(
+        self,
+        keypoints: typing.List[
+            typing.Tuple[float, float, float, float, typing.Tuple[int, int]]
+        ],
+        **params
+    ):
+        holes_ids = params["holes_ids"]
+        return [keypoint for keypoint in keypoints if keypoint[4][0] not in holes_ids]
+
+    def apply_to_bboxes(self, bboxes, **params):
+        holes_ids = params["holes_ids"]
+        return [
+            bbox
+            for bbox in bboxes
+            if bbox[4] not in holes_ids and -bbox[4] not in holes_ids
+        ]
+
+    def apply_to_bbox(self, bbox, **params):
+        raise ValueError(
+            "This method should *not* be called. Please check your albumentations version."
+        )
+
+    def apply_to_keypoint(self, keypoint, **params):
+        raise ValueError(
+            "This method should *not* be called. Please check your albumentations version."
+        )

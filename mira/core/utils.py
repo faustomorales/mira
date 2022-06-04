@@ -21,6 +21,11 @@ MaskRegion = typing_extensions.TypedDict(
 )
 
 
+def box2pts(x1: int, y1: int, x2: int, y2: int) -> np.ndarray:
+    """Convert bounding box coordinates to a contour array."""
+    return np.array([[x1, y1], [x2, y1], [x2, y2], [x1, y2]])
+
+
 def read(filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO]):
     """Read a file into an image object
 
@@ -145,6 +150,53 @@ def compute_iou(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     )
     iou = interArea / (boxAArea + boxBArea - interArea)
     return iou
+
+
+def compute_iou_for_contour_pair(contour1, contour2):
+    """Compute IoU for a pair of contours.
+
+    Args:
+        contour1: The first contour.
+        contour2: The second contour.
+    """
+    points = np.concatenate([contour1, contour2], axis=0)
+    offset = points.min(axis=0)
+    points, contour1, contour2 = [v - offset for v in [points, contour1, contour2]]
+    scale = min(100 / points.max(axis=0).min(), 1)
+    if scale < 1:
+        points, contour1, contour2 = [v * scale for v in [points, contour1, contour2]]
+    w, h = points.max(axis=0).astype("int32")
+    im1, im2 = [
+        cv2.drawContours(
+            np.zeros((h, w), dtype="uint8"),
+            contours=(box[np.newaxis]).round().astype("int32"),
+            color=255,
+            thickness=-1,
+            contourIdx=0,
+        )
+        > 0
+        for box in [contour1, contour2]
+    ]
+    return (im1 & im2).sum() / (im1 | im2).sum()
+
+
+def compute_contour_iou(contoursA, contoursB):
+    """Compute pairwise IoU for two sets of contours. Consider the following
+    example:
+
+    Args:
+        contoursA: The first set of contours as a list of point arrays.
+        contoursB: The second set of boxes provided in same form as contoursA.
+    Returns:
+        An IoU matrix of shape (NA, NB) where 0 means no overlap and
+        1 means complete overlap.
+    """
+    return np.array(
+        [
+            [compute_iou_for_contour_pair(contour1, contour2) for contour2 in contoursB]
+            for contour1 in contoursA
+        ]
+    )
 
 
 def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
