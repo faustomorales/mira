@@ -9,19 +9,9 @@ import mira.detectors.fasterrcnn as mdf
 class FasterRCNNObjectDetector(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backbone_kwargs = {
-            **mdf.BACKBONE_TO_PARAMS[BACKBONE_NAME]["default_backbone_kwargs"],
-            **(BACKBONE_KWARGS or {}),
-            "pretrained": False,
-        }
-        self.anchor_kwargs = {
-            **mdf.BACKBONE_TO_PARAMS[BACKBONE_NAME]["default_anchor_kwargs"],
-            **(ANCHOR_KWARGS),
-        }
-        self.detector_kwargs = {
-            **mdf.BACKBONE_TO_PARAMS[BACKBONE_NAME]["default_detector_kwargs"],
-            **(DETECTOR_KWARGS),
-        }
+        self.backbone_kwargs = BACKBONE_KWARGS
+        self.anchor_kwargs = ANCHOR_KWARGS
+        self.detector_kwargs = DETECTOR_KWARGS
         self.model = torchvision.models.detection.faster_rcnn.FasterRCNN(
             mdf.BACKBONE_TO_PARAMS[BACKBONE_NAME]["backbone_func"](
                 **{

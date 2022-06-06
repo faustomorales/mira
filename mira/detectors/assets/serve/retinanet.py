@@ -9,22 +9,11 @@ import mira.detectors.retinanet as mdr
 class RetinaNetObjectDetector(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        default_kwargs = mdr.BACKBONE_TO_PARAMS[BACKBONE_NAME]
-        self.backbone_kwargs = {
-            **default_kwargs["default_backbone_kwargs"],
-            **(BACKBONE_KWARGS or {}),
-            "pretrained": False,
-        }
-        self.anchor_kwargs = {
-            **default_kwargs["default_anchor_kwargs"],
-            **(ANCHOR_KWARGS or {}),
-        }
-        self.detector_kwargs = {
-            **default_kwargs["default_detector_kwargs"],
-            **(DETECTOR_KWARGS or {}),
-        }
+        self.backbone_kwargs = BACKBONE_KWARGS
+        self.anchor_kwargs = ANCHOR_KWARGS
+        self.detector_kwargs = DETECTOR_KWARGS
         self.model = torchvision.models.detection.retinanet.RetinaNet(
-            backbone=default_kwargs["backbone_func"](
+            backbone=mdr.BACKBONE_TO_PARAMS[BACKBONE_NAME]["backbone_func"](
                 **{
                     k: (
                         v

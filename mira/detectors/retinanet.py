@@ -194,7 +194,8 @@ BACKBONE_TO_PARAMS = {
         "backbone_func": BackboneWithTIMM,
         "default_backbone_kwargs": {
             "model_name": "efficientnet_b0",
-            "out_indices": (0, 1, 2, 3, 4),
+            "out_indices": (2, 3, 4),
+            "extra_blocks": "lastlevelp6p7",
         },
         "default_anchor_kwargs": DEFAULT_ANCHOR_KWARGS,
         "default_detector_kwargs": {},
@@ -222,18 +223,18 @@ class RetinaNet(detector.Detector):
         if pretrained_top:
             pretrained_backbone = False
         self.backbone_kwargs = {
-            **BACKBONE_TO_PARAMS[backbone]["default_backbone_kwargs"],
-            **(backbone_kwargs or {}),
+            **(
+                backbone_kwargs
+                or BACKBONE_TO_PARAMS[backbone]["default_backbone_kwargs"]
+            ),
             "pretrained": pretrained_backbone,
         }
-        self.anchor_kwargs = {
-            **BACKBONE_TO_PARAMS[backbone]["default_anchor_kwargs"],
-            **(anchor_kwargs or {}),
-        }
-        self.detector_kwargs = {
-            **BACKBONE_TO_PARAMS[backbone]["default_detector_kwargs"],
-            **(detector_kwargs or {}),
-        }
+        self.anchor_kwargs = (
+            anchor_kwargs or BACKBONE_TO_PARAMS[backbone]["default_anchor_kwargs"]
+        )
+        self.detector_kwargs = (
+            detector_kwargs or BACKBONE_TO_PARAMS[backbone]["default_detector_kwargs"]
+        )
         self.fpn = BACKBONE_TO_PARAMS[backbone]["backbone_func"](
             **{
                 k: (
