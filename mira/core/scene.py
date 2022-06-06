@@ -586,6 +586,38 @@ class Scene:
                 raise ValueError("Failed to find a suitable crop.")
         return subcrops
 
+    def compute_iou(self, other: "Scene"):
+        """Obtain the inter-scene annotation IoU.
+
+        Args:
+            other: The other scene with which to compare.
+
+        Returns:
+            A matrix of shape (N, M) where N is the number of annotations
+            in this scene and M is the number of annotations in the other
+            scene. Each value represents the IoU between the two annotations.
+            A negative IoU value means the annotations overlapped but they
+            were for different classes.
+        """
+        return np.array(
+            [
+                [
+                    (
+                        utils.compute_iou(
+                            np.array([ann1.x1y1x2y2()]), np.array([ann2.x1y1x2y2()])
+                        )[0, 0]
+                        if ann1.is_rect and ann2.is_rect
+                        else utils.compute_iou_for_contour_pair(
+                            ann1.points, ann2.points
+                        )
+                    )
+                    * (1 if ann1.category.name == ann2.category.name else -1)
+                    for ann2 in other.annotations
+                ]
+                for ann1 in self.annotations
+            ]
+        )
+
 
 class SceneCollection:
     """A collection of scenes.
