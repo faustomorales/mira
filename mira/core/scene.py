@@ -1,6 +1,6 @@
 """Scene and SceneCollection objects"""
 
-# pylint: disable=invalid-name,len-as-condition,unsupported-assignment-operation
+# pylint: disable=invalid-name,len-as-condition,unsupported-assignment-operation,import-outside-toplevel
 
 import os
 import io
@@ -105,6 +105,70 @@ class Scene:
     def annotations(self) -> typing.List[Annotation]:
         """Get the list of annotations"""
         return self._annotations
+
+    @classmethod
+    def from_qsl(
+        cls,
+        item: typing.Dict,
+        label_key: str,
+        annotation_config: AnnotationConfiguration,
+    ):
+        """Create a scene from a set of QSL labels.
+
+        Args:
+            item: The QSL labeling item.
+            label_key: The key for the region label to use
+                for annotation.
+            annotation_config: The annotation configuration for the
+                resulting scene.
+        """
+        import qsl
+
+        labels = item["labels"]
+        dimensions = labels["dimensions"]
+        annotations = []
+        for box in labels["boxes"]:
+            annotations.append(
+                Annotation(
+                    category=annotation_config[box["labels"][label_key][0]],
+                    x1=box["pt1"]["x"] * dimensions["width"],
+                    y1=box["pt1"]["y"] * dimensions["height"],
+                    x2=box["pt2"]["x"] * dimensions["width"],
+                    y2=box["pt2"]["y"] * dimensions["height"],
+                )
+            )
+        for mask in labels["masks"]:
+            bitmap = qsl.counts2bitmap(**mask["map"])
+            scaley, scalex = (
+                dimensions["height"] / bitmap.shape[0],
+                dimensions["width"] / bitmap.shape[1],
+            )
+            contours = cv2.findContours(
+                bitmap, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE
+            )[0]
+            assert (
+                len(contours) == 1
+            ), f"Only single contour masks are supported. Found {len(contours)} contours."
+            annotations.append(
+                Annotation(
+                    category=annotation_config[mask["labels"][label_key][0]],
+                    points=contours[0][:, 0, :] * [scalex, scaley],
+                )
+            )
+        for polygon in labels["polygons"]:
+            annotations.append(
+                Annotation(
+                    category=annotation_config[polygon["labels"][label_key][0]],
+                    points=np.array([[p["x"], p["y"]] for p in polygon["points"]])
+                    * [dimensions["width"], dimensions["height"]],
+                )
+            )
+        return cls(
+            image=item["target"],
+            annotations=annotations,
+            annotation_config=annotation_config,
+            metadata=item.get("metadata", {}),
+        )
 
     @classmethod
     def fromString(cls, string):
@@ -737,7 +801,9 @@ class SceneCollection:
                             )
                     else:
                         scene = Scene.fromString(data.read())
-                        cv2.imwrite(image_filepath, scene.image)
+                        cv2.imwrite(
+                            image_filepath, cv2.cvtColor(scene.image, cv2.COLOR_RGB2BGR)
+                        )
                         with open(label_filepath, "wb") as f:
                             f.write(
                                 scene.assign(
@@ -749,3 +815,31 @@ class SceneCollection:
         if len(scenes) == 0:
             raise ValueError("No scenes found.")
         return cls(scenes=scenes, annotation_config=scenes[0].annotation_config)
+
+    @classmethod
+    def from_qsl(cls, jsonpath: str, label_key: str):
+        """Build a scene collection from a QSL JSON project file."""
+        with open(jsonpath, "r", encoding="utf8") as f:
+            project = json.loads(f.read())
+        rconfig = next(
+            (r for r in project["config"]["regions"] if r["name"] == label_key), None
+        )
+        if rconfig is None:
+            raise ValueError(f"{label_key} region configuration not found.")
+        annotation_config = AnnotationConfiguration(
+            [o["name"] for o in rconfig["options"]]
+        )
+        scenes = []
+        for item in project["items"]:
+            if item.get("type", "image") != "image":
+                log.warning("Skipping item with type %s.", item["type"])
+            if item.get("ignore", False):
+                log.warning("Skipping %s because it was ignored.", item["target"])
+            if "labels" not in item:
+                log.warning("Skipping %s because labels are missing.", item["target"])
+            scenes.append(
+                Scene.from_qsl(
+                    item=item, label_key=label_key, annotation_config=annotation_config
+                )
+            )
+        return cls(scenes=scenes)
