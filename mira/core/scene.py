@@ -311,6 +311,7 @@ class Scene:
         for ann, ax in zip(self.annotations, axs):
             ax.imshow(ann.extract(image))
             ax.set_title(ann.category.name)
+        fig.tight_layout()
         return fig
 
     def drop_duplicates(
@@ -803,6 +804,34 @@ class SceneCollection:
             for idx, scene in enumerate(tqdm.tqdm(self.scenes)):
                 with tempfile.NamedTemporaryFile() as temp:
                     temp.write(scene.toString())
+                    temp.flush()
+                    tar.add(name=temp.name, arcname=str(idx))
+
+    def save_placeholder(
+        self, filename: str, colormap: typing.Dict[str, typing.Tuple[int, int, int]]
+    ):
+        """Create a placeholder scene collection representing
+        blank images with black blobs drawn on in the location of
+        annotations. Useful for testing whether a detector has
+        any chance of working with a given dataset.
+
+        Args:
+            filename: The tarball to which the dummy dataast should be
+                saved.
+            colormap: A mapping of annotation categories to colors, used
+                for drawing the annotations onto a canvas.
+        """
+        with tarfile.open(filename, mode="w") as tar:
+            for idx, scene in enumerate(tqdm.tqdm(self.scenes)):
+                with tempfile.NamedTemporaryFile() as temp:
+                    image = np.zeros_like(scene.image) + 255
+                    for ann in typing.cast(Scene, scene).annotations:
+                        ann.draw(image, color=colormap[ann.category.name], opaque=True)
+                    temp.write(
+                        scene.assign(
+                            image=image, annotations=scene.annotations
+                        ).toString()
+                    )
                     temp.flush()
                     tar.add(name=temp.name, arcname=str(idx))
 
