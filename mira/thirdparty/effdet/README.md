@@ -1,1 +1,0 @@
-This submodule was downloaded from https://github.com/rwightman/efficientdet-pytorch/tree/v0.2.4. It is included in this package purely to avoid the dependency on pycocotools (which is difficult to install on Windows).
