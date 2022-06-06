@@ -1,6 +1,9 @@
 # pylint: disable=unexpected-keyword-arg
 import typing
+import functools
+import collections
 import cv2
+import timm
 import torch
 import numpy as np
 import torchvision
@@ -31,6 +34,56 @@ class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
     # "x" refers to convolutional layer outputs.
     def forward(self, results, x, names):  # pylint: disable=unused-argument
         return results, names
+
+
+EXTRA_BLOCKS_MAP = {
+    "lastlevelp6p7": lambda: torchvision.ops.feature_pyramid_network.LastLevelP6P7,
+    "lastlevelp6p7_256": functools.partial(
+        torchvision.ops.feature_pyramid_network.LastLevelP6P7,
+        in_channels=256,
+        out_channels=256,
+    ),
+    "noop": LastLevelNoop,
+    "lastlevelmaxpool": torchvision.ops.feature_pyramid_network.LastLevelMaxPool,
+}
+
+
+class BackboneWithTIMM(torch.nn.Module):
+    """An experimental class that operates Like BackboneWithFPN but built using a
+    model built using timm.create_model."""
+
+    def __init__(
+        self,
+        model_name: str,
+        pretrained: bool,
+        out_channels=None,
+        extra_blocks=None,
+        **kwargs,
+    ):
+        super().__init__()
+        self.body = timm.create_model(
+            model_name=model_name, pretrained=pretrained, **kwargs, features_only=True
+        )
+        self.out_channels = out_channels or max(self.body.feature_info.channels())
+        self.fpn = torchvision.ops.feature_pyramid_network.FeaturePyramidNetwork(
+            in_channels_list=self.body.feature_info.channels(),
+            out_channels=self.out_channels,
+        )
+        if extra_blocks is not None:
+            self.extra_blocks = extra_blocks(
+                in_channels=self.out_channels, out_channels=self.out_channels
+            )
+        else:
+            self.extra_blocks = None
+
+    # pylint: disable=missing-function-docstring
+    def forward(self, x):
+        names = self.body.feature_info.module_name()
+        c = self.body(x)
+        p = list(self.fpn(collections.OrderedDict(zip(names, c))).values())
+        if self.extra_blocks is not None:
+            p, names = self.extra_blocks(c=c, p=p, names=names)
+        return collections.OrderedDict(zip(names, p))
 
 
 ArrayType = typing.TypeVar("ArrayType", torch.Tensor, np.ndarray)
@@ -189,7 +242,8 @@ def torchvision_serve_inference(
     scales = scales[:, [1, 0]].repeat((1, 2))
     sizes = sizes[:, [1, 0]].repeat((1, 2))
     detections = [
-        {k: v.detach().cpu() for k, v in d.items()} for d in model.model(resized)
+        {k: v.detach().cpu() for k, v in d.items()}
+        for d in model.model(resized)["output"]
     ]
     clipped = [
         group["boxes"][:, :4].min(group_size.unsqueeze(0))
@@ -231,7 +285,11 @@ def convert_rcnn_transform(
 
 
 def get_torchvision_anchor_boxes(
-    model: torch.nn.Module, device: torch.device, height: int, width: int
+    model: torch.nn.Module,
+    anchor_generator,
+    device: torch.device,
+    height: int,
+    width: int,
 ):
     """Get the anchor boxes for a torchvision model."""
     image_list = torchvision.models.detection.image_list.ImageList(
@@ -244,13 +302,65 @@ def get_torchvision_anchor_boxes(
     )
     feature_maps = model.backbone(image_list.tensors)  # type: ignore
     assert len(feature_maps) == len(
-        model.anchor_generator.sizes  # type: ignore
-    ), f"Number of feature maps ({len(feature_maps)}) does not match number of anchor sizes ({len(model.anchor_generator.sizes)}). This model is misconfigured."  # type: ignore
+        anchor_generator.sizes  # type: ignore
+    ), f"Number of feature maps ({len(feature_maps)}) does not match number of anchor sizes ({len(anchor_generator.sizes)}). This model is misconfigured."  # type: ignore
     return np.concatenate(
         [
             a.cpu()
-            for a in model.anchor_generator(  # type: ignore
+            for a in anchor_generator(  # type: ignore
                 image_list=image_list, feature_maps=list(feature_maps.values())
             )
         ]
+    )
+
+
+def interpret_fpn_kwargs(fpn_kwargs):
+    """Interpret fpn kwargs to extract extra blocks."""
+    return {
+        k: (
+            v
+            if k != "extra_blocks"
+            or isinstance(v, torchvision.ops.feature_pyramid_network.ExtraFPNBlock)
+            else EXTRA_BLOCKS_MAP[typing.cast(str, v)]()  # type: ignore
+        )
+        for k, v in fpn_kwargs.items()
+    }
+
+
+def initialize_basic(
+    default_map: typing.Dict[str, dict],
+    backbone: str,
+    fpn_kwargs: dict = None,
+    anchor_kwargs: dict = None,
+    detector_kwargs: dict = None,
+    resize_config: ResizeConfig = None,
+    pretrained_backbone: bool = True,
+):
+    """Initialize basic FPN-based model."""
+    fpn_kwargs = {
+        **(fpn_kwargs or default_map[backbone]["default_fpn_kwargs"]),
+        "pretrained": pretrained_backbone,
+    }
+    anchor_kwargs = anchor_kwargs or default_map[backbone]["default_anchor_kwargs"]
+    detector_kwargs = (
+        detector_kwargs or default_map[backbone]["default_detector_kwargs"]
+    )
+    fpn = default_map[backbone]["fpn_func"](**interpret_fpn_kwargs(fpn_kwargs))
+    resize_config = resize_config or {"method": "pad_to_multiple", "base": 128}
+    # In mira, backbone has meaning because we use it to skip
+    # training these weights. But the FPN includes feature extraction
+    # layers that we likely we want to change, so we distinguish
+    # between the FPN and the backbone.
+    backbone = fpn.body
+    anchor_generator = torchvision.models.detection.anchor_utils.AnchorGenerator(
+        **anchor_kwargs
+    )
+    return (
+        resize_config,
+        anchor_kwargs,
+        fpn_kwargs,
+        detector_kwargs,
+        backbone,
+        fpn,
+        anchor_generator,
     )

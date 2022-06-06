@@ -46,13 +46,12 @@ class ThresholdConfigurableObjectDetector(ObjectDetector):
                     "label": self.mapping[str(label)],
                     **dict(zip(["x1", "y1", "x2", "y2"], box)),
                 }
-                for score, box, label, threshold in zip(
+                for score, box, label in zip(
                     row["scores"].tolist(),
                     row["boxes"].tolist(),
                     row["labels"].tolist(),
-                    thresholds,
                 )
                 if score > threshold
             ]
-            for row in data
+            for row, threshold in zip(data, thresholds)
         ]

@@ -13,16 +13,11 @@ from . import detector
 from . import common as mdc
 
 
-EXTRA_BLOCKS_MAP = {
-    "lastlevelmaxpool": torchvision.ops.feature_pyramid_network.LastLevelMaxPool,
-    "noop": mdc.LastLevelNoop,
-}
-
 BACKBONE_TO_PARAMS = {
     "resnet50": {
         "weights_url": "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
-        "backbone_func": torchvision.models.detection.backbone_utils.resnet_fpn_backbone,
-        "default_backbone_kwargs": {
+        "fpn_func": torchvision.models.detection.backbone_utils.resnet_fpn_backbone,
+        "default_fpn_kwargs": {
             "trainable_layers": 3,
             "backbone_name": "resnet50",
             "extra_blocks": "lastlevelmaxpool",
@@ -33,10 +28,25 @@ BACKBONE_TO_PARAMS = {
         },
         "default_detector_kwargs": {},
     },
+    "timm": {
+        "fpn_func": mdc.BackboneWithTIMM,
+        "default_fpn_kwargs": {
+            "model_name": "mnasnet_small",
+            "out_indices": (2, 3, 4),
+        },
+        "default_anchor_kwargs": {
+            "sizes": tuple(
+                (x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3)))
+                for x in [32, 64, 128]
+            ),
+            "aspect_ratios": ((1.0,),) * 3,
+        },
+        "default_detector_kwargs": {},
+    },
     "mobilenet_large": {
         "weights_url": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
-        "backbone_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
-        "default_backbone_kwargs": {
+        "fpn_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
+        "default_fpn_kwargs": {
             "trainable_layers": 3,
             "backbone_name": "mobilenet_v3_large",
             "fpn": True,
@@ -61,8 +71,8 @@ BACKBONE_TO_PARAMS = {
     },
     "mobilenet_large_320": {
         "weights_url": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
-        "backbone_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
-        "default_backbone_kwargs": {
+        "fpn_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
+        "default_fpn_kwargs": {
             "trainable_layers": 3,
             "backbone_name": "mobilenet_v3_large",
             "fpn": True,
@@ -142,6 +152,11 @@ class ModifiedFasterRCNN(torchvision.models.detection.faster_rcnn.FasterRCNN):
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
             features = typing.OrderedDict([("0", features)])
+        else:
+            # Forces features to comply with self.roi_heads.box_roi_pool.featmap_names
+            features = typing.OrderedDict(
+                [(str(idx), f) for idx, f in enumerate(features.values())]
+            )
         proposals, proposal_losses = self.rpn(images, features, targets)
         if self.training:
             self.roi_heads.training = False
@@ -178,46 +193,36 @@ class FasterRCNN(detector.Detector):
             "resnet50", "mobilenet_large", "mobilenet_large_320"
         ] = "resnet50",
         device="cpu",
-        backbone_kwargs=None,
+        fpn_kwargs=None,
         detector_kwargs=None,
         anchor_kwargs=None,
         resize_config: mdc.ResizeConfig = None,
     ):
         self.annotation_config = annotation_config
+        self.backbone_name = backbone
         if pretrained_top:
             pretrained_backbone = False
-        self.backbone_kwargs = {
-            **BACKBONE_TO_PARAMS[backbone]["default_backbone_kwargs"],
-            **(backbone_kwargs or {}),
-            "pretrained": pretrained_backbone,
-        }
-        self.anchor_kwargs = {
-            **BACKBONE_TO_PARAMS[backbone]["default_anchor_kwargs"],
-            **(anchor_kwargs or {}),
-        }
-        self.detector_kwargs = {
-            **BACKBONE_TO_PARAMS[backbone]["default_detector_kwargs"],
-            **(detector_kwargs or {}),
-        }
-        self.backbone = BACKBONE_TO_PARAMS[backbone]["backbone_func"](
-            **{
-                k: (
-                    v
-                    if k != "extra_blocks"
-                    or isinstance(
-                        v, torchvision.ops.feature_pyramid_network.ExtraFPNBlock
-                    )
-                    else EXTRA_BLOCKS_MAP[typing.cast(str, v)]()
-                )
-                for k, v in self.backbone_kwargs.items()
-            }
+        (
+            self.resize_config,
+            self.anchor_kwargs,
+            self.fpn_kwargs,
+            self.detector_kwargs,
+            self.backbone,
+            fpn,
+            anchor_generator,
+        ) = mdc.initialize_basic(
+            BACKBONE_TO_PARAMS,
+            backbone=backbone,
+            fpn_kwargs=fpn_kwargs,
+            anchor_kwargs=anchor_kwargs,
+            detector_kwargs=detector_kwargs,
+            resize_config=resize_config,
+            pretrained_backbone=pretrained_backbone,
         )
         self.model = ModifiedFasterRCNN(
-            self.backbone,
+            fpn,
             len(annotation_config) + 1,
-            rpn_anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
-                **self.anchor_kwargs
-            ),
+            rpn_anchor_generator=anchor_generator,
             **self.detector_kwargs,
         )
         self.model.transform = mdc.convert_rcnn_transform(self.model.transform)
@@ -230,8 +235,6 @@ class FasterRCNN(detector.Detector):
             )
             torchvision.models.detection.faster_rcnn.overwrite_eps(self.model, 0.0)
         self.set_device(device)
-        self.backbone_name = backbone
-        self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 128}
 
     def serve_module_string(self):
         return (
@@ -244,9 +247,7 @@ class FasterRCNN(detector.Detector):
             .replace("RESIZE_CONFIG", str(self.resize_config))
             .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
             .replace("ANCHOR_KWARGS", str(self.anchor_kwargs))
-            .replace(
-                "BACKBONE_KWARGS", str({**self.backbone_kwargs, "pretrained": False})
-            )
+            .replace("FPN_KWARGS", str({**self.fpn_kwargs, "pretrained": False}))
         )
 
     def compute_inputs(self, images):
@@ -291,5 +292,11 @@ class FasterRCNN(detector.Detector):
 
     def compute_anchor_boxes(self, width, height):
         return mdc.get_torchvision_anchor_boxes(
-            model=self.model, device=self.device, height=height, width=width
+            model=self.model,
+            anchor_generator=typing.cast(
+                torch.nn.Module, self.model.rpn
+            ).anchor_generator,
+            device=self.device,
+            height=height,
+            width=width,
         )

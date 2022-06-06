@@ -1,11 +1,9 @@
 # pylint: disable=too-many-instance-attributes
 import typing
 import logging
-import functools
 import collections
 
 import torch
-import timm
 import torchvision
 import numpy as np
 import pkg_resources
@@ -121,54 +119,6 @@ class ModifiedRetinaNet(torchvision.models.detection.retinanet.RetinaNet):
         }
 
 
-class BackboneWithTIMM(torch.nn.Module):
-    """An experimental class that operates Like BackboneWithFPN but built using a
-    model built using timm.create_model."""
-
-    def __init__(
-        self,
-        model_name: str,
-        pretrained: bool,
-        out_channels=None,
-        extra_blocks=None,
-        **kwargs,
-    ):
-        super().__init__()
-        self.body = timm.create_model(
-            model_name=model_name, pretrained=pretrained, **kwargs, features_only=True
-        )
-        self.out_channels = out_channels or max(self.body.feature_info.channels())
-        self.fpn = torchvision.ops.feature_pyramid_network.FeaturePyramidNetwork(
-            in_channels_list=self.body.feature_info.channels(),
-            out_channels=self.out_channels,
-        )
-        if extra_blocks is not None:
-            self.extra_blocks = extra_blocks(
-                in_channels=self.out_channels, out_channels=self.out_channels
-            )
-        else:
-            self.extra_blocks = None
-
-    # pylint: disable=missing-function-docstring
-    def forward(self, x):
-        names = self.body.feature_info.module_name()
-        c = self.body(x)
-        p = list(self.fpn(collections.OrderedDict(zip(names, c))).values())
-        if self.extra_blocks is not None:
-            p, names = self.extra_blocks(c=c, p=p, names=names)
-        return collections.OrderedDict(zip(names, p))
-
-
-EXTRA_BLOCKS_MAP = {
-    "lastlevelp6p7": lambda: torchvision.ops.feature_pyramid_network.LastLevelP6P7,
-    "lastlevelp6p7_256": functools.partial(
-        torchvision.ops.feature_pyramid_network.LastLevelP6P7,
-        in_channels=256,
-        out_channels=256,
-    ),
-    "noop": mdc.LastLevelNoop,
-}
-
 DEFAULT_ANCHOR_KWARGS = {
     "sizes": tuple(
         (x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3)))
@@ -180,8 +130,8 @@ DEFAULT_ANCHOR_KWARGS = {
 BACKBONE_TO_PARAMS = {
     "resnet50": {
         "weights_url": "https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth",
-        "backbone_func": torchvision.models.detection.backbone_utils.resnet_fpn_backbone,
-        "default_backbone_kwargs": {
+        "fpn_func": torchvision.models.detection.backbone_utils.resnet_fpn_backbone,
+        "default_fpn_kwargs": {
             "trainable_layers": 3,
             "backbone_name": "resnet50",
             "extra_blocks": "lastlevelp6p7_256",
@@ -191,8 +141,8 @@ BACKBONE_TO_PARAMS = {
         "default_detector_kwargs": {},
     },
     "timm": {
-        "backbone_func": BackboneWithTIMM,
-        "default_backbone_kwargs": {
+        "fpn_func": mdc.BackboneWithTIMM,
+        "default_fpn_kwargs": {
             "model_name": "efficientnet_b0",
             "out_indices": (2, 3, 4),
             "extra_blocks": "lastlevelp6p7",
@@ -213,53 +163,37 @@ class RetinaNet(detector.Detector):
         pretrained_top: bool = False,
         backbone: tx.Literal["resnet50"] = "resnet50",
         device="cpu",
-        backbone_kwargs=None,
+        fpn_kwargs=None,
         detector_kwargs=None,
         anchor_kwargs=None,
         resize_config: mdc.ResizeConfig = None,
     ):
         super().__init__()
         self.annotation_config = annotation_config
+        self.backbone_name = backbone
         if pretrained_top:
             pretrained_backbone = False
-        self.backbone_kwargs = {
-            **(
-                backbone_kwargs
-                or BACKBONE_TO_PARAMS[backbone]["default_backbone_kwargs"]
-            ),
-            "pretrained": pretrained_backbone,
-        }
-        self.anchor_kwargs = (
-            anchor_kwargs or BACKBONE_TO_PARAMS[backbone]["default_anchor_kwargs"]
+        (
+            self.resize_config,
+            self.anchor_kwargs,
+            self.fpn_kwargs,
+            self.detector_kwargs,
+            self.backbone,
+            fpn,
+            anchor_generator,
+        ) = mdc.initialize_basic(
+            BACKBONE_TO_PARAMS,
+            backbone=backbone,
+            fpn_kwargs=fpn_kwargs,
+            anchor_kwargs=anchor_kwargs,
+            detector_kwargs=detector_kwargs,
+            resize_config=resize_config,
+            pretrained_backbone=pretrained_backbone,
         )
-        self.detector_kwargs = (
-            detector_kwargs or BACKBONE_TO_PARAMS[backbone]["default_detector_kwargs"]
-        )
-        self.fpn = BACKBONE_TO_PARAMS[backbone]["backbone_func"](
-            **{
-                k: (
-                    v
-                    if k != "extra_blocks"
-                    or isinstance(
-                        v, torchvision.ops.feature_pyramid_network.ExtraFPNBlock
-                    )
-                    else EXTRA_BLOCKS_MAP[typing.cast(str, v)]()  # type: ignore
-                )
-                for k, v in self.backbone_kwargs.items()
-            }
-        )
-        self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 128}
-        # In mira, backbone has meaning because we use it to skip
-        # training these weights. But the FPN includes feature extraction
-        # layers that we likely we want to change, so we distinguish
-        # between the FPN and the backbone.
-        self.backbone = self.fpn.body
         self.model = ModifiedRetinaNet(
-            backbone=self.fpn,
+            backbone=fpn,
             num_classes=len(annotation_config) + 1,
-            anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
-                **self.anchor_kwargs
-            ),
+            anchor_generator=anchor_generator,
             **self.detector_kwargs,
         )
         self.model.transform = mdc.convert_rcnn_transform(self.model.transform)
@@ -276,7 +210,6 @@ class RetinaNet(detector.Detector):
             )
             torchvision.models.detection.retinanet.overwrite_eps(self.model, 0.0)
         self.set_device(device)
-        self.backbone_name = backbone
 
     def serve_module_string(self):
         return (
@@ -287,9 +220,7 @@ class RetinaNet(detector.Detector):
             .replace("RESIZE_CONFIG", str(self.resize_config))
             .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
             .replace("ANCHOR_KWARGS", str(self.anchor_kwargs))
-            .replace(
-                "BACKBONE_KWARGS", str({**self.backbone_kwargs, "pretrained": False})
-            )
+            .replace("FPN_KWARGS", str({**self.fpn_kwargs, "pretrained": False}))
         )
 
     def compute_inputs(self, images):
@@ -334,5 +265,9 @@ class RetinaNet(detector.Detector):
 
     def compute_anchor_boxes(self, width, height):
         return mdc.get_torchvision_anchor_boxes(
-            model=self.model, device=self.device, height=height, width=width
+            model=self.model,
+            anchor_generator=self.model.anchor_generator,
+            device=self.device,
+            height=height,
+            width=width,
         )

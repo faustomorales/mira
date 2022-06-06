@@ -9,28 +9,15 @@ import mira.detectors.fasterrcnn as mdf
 class FasterRCNNObjectDetector(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backbone_kwargs = BACKBONE_KWARGS
-        self.anchor_kwargs = ANCHOR_KWARGS
-        self.detector_kwargs = DETECTOR_KWARGS
-        self.model = torchvision.models.detection.faster_rcnn.FasterRCNN(
-            mdf.BACKBONE_TO_PARAMS[BACKBONE_NAME]["backbone_func"](
-                **{
-                    k: (
-                        v
-                        if k != "extra_blocks"
-                        or isinstance(
-                            v, torchvision.ops.feature_pyramid_network.ExtraFPNBlock
-                        )
-                        else mdf.EXTRA_BLOCKS_MAP[v]()
-                    )
-                    for k, v in self.backbone_kwargs.items()
-                }
+        self.model = mdf.ModifiedFasterRCNN(
+            mdf.BACKBONE_TO_PARAMS[BACKBONE_NAME]["fpn_func"](
+                **mdc.interpret_fpn_kwargs(FPN_KWARGS)
             ),
             NUM_CLASSES,
             rpn_anchor_generator=torchvision.models.detection.anchor_utils.AnchorGenerator(
-                **self.anchor_kwargs
+                **ANCHOR_KWARGS
             ),
-            **self.detector_kwargs,
+            **DETECTOR_KWARGS,
         )
         self.model.transform = mdc.convert_rcnn_transform(self.model.transform)
 
