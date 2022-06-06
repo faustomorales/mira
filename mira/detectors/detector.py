@@ -130,7 +130,11 @@ class Detector:
 
     @abc.abstractmethod
     def compute_anchor_boxes(self, width: int, height: int) -> np.ndarray:
-        """Return the list of anchor boxes in xyxy format."""
+        """Return the list of anchor boxes in xyxy format. You can convert these
+        to dimensions using something like:
+
+        detector.compute_anchor_boxes(iwidth, iheight)[:, [0, 2, 1, 3]].reshape((-1, 2, 2))
+        """
 
     def loss(
         self,

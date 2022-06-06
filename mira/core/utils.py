@@ -68,10 +68,16 @@ def get_blank_image(width: int, height: int, n_channels: int, cval=255) -> np.nd
     return image.astype("uint8")
 
 
+def image2bytes(image: np.ndarray, extension=".png"):
+    """Convert an RGB or grayscale image to PNG bytes."""
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR) if len(image.shape) == 3 else image
+    return cv2.imencode(extension, image)[1].tobytes()
+
+
 def save(
     image,
     filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO],
-    extension=".jpg",
+    extension=".png",
 ):
     """Save the image
 
@@ -82,12 +88,12 @@ def save(
         esxtension: The extension for the format to use
             if writing to buffer
     """
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) if len(image.shape) == 3 else image
+    data = image2bytes(image, extension=extension)
     if hasattr(filepath_or_buffer, "write"):
-        data = cv2.imencode(extension, image)[1].tobytes()
         filepath_or_buffer.write(data)  # type: ignore
     else:
-        cv2.imwrite(filepath_or_buffer, img=image)
+        with open(filepath_or_buffer, "wb") as f:  # type: ignore
+            f.write(data)
 
 
 def imshow(image, ax: mpl.axes.Axes = None) -> mpl.axes.Axes:

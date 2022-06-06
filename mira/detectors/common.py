@@ -188,12 +188,6 @@ def torchvision_serve_inference(
     # Go from [sy, sx] to [sx, sy, sx, sy]
     scales = scales[:, [1, 0]].repeat((1, 2))
     sizes = sizes[:, [1, 0]].repeat((1, 2))
-    if (
-        model.input_shape[2],
-        model.input_shape[0],
-        model.input_shape[1],
-    ) != resized.shape[1:]:
-        model.set_input_shape(height=resized.shape[2], width=resized.shape[3])
     detections = [
         {k: v.detach().cpu() for k, v in d.items()} for d in model.model(resized)
     ]

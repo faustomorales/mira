@@ -205,51 +205,39 @@ import mira.detectors as md
 
 detector1 = md.FasterRCNN(pretrained_top=True, backbone="resnet50")
 detector1.to_torchserve("fastrcnn")
-detector2 = md.EfficientDet(pretrained_top=True, model_name="tf_efficientdet_d0")
-detector2.to_torchserve("effdet")
+detector2 = md.RetinaNet(pretrained_top=True)
+detector2.to_torchserve("retinanet")
 ```
 
-The above will generate `fastrcnn.mar` and `effdet.amr` in the `model-store` directory. You can then use those models with TorchServe using:
+The above will generate `fastrcnn.mar` and `retinanet.amr` in the `model-store` directory. You can then use those models with TorchServe using:
 
 ```bash
-torchserve --start --model-store model-store --models effdet=effdet.mar,fastrcnn=fastrcnn.mar
+torchserve --start --model-store model-store --models retinanet=retinanet.mar,fastrcnn=fastrcnn.mar
 ```
 
-Then you can do inference in TorchServe using something like the following. Most of the boilerplate is just for unpacking the `torchserve` format, which is fairly straightforward but requires a little wrangling.
+Then you can do inference in TorchServe using something like the following.
 
 ```python
 # Get responses from server.
 with open("path/to/image.jpg", "rb") as f:
     data = f.read()
     prediction1 = requests.post("http://localhost:8080/predictions/fastrcnn", data=data).json()
-    prediction2 = requests.post("http://localhost:8080/predictions/effdet", data=data).json()
-    annotation_config = mc.AnnotationConfiguration(set([list(p.keys())[0] for p in prediction1 + prediction2]))
-scene1 = mc.Scene(
-    image=filename,
-    annotation_config=annotation_config,
-    annotations=[
-        mc.Annotation(
-            x1=p[label][0],
-            y1=p[label][1],
-            x2=p[label][2],
-            y2=p[label][3],
-            category=annotation_config[label], score=p["score"]) for label, p in [
-            (next(k for k in p if k != "score"), p) for p in prediction1
+    prediction2 = requests.post("http://localhost:8080/predictions/retinanet", data=data).json()
+    annotation_config = mc.AnnotationConfiguration(list(set(p["label"] for p in prediction1 + prediction2)))
+scene1, scene2 = [
+    mc.Scene(
+        image=filename,
+        annotation_config=annotation_config,
+        annotations=[
+            mc.Annotation(
+                x1=p["x1"],
+                y1=p["y1"],
+                x2=p["x2"],
+                y2=p["y2"],
+                category=annotation_config[p["label"]],
+                score=p["score"]
+            ) for p in prediction
         ]
-    ]
-)
-scene2 = mc.Scene(
-    image=filename,
-    annotation_config=annotation_config,
-    annotations=[
-        mc.Annotation(
-            x1=p[label][0],
-            y1=p[label][1],
-            x2=p[label][2],
-            y2=p[label][3],
-            category=annotation_config[label], score=p["score"]) for label, p in [
-            (next(k for k in p if k != "score"), p) for p in prediction2
-        ]
-    ]
-)
+    ) for prediction in [prediction1, prediction2]
+]
 ```

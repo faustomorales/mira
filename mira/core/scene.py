@@ -106,6 +106,11 @@ class Scene:
         """Get the list of annotations"""
         return self._annotations
 
+    @property
+    def image_bytes(self) -> bytes:
+        """Get the image as a PNG encoded to bytes."""
+        return utils.image2bytes(self.image)
+
     @classmethod
     def from_qsl(
         cls,

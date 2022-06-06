@@ -7,7 +7,10 @@ import json
 
 import ts
 import torch
+import numpy as np
 from ts.torch_handler.unit_tests.test_utils.mock_context import MockContext
+
+from ...core.utils import image2bytes
 
 
 def import_code(code, name):
@@ -63,6 +66,12 @@ def load_mar_model(filepath: str, gpu_id: int = None):
                     with open(filepath, "rb") as f:
                         data.append({"data": f.read()})
                 return self.handle(data=data, context=MockContext())
+
+            def handle_images(self, images: typing.List[np.ndarray]):
+                return self.handle(
+                    data=[{"data": image2bytes(image)} for image in images],
+                    context=MockContext(),
+                )
 
         handler = SimulatedHandler()
         handler.model = candidate_models[-1]()
