@@ -52,6 +52,7 @@ torch = "*"
 torchserve = "*"
 jupyterlab = "*"
 torch-model-archiver = "*"
+qsl = "^0.1.23"
 
 [tool.poetry-dynamic-versioning]
 enable = true
