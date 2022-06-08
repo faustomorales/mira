@@ -456,6 +456,18 @@ class Detector:
                 args=args, manifest=marmpu.ModelExportUtils.generate_manifest_json(args)
             )
 
+    def compute_anchor_iou(self, scene: mc.Scene) -> np.ndarray:
+        """Compute the IoU between annotatons for a scene and the anchors for the detector."""
+        images, scales = self.resize_to_model_size([scene.image])
+        return mc.utils.compute_iou(
+            scene.annotation_config.bboxes_from_group(
+                [ann.resize(scales[0][::-1]) for ann in scene.annotations]
+            )[:, :4],
+            self.compute_anchor_boxes(
+                height=images[0].shape[0], width=images[0].shape[1]
+            ),
+        )
+
     def load_weights(self, filepath: str):
         """Load weights from disk."""
         self.model.load_state_dict(torch.load(filepath, map_location=self.device))

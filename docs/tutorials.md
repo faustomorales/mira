@@ -241,3 +241,5 @@ scene1, scene2 = [
     ) for prediction in [prediction1, prediction2]
 ]
 ```
+
+You can stop the server using `torchserve --stop`. Note that to restart the server, you should delete the `logs`  directory that `torchserve` creates as it stores cached state that you may not want.
