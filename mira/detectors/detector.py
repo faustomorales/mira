@@ -22,6 +22,7 @@ except ImportError:
 from .. import metrics as mm
 from .. import core as mc
 from . import common as mdc
+from . import callbacks as mdcb
 
 LOGGER = logging.getLogger(__name__)
 
@@ -222,7 +223,7 @@ class Detector:
         augmenter: mc.augmentations.AugmenterProtocol = None,
         train_backbone: bool = True,
         train_backbone_bn: bool = True,
-        callbacks: typing.List[mc.callbacks.CallbackProtocol] = None,
+        callbacks: typing.List[mdcb.CallbackProtocol] = None,
         data_dir_prefix=None,
         validation_transforms: np.ndarray = None,
         **kwargs,

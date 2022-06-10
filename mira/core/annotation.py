@@ -247,7 +247,7 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
             return self.assign(
                 category=annotation_config[name],
             )
-        raise ValueError("%s is not in the new annotation configuration.")
+        raise ValueError(f"{name} is not in the new annotation configuration.")
 
     def __eq__(self, other):
         return (

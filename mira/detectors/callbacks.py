@@ -14,11 +14,8 @@ import pandas as pd
 import typing_extensions as tx
 
 if typing.TYPE_CHECKING:
-    from ..detectors.detector import Detector
-from .. import metrics as mm
-from . import scene as mcs
-from . import annotation as mca
-from . import utils as mcu
+    from .detector import Detector
+from .. import metrics, core
 
 # pylint: disable=too-few-public-methods
 class CallbackProtocol(tx.Protocol):
@@ -89,13 +86,13 @@ def data_dir_to_collections(data_dir: str, threshold: float, detector: "Detector
     return {
         split: {
             "collections": {
-                "true_collection": mcs.SceneCollection(
+                "true_collection": core.SceneCollection(
                     [
-                        mcs.Scene(
+                        core.Scene(
                             image=filepath,
                             annotation_config=detector.annotation_config,
                             annotations=[
-                                mca.Annotation(
+                                core.Annotation(
                                     detector.annotation_config[cIdx], x1, y1, x2, y2
                                 )
                                 for x1, y1, x2, y2, cIdx in np.load(
@@ -107,9 +104,9 @@ def data_dir_to_collections(data_dir: str, threshold: float, detector: "Detector
                     ],
                     annotation_config=detector.annotation_config,
                 ),
-                "pred_collection": mcs.SceneCollection(
+                "pred_collection": core.SceneCollection(
                     [
-                        mcs.Scene(
+                        core.Scene(
                             image=filepath,
                             annotation_config=detector.annotation_config,
                             annotations=annotations,
@@ -171,7 +168,7 @@ def mAP(iou_threshold=0.5, threshold=0.01) -> CallbackProtocol:
             f"{split}_mAP": round(
                 np.nanmean(
                     list(
-                        mm.mAP(
+                        metrics.mAP(
                             **split_data["collections"],
                             iou_threshold=iou_threshold,
                         ).values()
@@ -213,7 +210,7 @@ def error_examples(
             for imageIdx, image, examples, metadata, transform in zip(
                 split_data["indices"],
                 split_data["collections"]["true_collection"].images,
-                mm.crop_error_examples(
+                metrics.crop_error_examples(
                     **split_data["collections"],
                     threshold=threshold,
                     iou_threshold=iou_threshold,
@@ -226,7 +223,7 @@ def error_examples(
                     directory = os.path.join(
                         examples_dir, str(len(summaries)), split, error_type
                     )
-                    bboxes = mcu.transform_bboxes(
+                    bboxes = core.utils.transform_bboxes(
                         np.array([ann.x1y1x2y2() for ann in annotations]),
                         np.linalg.pinv(transform),
                         clip=False,
