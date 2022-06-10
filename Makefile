@@ -27,6 +27,7 @@ patch-thirdparty: ## Patch thirdparty module import structure.
 	find mira/thirdparty/albumentations -name '*.py' -exec sed -i'.bak' -e 's/from albumentations/from mira.thirdparty.albumentations.albumentations/g' {} +
 	find mira/thirdparty/albumentations -name '*.py' -exec sed -i'.bak' -e 's/from .domain_adaptation import \*//g' {} +
 	find mira/thirdparty/smp -name '*.py' -exec sed -i'.bak' -e 's/from segmentation_models_pytorch/from mira.thirdparty.smp.segmentation_models_pytorch/g' {} +
+	find mira/thirdparty -name '*.py.bak' -exec rm {} +
 
 init:  patch-thirdparty ## Initialize the development environment.
 	pip install poetry-dynamic-versioning poetry
