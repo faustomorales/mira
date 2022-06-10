@@ -29,6 +29,8 @@ jobs:
       - name: Make Host Environment
         run: |
           make init
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
       - name: Test Source
         run: |
           make check
