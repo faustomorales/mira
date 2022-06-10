@@ -1,8 +1,8 @@
 [submodule "mira/thirdparty/albumentations"]
 	path = mira/thirdparty/albumentations
-	url = git@github.com:albumentations-team/albumentations.git
+	url = https://github.com/albumentations-team/albumentations.git
 	ignore = all
 [submodule "mira/thirdparty/smp"]
 	path = mira/thirdparty/smp
-	url = git@github.com:qubvel/segmentation_models.pytorch.git
+	url = https://github.com/qubvel/segmentation_models.pytorch.git
 	ignore = all
