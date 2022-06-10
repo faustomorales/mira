@@ -19,16 +19,17 @@ import numpy as np
 LOGGER = logging.getLogger()
 DEFAULT_SCHEDULER_PARAMS = dict(
     sched="cosine",
-    min_lr=1e-5,
-    decay_rate=1,
+    min_lr=1e-3,
     warmup_lr=0,
     warmup_epochs=0,
     cooldown_epochs=0,
-    epochs=100,
-    lr_cycle_limit=0,
+    epochs=10,
+    lr_cycle_decay=1,
+    lr_cycle_limit=1e5,
+    lr_cycle_mul=1,
 )
 
-DEFAULT_OPTIMIZER_PARAMS = dict(learning_rate=1e-2, weight_decay=4e-5)
+DEFAULT_OPTIMIZER_PARAMS = dict(lr=1e-2, opt="sgd", weight_decay=4e-5)
 
 InputType = typing.TypeVar("InputType")
 

@@ -268,12 +268,12 @@ class Detector:
             ]
 
         def on_epoch_end(summaries: typing.List[dict]):
-            summary: typing.Dict[str, typing.Any] = {}
+            summary: typing.Dict[str, typing.Any] = summaries[-1]
             if callbacks:
                 for callback in callbacks:
                     for k, v in callback(
                         detector=self,
-                        summaries=summaries + [summary],
+                        summaries=summaries,
                         data_dir=state["directory"].name,
                     ).items():
                         summary[k] = v
