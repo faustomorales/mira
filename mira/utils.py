@@ -100,7 +100,7 @@ def _extract_archive(  # noqa: E302
         if is_match_fn(file_path):
             if os.path.exists(path) and extract_check_fn is not None:
                 log.info(
-                    "Found target folder. Checking for " "existing complete extraction."
+                    "Found target folder. Checking for existing complete extraction."
                 )
                 if extract_check_fn(path):
                     log.info("Found complete extraction.")

@@ -5,9 +5,9 @@ import logging
 import cv2
 import numpy as np
 import pandas as pd
-import albumentations as A
 import typing_extensions as tx
 
+from ..thirdparty.albumentations import albumentations as A
 from . import experimental as mce
 from . import utils as mcu
 

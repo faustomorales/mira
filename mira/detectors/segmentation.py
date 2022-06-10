@@ -1,7 +1,7 @@
 import torch
 import cv2
 import numpy as np
-import segmentation_models_pytorch as smp
+from ..thirdparty.smp import segmentation_models_pytorch as smp
 from . import detector as mdd
 from . import common as mdc
 from .. import core as mc

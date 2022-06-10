@@ -29,15 +29,14 @@ version = "0.0.0"
 python = ">=3.7.9,<3.11"
 pandas = "*"
 protobuf = "*"
-albumentations = ">=1.1.0"
 numpy = "*"
 tqdm = "*"
 matplotlib = "*"
 validators = "*"
-segmentation-models-pytorch = {version = ">=0.2.0", optional = true}
+scikit-image = {version = "*", optional = true}
 timm = {version = "*", optional = true}
-omegaconf = {version = "*", optional = true}
-torchvision = {version = "*", optional = true}
+pretrainedmodels = {version = "*", optional = true}
+efficientnet_pytorch = {version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
 black = "*"
@@ -52,7 +51,9 @@ torch = "*"
 torchserve = "*"
 jupyterlab = "*"
 torch-model-archiver = "*"
-qsl = "^0.1.23"
+qsl = "*"
+opencv-python-headless = "*"
+scipy = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -60,7 +61,7 @@ vcs = "git"
 style = "semver"
 
 [tool.poetry.extras]
-detectors = ["timm", "omegaconf", "torchvision", "segmentation-models-pytorch"]
+detectors = ["timm", "scikit-image", "pretrainedmodels", "efficientnet_pytorch"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=mira --cov-report=term-missing"
@@ -71,13 +72,17 @@ filterwarnings = [
     "ignore:Named tensors and all their associated APIs are an experimental feature and subject to change.:UserWarning"
 ]
 
-[tool.pylint.master]
+[tool.pylint.main]
+extension-pkg-allow-list = [
+    "cv2"
+]
 init-hook="import mira.pylint; mira.pylint.patch(['mira/thirdparty'])"
+
 
 [tool.pylint.similarities]
 min-similarity-lines=10
 
-[tool.pylint.messages_control]
+[tool.pylint."messages_control"]
 disable = [
     "line-too-long",
     "missing-module-docstring",
@@ -89,13 +94,13 @@ disable = [
     "too-many-statements",
     "duplicate-code",
     "protected-access",
-    "wrong-import-position"
+    "wrong-import-position",
+    "unnecessary-lambda-assignment",
+    "too-few-public-methods"
 ]
-extension-pkg-whitelist = [
-    "cv2"
-]
+
 [tool.pylint.typecheck]
-generated-members = ["torch.*"]
+generated-members = ["torch.*", "cv2.*"]
 
 [tool.mypy]
 exclude = [

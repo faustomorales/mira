@@ -12,7 +12,6 @@ import tempfile
 
 import tqdm
 import pandas as pd
-import albumentations as A
 import typing_extensions as tx
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -22,6 +21,7 @@ import cv2
 from .protos import scene_pb2 as mps
 from .annotation import AnnotationConfiguration, Annotation
 from . import utils, augmentations
+from ..thirdparty.albumentations import albumentations as A
 
 log = logging.getLogger(__name__)
 
@@ -151,14 +151,14 @@ class Scene:
             contours = cv2.findContours(
                 bitmap, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE
             )[0]
-            assert (
-                len(contours) == 1
-            ), f"Only single contour masks are supported. Found {len(contours)} contours."
-            annotations.append(
-                Annotation(
-                    category=annotation_config[mask["labels"][label_key][0]],
-                    points=contours[0][:, 0, :] * [scalex, scaley],
-                )
+            annotations.extend(
+                [
+                    Annotation(
+                        category=annotation_config[mask["labels"][label_key][0]],
+                        points=contour[:, 0, :] * [scalex, scaley],
+                    )
+                    for contour in contours
+                ]
             )
         for polygon in labels["polygons"]:
             annotations.append(

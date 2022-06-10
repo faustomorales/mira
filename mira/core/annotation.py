@@ -286,7 +286,7 @@ class AnnotationConfiguration:
     def __init__(self, names: typing.List[str]):
         names = [s.lower() for s in names]
         if len(names) != len(set(names)):
-            raise ValueError("All class names must be unique " "(case-insensitive).")
+            raise ValueError("All class names must be unique (case-insensitive).")
         self._types = [AnnotationCategory(name=name) for name in names]
 
     def bboxes_from_group(self, annotations: typing.List[Annotation]):

@@ -23,7 +23,12 @@ help:
 protos: ## Build protobufs.
 	protoc --python_out=mira/core protos/scene.proto
 
-init:  ## Initialize the development environment.
+patch-thirdparty: ## Patch thirdparty module import structure.
+	sed -i'.bak' -e 's/from albumentations/from mira.thirdparty.albumentations.albumentations/g' mira/thirdparty/albumentations/**/*.py
+	sed -i'.bak' -e 's/from .domain_adaptation import \*//g' mira/thirdparty/albumentations/**/*.py
+	sed -i'.bak' -e 's/from segmentation_models_pytorch/from mira.thirdparty.smp.segmentation_models_pytorch/g' mira/thirdparty/smp/**/*.py
+
+init:  patch-thirdparty ## Initialize the development environment.
 	pip install poetry-dynamic-versioning poetry
 	poetry install -E detectors --remove-untracked
 
@@ -33,7 +38,7 @@ format-check: ## Make black check source formatting
 format: ## Make black unabashedly format source code
 	@$(EXEC) black --exclude mira/thirdparty $(PKG_NAME) tests
 
-package: ## Make a local build of the Python package, source dist and wheel
+package: patch-thirdparty ## Make a local build of the Python package, source dist and wheel
 	@rm -rf dist
 	@mkdir -p dist
 	@$(EXEC) poetry build

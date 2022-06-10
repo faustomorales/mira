@@ -10,8 +10,8 @@ import io
 
 import cv2
 import numpy as np
-import albumentations as A
 
+from mira.thirdparty.albumentations import albumentations as A
 import mira.core as mc
 import mira.core.experimental as mce
 import mira.datasets as mds
