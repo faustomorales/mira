@@ -57,19 +57,22 @@ class SMP(mdd.Detector):
         max_detections: int = None,
         detector_kwargs=None,
         backbone_kwargs=None,
-        preprocessing_fn=None,
+        preprocessing_kwargs=None,
         resize_config: mdc.ResizeConfig = None,
     ):
-        self.backbone_kwargs = {
-            "encoder_name": "efficientnet-b0",
-            **(backbone_kwargs or {}),
-        }
-        self.detector_kwargs = {
+        self.backbone_kwargs = backbone_kwargs or {"encoder_name": "efficientnet-b0"}
+        self.detector_kwargs = detector_kwargs or {
             "loss": smp.losses.DiceLoss(
                 smp.losses.MULTILABEL_MODE,
-            ),
-            **(detector_kwargs or {}),
+            )
         }
+        self.max_detections = max_detections
+        self.preprocessing_kwargs = preprocessing_kwargs or {
+            "encoder_name": self.backbone_kwargs["encoder_name"],
+            "pretrained": "imagenet",
+        }
+        self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 64}
+        self.annotation_config = annotation_config
         self.model = SMPWrapper(
             model=getattr(smp, arch)(
                 **self.backbone_kwargs,
@@ -78,14 +81,11 @@ class SMP(mdd.Detector):
             ),
             **self.detector_kwargs,
         )
-        self.backbone = self.model.backbone
         self.set_device(device)
-        self.annotation_config = annotation_config
-        self.max_detections = max_detections
-        self.preprocessing_fn = preprocessing_fn or smp.encoders.get_preprocessing_fn(
-            self.backbone_kwargs["encoder_name"], pretrained="imagenet"
+        self.backbone = self.model.backbone
+        self.preprocessing_fn = smp.encoders.get_preprocessing_fn(
+            **self.preprocessing_kwargs
         )
-        self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 64}
 
     def compute_inputs(self, images):
         return torch.tensor(
