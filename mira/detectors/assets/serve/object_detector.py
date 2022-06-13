@@ -44,12 +44,21 @@ class ThresholdConfigurableObjectDetector(ObjectDetector):
                 {
                     "score": score,
                     "label": self.mapping[str(label)],
-                    **dict(zip(["x1", "y1", "x2", "y2"], box)),
+                    **(
+                        dict(zip(["x1", "y1", "x2", "y2"], box))
+                        if "boxes" in row
+                        else dict(polygon=box)
+                    ),
                 }
                 for score, box, label in zip(
-                    row["scores"].tolist(),
-                    row["boxes"].tolist(),
-                    row["labels"].tolist(),
+                    *[
+                        l if isinstance(l, list) else l.tolist()
+                        for l in [
+                            row["scores"],
+                            row["boxes" if "boxes" in row else "polygons"],
+                            row["labels"],
+                        ]
+                    ]
                 )
                 if score > threshold
             ]
