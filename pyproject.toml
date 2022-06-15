@@ -37,6 +37,8 @@ scikit-image = {version = "*", optional = true}
 timm = {version = "*", optional = true}
 pretrainedmodels = {version = "*", optional = true}
 efficientnet_pytorch = {version = "*", optional = true}
+ftfy = {version = "*", optional = true}
+regex = {version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
 black = "*"
@@ -54,6 +56,7 @@ torch-model-archiver = "*"
 qsl = "*"
 opencv-python-headless = "*"
 scipy = "*"
+types-requests = "^2.27.30"
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -62,6 +65,7 @@ style = "semver"
 
 [tool.poetry.extras]
 detectors = ["timm", "scikit-image", "pretrainedmodels", "efficientnet_pytorch"]
+classifiers = ["ftfy", "regex"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=mira --cov-report=term-missing"

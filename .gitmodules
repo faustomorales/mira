@@ -6,3 +6,6 @@
 	path = mira/thirdparty/smp
 	url = https://github.com/qubvel/segmentation_models.pytorch.git
 	ignore = all
+[submodule "mira/thirdparty/clip"]
+	path = mira/thirdparty/clip
+	url = https://github.com/openai/CLIP.git
