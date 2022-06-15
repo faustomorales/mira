@@ -129,10 +129,14 @@ class Scene:
         """
         import qsl
 
+        target = item["target"]
         labels = item["labels"]
         dimensions = labels["dimensions"]
         annotations = []
         for box in labels["boxes"]:
+            if not box["labels"].get(label_key):
+                log.warning("A box in %s is missing %s. Skipping.", target, label_key)
+                continue
             annotations.append(
                 Annotation(
                     category=annotation_config[box["labels"][label_key][0]],
@@ -143,6 +147,9 @@ class Scene:
                 )
             )
         for mask in labels["masks"]:
+            if not mask["labels"].get(label_key):
+                log.warning("A mask in %s is missing %s. Skipping.", target, label_key)
+                continue
             bitmap = qsl.counts2bitmap(**mask["map"])
             scaley, scalex = (
                 dimensions["height"] / bitmap.shape[0],
@@ -161,6 +168,11 @@ class Scene:
                 ]
             )
         for polygon in labels["polygons"]:
+            if not polygon["labels"].get(label_key):
+                log.warning(
+                    "A polygon in %s is missing %s. Skipping.", target, label_key
+                )
+                continue
             annotations.append(
                 Annotation(
                     category=annotation_config[polygon["labels"][label_key][0]],
@@ -169,7 +181,7 @@ class Scene:
                 )
             )
         return cls(
-            image=item["target"],
+            image=target,
             annotations=annotations,
             annotation_config=annotation_config,
             metadata=item.get("metadata", {}),
