@@ -1,9 +1,11 @@
 import typing
+import math
 
 import typing_extensions as tx
 import mira.core
 import mira.thirdparty.clip.clip as clip
 
+import tqdm
 import torch
 import torchvision
 import numpy as np
@@ -39,11 +41,17 @@ class CLIP:
         )
 
     def classify(
-        self, images: typing.List[typing.Union[str, np.ndarray]], batch_size=32
+        self,
+        images: typing.List[typing.Union[str, np.ndarray]],
+        batch_size=32,
+        progress=False,
     ) -> typing.List[ClassifierPrediction]:
         """Classify a batch of images."""
         predictions: typing.List[ClassifierPrediction] = []
-        for start in range(0, len(images), batch_size):
+        iterator = range(0, len(images), batch_size)
+        if progress:
+            iterator = tqdm.tqdm(iterator, total=math.ceil(len(images) / batch_size))
+        for start in iterator:
             with torch.no_grad():
                 image_vectors = self.model.encode_image(
                     torch.stack(
