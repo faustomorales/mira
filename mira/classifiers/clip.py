@@ -10,8 +10,15 @@ import torch
 import torchvision
 import numpy as np
 
+SimplePrediction = tx.TypedDict("SimplePrediction", {"logit": float, "score": float})
 ClassifierPrediction = tx.TypedDict(
-    "ClassifierPrediction", {"score": float, "logit": float, "label": str}
+    "ClassifierPrediction",
+    {
+        "score": float,
+        "logit": float,
+        "label": str,
+        "raw": typing.Dict[str, SimplePrediction],
+    },
 )
 
 
@@ -71,24 +78,39 @@ class CLIP:
                     )
                 )
                 logits = (
-                    self.model.logit_scale.exp()
-                    * (image_vectors / image_vectors.norm(dim=1, keepdim=True))
-                    @ (
-                        self.text_vectors / self.text_vectors.norm(dim=1, keepdim=True)
-                    ).t()
+                    (
+                        self.model.logit_scale.exp()
+                        * (image_vectors / image_vectors.norm(dim=1, keepdim=True))
+                        @ (
+                            self.text_vectors
+                            / self.text_vectors.norm(dim=1, keepdim=True)
+                        ).t()
+                    )
+                    .detach()
+                    .cpu()
                 )
-                scores = logits.softmax(dim=-1).detach().cpu().numpy()
+                scores = logits.softmax(dim=-1).numpy()
                 predictions.extend(
                     [
                         {
                             "label": self.annotation_config[classIdx].name,
                             "score": score,
                             "logit": logit,
+                            "raw": {
+                                category.name: {"score": score, "logit": logit}
+                                for category, score, logit in zip(
+                                    self.annotation_config,
+                                    catscores.tolist(),
+                                    catlogits.tolist(),
+                                )
+                            },
                         }
-                        for score, classIdx, logit in zip(
-                            scores.max(axis=1),
-                            scores.argmax(axis=1),
-                            logits.detach().cpu().numpy().max(axis=1),
+                        for score, classIdx, logit, catscores, catlogits in zip(
+                            scores.max(axis=1).tolist(),
+                            scores.argmax(axis=1).tolist(),
+                            logits.numpy().max(axis=1).tolist(),
+                            scores,
+                            logits.numpy(),
                         )
                     ]
                 )
