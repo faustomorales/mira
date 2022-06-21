@@ -64,17 +64,29 @@ def test_scene_deduplication():
         ],
         annotation_config=ac,
     )
-    deduplicated_coverage = scene.drop_duplicates(method="coverage")
-    deduplicated_iou = scene.drop_duplicates(method="iou")
-    assert len(deduplicated_coverage.annotations) == 2
-    assert len(deduplicated_iou.annotations) == 3
-    assert all(
-        ann.metadata["tag"] == "keep-me" for ann in deduplicated_coverage.annotations
-    )
-    assert all(
-        ann.metadata["tag"] in ["keep-me", "drop-me-coverage"]
-        for ann in deduplicated_iou.annotations
-    )
+    for convert_to_polygon in [False, True]:
+        test_scene = (
+            scene.assign(
+                annotations=[
+                    ann.assign(points=ann.points, x1=None, y1=None, x2=None, y2=None)
+                    for ann in scene.annotations
+                ]
+            )
+            if convert_to_polygon
+            else scene
+        )
+        deduplicated_coverage = test_scene.drop_duplicates(method="coverage")
+        deduplicated_iou = test_scene.drop_duplicates(method="iou")
+        assert len(deduplicated_coverage.annotations) == 2
+        assert len(deduplicated_iou.annotations) == 3
+        assert all(
+            ann.metadata["tag"] == "keep-me"
+            for ann in deduplicated_coverage.annotations
+        )
+        assert all(
+            ann.metadata["tag"] in ["keep-me", "drop-me-coverage"]
+            for ann in deduplicated_iou.annotations
+        )
 
 
 def test_file_read():

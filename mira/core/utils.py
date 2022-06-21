@@ -18,6 +18,8 @@ log = logging.getLogger(__name__)
 MaskRegion = typing_extensions.TypedDict(
     "MaskRegion", {"visible": bool, "contour": np.ndarray, "name": str}
 )
+ContourList = typing.List[np.ndarray]
+DeduplicationMethod = typing_extensions.Literal["iou", "coverage"]
 
 
 def box2pts(x1: int, y1: int, x2: int, y2: int) -> np.ndarray:
@@ -156,13 +158,10 @@ def compute_iou(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     return iou
 
 
-def compute_iou_for_contour_pair(contour1, contour2):
-    """Compute IoU for a pair of contours.
-
-    Args:
-        contour1: The first contour.
-        contour2: The second contour.
-    """
+def compute_contour_binary_masks(
+    contour1: np.ndarray, contour2: np.ndarray
+) -> typing.Tuple[np.ndarray, np.ndarray]:
+    """Given two contours, build binary images showing the coverage of eash, scaling them to a maximum size of 100px."""
     points = np.concatenate([contour1, contour2], axis=0)
     offset = points.min(axis=0)
     points, contour1, contour2 = [v - offset for v in [points, contour1, contour2]]
@@ -181,12 +180,28 @@ def compute_iou_for_contour_pair(contour1, contour2):
         > 0
         for box in [contour1, contour2]
     ]
+    return im1, im2
+
+
+def compute_coverage_for_contour_pair(contour1: np.ndarray, contour2: np.ndarray):
+    """Compute how much of contour1 is contained within contour2."""
+    im1, im2 = compute_contour_binary_masks(contour1, contour2)
+    return (im1 & im2).sum() / im1.sum()
+
+
+def compute_iou_for_contour_pair(contour1: np.ndarray, contour2: np.ndarray):
+    """Compute IoU for a pair of contours.
+
+    Args:
+        contour1: The first contour.
+        contour2: The second contour.
+    """
+    im1, im2 = compute_contour_binary_masks(contour1, contour2)
     return (im1 & im2).sum() / (im1 | im2).sum()
 
 
-def compute_contour_iou(contoursA, contoursB):
-    """Compute pairwise IoU for two sets of contours. Consider the following
-    example:
+def compute_contour_iou(contoursA: ContourList, contoursB: ContourList):
+    """Compute pairwise IoU for two sets of contours.
 
     Args:
         contoursA: The first set of contours as a list of point arrays.
@@ -201,6 +216,15 @@ def compute_contour_iou(contoursA, contoursB):
             for contour1 in contoursA
         ]
     )
+
+
+def compute_contour_coverage(contoursA: ContourList, contoursB: ContourList):
+    """Compute pairwise overlap of two sets of contours."""
+    arr = np.zeros((len(contoursA), len(contoursB)), dtype="float32")
+    for idx1, contour1 in enumerate(contoursA):
+        for idx2, contour2 in enumerate(contoursB):
+            arr[idx1, idx2] = compute_coverage_for_contour_pair(contour1, contour2)
+    return arr
 
 
 def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
@@ -332,9 +356,36 @@ def flatten(t):
     return [item for sublist in t for item in sublist]
 
 
-def find_largest_unique_boxes(
-    bboxes, threshold=1, method: typing_extensions.Literal["iou", "coverage"] = "iou"
-):
+def find_largest_unique_contours(contours, threshold=1, method="iou"):
+    """Find the largest entries in a list of contours that are not duplicative with a larger contour.
+    Same as find_largest_unique_boxes but with contours."""
+    assert method in ["iou", "coverage"]
+    func = compute_contour_iou if method == "iou" else compute_contour_coverage
+    if len(contours) <= 1:
+        # You can't have duplicates if there's only one or None.
+        return np.array([0] if len(contours) == 1 else [])
+
+    # Sort by area because we're going to identify duplicates
+    # in order of size.
+    indexes = sorted(
+        range(len(contours)), key=lambda idx: cv2.contourArea(contours[idx])
+    )
+    sorted_contours = [contours[idx] for idx in indexes]
+    # Keep only annotations that are not duplicative with a larger (i.e.,
+    # later in our sorted list) annotation. The largest annotation is, of course,
+    # always retained.
+    return np.array(
+        [
+            bidx
+            for bidx, (cidx, coverages) in zip(
+                indexes, enumerate(func(sorted_contours, sorted_contours))
+            )
+            if (cidx == len(contours) - 1 or coverages[cidx + 1 :].max() < threshold)
+        ]
+    )
+
+
+def find_largest_unique_boxes(bboxes, threshold=1, method: DeduplicationMethod = "iou"):
     """Find the largest entries in a list of bounding boxes that are not duplicative with
     a larger box.
 

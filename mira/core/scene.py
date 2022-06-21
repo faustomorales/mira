@@ -12,7 +12,6 @@ import tempfile
 
 import tqdm
 import pandas as pd
-import typing_extensions as tx
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -331,9 +330,7 @@ class Scene:
         fig.tight_layout()
         return fig
 
-    def drop_duplicates(
-        self, threshold=1, method: tx.Literal["iou", "coverage"] = "iou"
-    ):
+    def drop_duplicates(self, threshold=1, method: utils.DeduplicationMethod = "iou"):
         """Remove annotations of the same class where one annotation covers similar or equal area as another.
 
         Args:
@@ -353,12 +350,20 @@ class Scene:
             annotations.extend(
                 [
                     current_annotations[idx]
-                    for idx in utils.find_largest_unique_boxes(
-                        bboxes=self.annotation_config.bboxes_from_group(
-                            current_annotations
-                        )[:, :4],
-                        method=method,
-                        threshold=threshold,
+                    for idx in (
+                        utils.find_largest_unique_boxes(
+                            bboxes=self.annotation_config.bboxes_from_group(
+                                current_annotations
+                            )[:, :4],
+                            method=method,
+                            threshold=threshold,
+                        )
+                        if all(ann.is_rect for ann in current_annotations)
+                        else utils.find_largest_unique_contours(
+                            contours=[ann.points for ann in current_annotations],
+                            method=method,
+                            threshold=threshold,
+                        )
                     )
                 ]
             )
