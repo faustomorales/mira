@@ -514,13 +514,12 @@ class Scene:
             ]
         )
         annotations = [ann for ann in annotations if ann.area() > 0]
-        return self.assign(
-            image=image,
-            annotations=annotations,
-        ), cv2.getPerspectiveTransform(
+        transform = cv2.getPerspectiveTransform(
             src=np.array(base_points, dtype="float32")[:4],
             dst=np.array(transformed["keypoints"][:4], dtype="float32"),
         )
+        augmented = self.assign(image=image, annotations=annotations, masks=[])
+        return augmented, transform
 
     def to_subcrops(self, max_size: int) -> typing.List["Scene"]:
         """Split a scene into subcrops of some maximum size while trying

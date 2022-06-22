@@ -489,3 +489,8 @@ def transform_bboxes(
         axis=0,
     ).T
     return transformed_bboxes
+
+
+def transform_contour(contour: np.ndarray, M):
+    """Apply a transform to a contour."""
+    return cv2.transform(contour[:, np.newaxis], m=M)[:, 0, :2]
