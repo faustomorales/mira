@@ -907,13 +907,13 @@ class SceneCollection:
         scenes = []
         for item in project["items"]:
             if item.get("type", "image") != "image":
-                log.warning("Skipping item with type %s.", item["type"])
+                log.info("Skipping item with type %s.", item["type"])
                 continue
             if item.get("ignore", False):
-                log.warning("Skipping %s because it was ignored.", item["target"])
+                log.info("Skipping %s because it was ignored.", item["target"])
                 continue
             if "labels" not in item:
-                log.warning("Skipping %s because labels are missing.", item["target"])
+                log.info("Skipping %s because labels are missing.", item["target"])
                 continue
             scenes.append(
                 Scene.from_qsl(
