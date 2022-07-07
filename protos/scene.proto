@@ -19,11 +19,16 @@ message Annotation {
     string metadata = 9;
 }
 
+
+message Label {
+    int32 category = 1;
+    float score = 2;
+    string metadata = 3;
+}
+
 message AnnotationConfiguration {
     repeated string categories = 1;
 }
-
-
 
 message Mask {
     bool visible = 1;
@@ -37,4 +42,5 @@ message Scene {
   repeated Mask masks = 3;
   bytes image = 4;
   string metadata = 5;
+  repeated Label labels = 6;
 }

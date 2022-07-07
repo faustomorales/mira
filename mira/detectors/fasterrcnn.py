@@ -3,7 +3,6 @@ import typing
 
 import torch
 import torchvision
-import numpy as np
 import typing_extensions as tx
 import pkg_resources
 
@@ -196,7 +195,7 @@ class FasterRCNN(detector.Detector):
         fpn_kwargs=None,
         detector_kwargs=None,
         anchor_kwargs=None,
-        resize_config: mdc.ResizeConfig = None,
+        resize_config: mc.torchtools.ResizeConfig = None,
     ):
         self.annotation_config = annotation_config
         self.backbone_name = backbone
@@ -248,14 +247,6 @@ class FasterRCNN(detector.Detector):
             .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
             .replace("ANCHOR_KWARGS", str(self.anchor_kwargs))
             .replace("FPN_KWARGS", str({**self.fpn_kwargs, "pretrained": False}))
-        )
-
-    def compute_inputs(self, images):
-        images = np.float32(images) / 255.0
-        return (
-            torch.tensor(images, dtype=torch.float32)
-            .permute(0, 3, 1, 2)
-            .to(self.device)
         )
 
     def invert_targets(self, y, threshold=0.5, **kwargs):

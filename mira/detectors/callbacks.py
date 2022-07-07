@@ -43,7 +43,7 @@ def best_weights(
         key: What name to use for the saved flag.
     """
     # pylint: disable=unused-argument
-    def callback(detector, summaries, data_dir):
+    def callback(detector, summaries, data_dir=None):
         saved = False
         summaries_df = pd.json_normalize(summaries)
         best_idx = (

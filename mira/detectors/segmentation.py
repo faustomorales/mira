@@ -4,7 +4,6 @@ import numpy as np
 import pkg_resources
 from ..thirdparty.smp import segmentation_models_pytorch as smp
 from . import detector as mdd
-from . import common as mdc
 from .. import core as mc
 
 
@@ -59,7 +58,7 @@ class SMP(mdd.Detector):
         detector_kwargs=None,
         backbone_kwargs=None,
         preprocessing_kwargs=None,
-        resize_config: mdc.ResizeConfig = None,
+        resize_config: mc.torchtools.ResizeConfig = None,
         base_threshold: float = 0.5,
     ):
         self.arch = arch

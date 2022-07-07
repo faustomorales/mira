@@ -27,13 +27,17 @@ def box2pts(x1: int, y1: int, x2: int, y2: int) -> np.ndarray:
     return np.array([[x1, y1], [x2, y1], [x2, y2], [x1, y2]])
 
 
-def read(filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO]):
+def read(
+    filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO, np.ndarray]
+):
     """Read a file into an image object
 
     Args:
         filepath_or_buffer: The path to the file or any object
             with a `read` method (such as `io.BytesIO`)
     """
+    if isinstance(filepath_or_buffer, np.ndarray):
+        return filepath_or_buffer
     if hasattr(filepath_or_buffer, "read"):
         image = np.asarray(bytearray(filepath_or_buffer.read()), dtype=np.uint8)  # type: ignore
         image = cv2.imdecode(image, cv2.IMREAD_COLOR)

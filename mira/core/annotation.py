@@ -32,8 +32,49 @@ class AnnotationCategory:
     def __repr__(self):
         return repr(self._name)
 
+    def convert(self, annotation_config) -> "AnnotationCategory":
+        """Convert an annotation to match another annotation config."""
+        name = self._name
+        if name in annotation_config:
+            return annotation_config[name]
+        raise ValueError(f"{name} is not in the new annotation configuration.")
 
-class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tuple-unpacking
+
+class Label:
+    """An image-level label."""
+
+    category: AnnotationCategory
+    metadata: dict
+    score: typing.Optional[float]
+
+    def __init__(
+        self, category: AnnotationCategory, score: float = None, metadata: dict = None
+    ):
+        self.category = category
+        self.score = score
+        self.metadata = metadata or {}
+
+    def convert(self, annotation_config) -> "Label":
+        """Convert an annotation to match another annotation config."""
+        return self.assign(
+            category=self.category.convert(annotation_config),
+        )
+
+    def assign(self, **kwargs) -> "Label":
+        """Get a new Annotation with only the supplied
+        keyword arguments changed."""
+        defaults = {
+            "category": self.category,
+            "score": self.score,
+            "metadata": self.metadata,
+        }
+        kwargs = {**defaults, **kwargs}
+        return Label(**kwargs)
+
+
+class Annotation(
+    Label
+):  # pylint: disable=too-many-instance-attributes,unbalanced-tuple-unpacking
     """Defines a single annotation.
 
     Args:
@@ -48,8 +89,6 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
     y1: int
     x2: int
     y2: int
-    metadata: dict
-    score: typing.Optional[float]
 
     def __init__(
         self,
@@ -62,9 +101,10 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
         score: float = None,
         metadata: dict = None,
     ):
+        super().__init__(category=category, score=score, metadata=metadata)
         is_rect = all(v is not None for v in [x1, y1, x2, y2])
         is_poly = points is not None
-        if (not is_rect and not is_poly) or (is_rect and is_poly):
+        if is_rect and is_poly:
             raise ValueError(
                 "Either all of (x1, y1, x2, y2) or points must be provided (and not both)."
             )
@@ -81,9 +121,6 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
                 self.points = np.concatenate([self.points, self.points[:1]], axis=0)
             self.x1, self.y1 = self.points.min(axis=0).tolist()
             self.x2, self.y2 = self.points.max(axis=0).tolist()
-        self.category = category
-        self.score = score
-        self.metadata = metadata or {}
 
     def area(self) -> int:
         """Compute the area of the selection."""
@@ -219,6 +256,12 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
             else self.assign(points=self.points * scale)
         )
 
+    def convert(self, annotation_config) -> "Annotation":
+        """Convert an annotation to match another annotation config."""
+        return self.assign(
+            category=self.category.convert(annotation_config),
+        )
+
     def assign(self, **kwargs) -> "Annotation":
         """Get a new Annotation with only the supplied
         keyword arguments changed."""
@@ -239,15 +282,6 @@ class Annotation:  # pylint: disable=too-many-instance-attributes,unbalanced-tup
         }
         kwargs = {**defaults, **kwargs}
         return Annotation(**kwargs)
-
-    def convert(self, annotation_config) -> "Annotation":
-        """Convert an annotation to match another annotation config."""
-        name = self.category.name
-        if name in annotation_config:
-            return self.assign(
-                category=annotation_config[name],
-            )
-        raise ValueError(f"{name} is not in the new annotation configuration.")
 
     def __eq__(self, other):
         return (

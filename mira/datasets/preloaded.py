@@ -25,6 +25,19 @@ VOCAnnotationConfiguration = core.AnnotationConfiguration(
 COCOAnnotationConfiguration90 = core.AnnotationConfiguration(
     resource_string(__name__, "assets/coco_classes_90.txt").decode("utf-8").split("\n")
 )
+ImageNet1KAnnotationConfiguration = core.AnnotationConfiguration(
+    resource_string(__name__, "assets/imagenet1k_classes.txt")
+    .decode("utf-8")
+    .lower()
+    .split("\n")
+)
+
+ShapeAnnotationConfig = core.AnnotationConfiguration(
+    [
+        " ".join([s, c])
+        for s, c in product(["RED", "BLUE", "GREEN"], ["RECTANGLE", "CIRCLE"])
+    ]
+)
 
 
 def load_random_images():
@@ -108,13 +121,92 @@ def load_voc2012(subset="train") -> core.SceneCollection:
     )
 
 
-def load_shapes(
+def make_shape_scene(
     width=256,
     height=256,
     object_count_bounds=(3, 8),
     object_width_bounds=(20, 40),
-    n_scenes=100,
     polygons=False,
+):
+    """Make a shape scene (used by load_shapes)."""
+    # pylint: disable=unsubscriptable-object
+    image = core.utils.get_blank_image(
+        width=width, height=height, n_channels=3, cval=255
+    )
+    object_count = (
+        object_count_bounds[0]
+        if object_count_bounds[0] == object_count_bounds[1]
+        else np.random.randint(*object_count_bounds)
+    )
+    ws = [object_width_bounds[0]] * object_count if object_width_bounds[0] == object_width_bounds[1] else np.random.randint(object_width_bounds[0], object_width_bounds[1], size=object_count)  # type: ignore
+    xs = (
+        [0] * object_count
+        if width - object_width_bounds[-1] <= 0
+        else np.random.randint(
+            low=0, high=width - object_width_bounds[-1], size=object_count
+        )
+    )
+    ys = (
+        [0] * object_count
+        if height - object_width_bounds[-1] <= 0
+        else np.random.randint(
+            low=0, high=height - object_width_bounds[-1], size=object_count
+        )
+    )
+    shapes = np.random.choice(["RECTANGLE", "CIRCLE"], size=object_count)
+    colors = np.random.choice(["RED", "BLUE", "GREEN"], size=object_count)
+    lookup = {"RED": (255, 0, 0), "BLUE": (0, 0, 255), "GREEN": (0, 255, 0)}
+    annotations = []
+    for x, y, w, shape, color in zip(xs, ys, ws, shapes, colors):
+        if image[y : y + w, x : x + w].min() == 0:
+            # Avoid overlapping shapes.
+            continue
+        if shape == "RECTANGLE":
+            cv2.rectangle(
+                image,
+                pt1=(x, y),
+                pt2=(x + w, y + w),
+                thickness=-1,
+                color=lookup[color],
+            )
+            points = [(x, y), (x + w, y), (x + w, y + w), (x, y + w), (x, y)]
+        elif shape == "CIRCLE":
+            r = w // 2
+            w = 2 * r
+            cv2.circle(
+                image,
+                center=(x + r, y + r),
+                radius=r,
+                thickness=-1,
+                color=lookup[color],
+            )
+            t = np.linspace(0, 2 * np.pi, num=20)
+            points = np.array(
+                [x + r * (np.cos(t) + 1), y + r * (1 + np.sin(t))]
+            ).T.tolist()
+        if polygons:
+            annotation = core.Annotation(
+                points=points,
+                category=ShapeAnnotationConfig[" ".join([color, shape])],
+            )
+        else:
+            annotation = core.Annotation(
+                x1=x,
+                y1=y,
+                x2=x + w,
+                y2=y + w,
+                category=ShapeAnnotationConfig[" ".join([color, shape])],
+            )
+        annotations.append(annotation)
+    return core.Scene(
+        annotations=annotations, image=image, annotation_config=ShapeAnnotationConfig
+    )
+
+
+def load_shapes(
+    n_scenes=100,
+    classification=False,
+    **kwargs,
 ) -> core.SceneCollection:
     """A simple dataset for testing.
 
@@ -132,77 +224,24 @@ def load_shapes(
     Returns:
         A scene collection of images with circles and rectangles in it.
     """
-    annotation_config = core.AnnotationConfiguration(
-        [
-            " ".join([s, c])
-            for s, c in product(["RED", "BLUE", "GREEN"], ["RECTANGLE", "CIRCLE"])
+    if classification:
+        width, height = kwargs.get("width", 256), kwargs.get("height", 256)
+        scenes = [
+            make_shape_scene(
+                width=width,
+                height=height,
+                object_count_bounds=(1, 1),
+                object_width_bounds=(min(width, height), min(width, height)),
+            )
+            for n in range(n_scenes)
         ]
-    )
-
-    def make_scene():
-        # pylint: disable=unsubscriptable-object
-        image = core.utils.get_blank_image(
-            width=width, height=height, n_channels=3, cval=255
-        )
-        object_count = np.random.randint(*object_count_bounds)
-        ws = np.random.randint(object_width_bounds[0], object_width_bounds[1], size=object_count)  # type: ignore
-        xs = np.random.randint(
-            low=0, high=width - object_width_bounds[-1], size=object_count
-        )
-        ys = np.random.randint(
-            low=0, high=height - object_width_bounds[-1], size=object_count
-        )
-        shapes = np.random.choice(["RECTANGLE", "CIRCLE"], size=object_count)
-        colors = np.random.choice(["RED", "BLUE", "GREEN"], size=object_count)
-        lookup = {"RED": (255, 0, 0), "BLUE": (0, 0, 255), "GREEN": (0, 255, 0)}
-        annotations = []
-        for x, y, w, shape, color in zip(xs, ys, ws, shapes, colors):
-            if image[y : y + w, x : x + w].min() == 0:
-                # Avoid overlapping shapes.
-                continue
-            if shape == "RECTANGLE":
-                cv2.rectangle(
-                    image,
-                    pt1=(x, y),
-                    pt2=(x + w, y + w),
-                    thickness=-1,
-                    color=lookup[color],
-                )
-                points = [(x, y), (x + w, y), (x + w, y + w), (x, y + w), (x, y)]
-            elif shape == "CIRCLE":
-                r = w // 2
-                w = 2 * r
-                cv2.circle(
-                    image,
-                    center=(x + r, y + r),
-                    radius=r,
-                    thickness=-1,
-                    color=lookup[color],
-                )
-                t = np.linspace(0, 2 * np.pi, num=20)
-                points = np.array(
-                    [x + r * (np.cos(t) + 1), y + r * (1 + np.sin(t))]
-                ).T.tolist()
-            if polygons:
-                annotation = core.Annotation(
-                    points=points,
-                    category=annotation_config[" ".join([color, shape])],
-                )
-            else:
-                annotation = core.Annotation(
-                    x1=x,
-                    y1=y,
-                    x2=x + w,
-                    y2=y + w,
-                    category=annotation_config[" ".join([color, shape])],
-                )
-            annotations.append(annotation)
-        return core.Scene(
-            annotations=annotations, image=image, annotation_config=annotation_config
-        )
-
-    scenes = [make_scene() for n in range(n_scenes)]
-    return core.SceneCollection(scenes=scenes, annotation_config=annotation_config)
+        scenes = [
+            s.assign(labels=[core.Label(category=s.annotations[0].category)])
+            for s in scenes
+        ]
+    else:
+        scenes = [make_shape_scene(**kwargs) for n in range(n_scenes)]
+    return core.SceneCollection(scenes=scenes)
 
 
 def load_oxfordiiitpets(breed=True) -> core.SceneCollection:

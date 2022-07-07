@@ -18,7 +18,7 @@ import numpy as np
 import cv2
 
 from .protos import scene_pb2 as mps
-from .annotation import AnnotationConfiguration, Annotation
+from .annotation import AnnotationConfiguration, Annotation, Label
 from . import utils, augmentations
 from ..thirdparty.albumentations import albumentations as A
 
@@ -46,21 +46,23 @@ class Scene:
     def __init__(
         self,
         annotation_config: AnnotationConfiguration,
-        annotations: typing.List[Annotation],
         image: typing.Union[np.ndarray, str],
+        annotations: typing.List[Annotation] = None,
         metadata: dict = None,
         cache: bool = False,
         masks: typing.List[utils.MaskRegion] = None,
+        labels: typing.List[Label] = None,
     ):
         assert isinstance(
             image, (np.ndarray, str)
         ), "Image must be string or ndarray, not " + str(type(image))
         if masks is None:
             masks = []
-        self.metadata = metadata
         self._image = image
-        self._annotations = annotations
-        self._annotation_config = annotation_config
+        self.metadata = metadata
+        self.annotations = annotations or []
+        self.annotation_config = annotation_config
+        self.labels = labels or []
         self.cache = cache
         self.masks = masks
 
@@ -94,16 +96,6 @@ class Scene:
                 image = image.copy()
             utils.apply_mask(image, masks=self.masks)
         return image
-
-    @property
-    def annotation_config(self):
-        """The annotation configuration"""
-        return self._annotation_config
-
-    @property
-    def annotations(self) -> typing.List[Annotation]:
-        """Get the list of annotations"""
-        return self._annotations
 
     @property
     def image_bytes(self) -> bytes:
@@ -201,6 +193,7 @@ class Scene:
             common = {
                 "category": annotation_config[annotation.category],
                 "metadata": json.loads(annotation.metadata),
+                "score": annotation.score,
             }
             if annotation.is_rect:
                 annotations.append(
@@ -222,6 +215,14 @@ class Scene:
         return cls(
             image=image,
             metadata=json.loads(deserialized.metadata),
+            labels=[
+                Label(
+                    category=annotation_config[ann.category],
+                    metadata=json.loads(ann.metadata),
+                    score=ann.score,
+                )
+                for ann in deserialized.labels
+            ],
             annotations=annotations,
             annotation_config=annotation_config,
             masks=[
@@ -250,6 +251,14 @@ class Scene:
                 )
                 for m in (self.masks or [])
             ],
+            labels=[
+                mps.Label(
+                    category=self.annotation_config.index(ann.category),
+                    score=ann.score,
+                    metadata=json.dumps(ann.metadata or {}),
+                )
+                for ann in self.labels
+            ],
             annotations=[
                 mps.Annotation(
                     category=self.annotation_config.index(ann.category),
@@ -257,6 +266,7 @@ class Scene:
                     y1=ann.y1,
                     x2=ann.x2,
                     y2=ann.y2,
+                    score=ann.score,
                     points=[mps.Point(x=x, y=y) for x, y in ann.points],
                     metadata=json.dumps(ann.metadata or {}),
                     is_rect=ann.is_rect,
@@ -271,18 +281,15 @@ class Scene:
         if "annotation_config" in kwargs:
             # We need to change all the categories for annotations
             # to match the new annotation configuration.
-            annotations = kwargs.get("annotations", self.annotations)
             annotation_config = kwargs["annotation_config"]
-            revised = [
-                ann.convert(annotation_config=annotation_config) for ann in annotations
+            kwargs["annotations"] = [
+                ann.convert(annotation_config)
+                for ann in kwargs.get("annotations", self.annotations)
             ]
-            revised = [ann for ann in revised if ann is not None]
-            removed = len(annotations) - len(revised)
-            log.debug(
-                "Removed %s annotations when changing annotation configuration.",
-                removed,
-            )
-            kwargs["annotations"] = revised
+            kwargs["labels"] = [
+                ann.convert(annotation_config)
+                for ann in kwargs.get("labels", self.labels)
+            ]
         # We use the _image instead of image to avoid triggering an
         # unnecessary read of the actual image.
         defaults = {
@@ -292,6 +299,7 @@ class Scene:
             "cache": self.cache,
             "metadata": self.metadata,
             "masks": self.masks,
+            "labels": self.labels,
         }
         kwargs = {**defaults, **kwargs}
         return Scene(**kwargs)
@@ -689,6 +697,11 @@ class SceneCollection:
     def annotation_groups(self):
         """The groups of annotations in the collection."""
         return [s.annotations for s in self.scenes]
+
+    @property
+    def label_groups(self):
+        """The groups of labels in the collection."""
+        return [s.labels for s in self.scenes]
 
     @property
     def uniform(self):

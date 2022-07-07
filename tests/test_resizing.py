@@ -1,7 +1,7 @@
 import torch
 import pytest
 import numpy as np
-from mira.detectors import common
+from mira.core.torchtools import resize
 
 base_examples = [
     np.zeros((256, 128, 3)).astype("uint8") + 255,
@@ -33,7 +33,7 @@ def verify_results(values, xlim, ylim, tensor_mode):
 
 @pytest.mark.parametrize("examples,tensor_mode", typed_examples)
 def test_resize_pad(examples, tensor_mode):
-    resized, scales, sizes = common.resize(
+    resized, scales, sizes = resize(
         x=examples, resize_config={"method": "pad", "height": 256, "width": 256}
     )
     assert (resized.shape[2:] if tensor_mode else resized.shape[1:3]) == (256, 256)
@@ -44,7 +44,7 @@ def test_resize_pad(examples, tensor_mode):
 
 @pytest.mark.parametrize("examples,tensor_mode", typed_examples)
 def test_resize_pad_to_multiple(examples, tensor_mode):
-    resized, scales, sizes = common.resize(
+    resized, scales, sizes = resize(
         x=examples, resize_config={"method": "pad_to_multiple", "base": 512}
     )
     assert (resized.shape[2:] if tensor_mode else resized.shape[1:3]) == (512, 512)
@@ -55,7 +55,7 @@ def test_resize_pad_to_multiple(examples, tensor_mode):
 
 @pytest.mark.parametrize("examples,tensor_mode", typed_examples)
 def test_resize_fit(examples, tensor_mode):
-    resized, scales, sizes = common.resize(
+    resized, scales, sizes = resize(
         x=examples, resize_config={"method": "fit", "height": 128, "width": 128}
     )
     assert (resized.shape[2:] if tensor_mode else resized.shape[1:3]) == (128, 128)

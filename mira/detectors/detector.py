@@ -21,36 +21,15 @@ except ImportError:
 
 from .. import metrics as mm
 from .. import core as mc
-from . import common as mdc
 from . import callbacks as mdcb
 
 LOGGER = logging.getLogger(__name__)
 
-TrainItem = typing.NamedTuple(
-    "TrainItem",
-    [
-        ("split", tx.Literal["train", "val"]),
-        ("index", int),
-        ("transform", np.ndarray),
-        ("scene", mc.Scene),
-    ],
-)
 TrainState = tx.TypedDict("TrainState", {"directory": tempfile.TemporaryDirectory})
 
 
-class Detector:
+class Detector(mc.torchtools.BaseModule):
     """Abstract base class for a detector."""
-
-    model: torch.nn.Module
-    backbone: torch.nn.Module
-    annotation_config: mc.AnnotationConfiguration
-    device: typing.Any
-    resize_config: mdc.ResizeConfig
-
-    def set_device(self, device):
-        """Set the device for training and inference tasks."""
-        self.device = torch.device(device)
-        self.model.to(self.device)
 
     @abc.abstractmethod
     def invert_targets(
@@ -61,30 +40,9 @@ class Detector:
     ) -> typing.List[typing.List[mc.Annotation]]:
         """Compute a list of annotation groups from model output."""
 
-    def resize_to_model_size(
-        self, images: typing.List[np.ndarray]
-    ) -> typing.Tuple[np.ndarray, np.ndarray]:
-        """Resize a series of images to the current model's size."""
-        padded, scales, _ = mdc.resize(images, self.resize_config)
-        return padded, scales
-
     @abc.abstractmethod
     def serve_module_string(self) -> str:
         """Return the module string used as part of TorchServe."""
-
-    @abc.abstractmethod
-    def compute_inputs(self, images: np.ndarray) -> np.ndarray:
-        """Convert images into suitable model inputs. *You
-        usually should not need this method*. For training,
-        use `detector.train()`. For detection, use
-        `detector.detect()`.
-
-        Args:
-            images: The images to convert
-
-        Returns:
-            The input to the model
-        """
 
     @abc.abstractmethod
     def compute_targets(
@@ -104,30 +62,6 @@ class Detector:
         Returns:
             The output(s) that will be used by detector.train()
         """
-
-    def freeze_backbone(self):
-        """Freeze the body of the model, leaving the final classification and
-        regression layer as trainable."""
-        for p in self.backbone.parameters():  # type: ignore
-            p.requires_grad = False
-        for m in self.backbone.modules():  # type: ignore
-            m.eval()
-
-    def unfreeze_backbone(self, batchnorm=True):
-        """Unfreeze the body of the model, making all layers trainable.
-
-        Args:
-            batchnorm: Whether to unfreeze batchnorm layers.
-        """
-        for m in self.backbone.modules():  # type: ignore
-            if isinstance(m, torch.nn.BatchNorm2d) and not batchnorm:
-                m.eval()
-                for p in m.parameters():
-                    p.requires_grad = False
-            else:
-                m.train()
-                for p in m.parameters():
-                    p.requires_grad = True
 
     @abc.abstractmethod
     def compute_anchor_boxes(self, width: int, height: int) -> np.ndarray:
@@ -245,7 +179,7 @@ class Detector:
             "directory": tempfile.TemporaryDirectory(prefix=data_dir_prefix),
         }
 
-        def loss(items: typing.List[TrainItem]) -> torch.Tensor:
+        def loss(items: typing.List[mc.torchtools.TrainItem]) -> torch.Tensor:
             return self.loss(
                 training.assign(scenes=[i.scene for i in items]),
                 data_dir=os.path.join(state["directory"].name, items[0].split),
@@ -253,11 +187,11 @@ class Detector:
                 indices=[i.index for i in items],
             )
 
-        def augment(items: typing.List[TrainItem]):
+        def augment(items: typing.List[mc.torchtools.TrainItem]):
             if not augmenter:
                 return items
             return [
-                TrainItem(
+                mc.torchtools.TrainItem(
                     split=base.split,
                     index=base.index,
                     scene=scene,
@@ -287,14 +221,18 @@ class Detector:
             else:
                 self.freeze_backbone()
 
-        mc.training.train(
+        mc.torchtools.train(
             model=self.model,
             training=[
-                TrainItem(split="train", index=index, transform=np.eye(3), scene=scene)
+                mc.torchtools.TrainItem(
+                    split="train", index=index, transform=np.eye(3), scene=scene
+                )
                 for index, scene in enumerate(training)
             ],
             validation=[
-                TrainItem(split="val", index=index, transform=transform, scene=scene)
+                mc.torchtools.TrainItem(
+                    split="val", index=index, transform=transform, scene=scene
+                )
                 for index, (scene, transform) in enumerate(
                     zip(
                         validation or [],
@@ -468,11 +406,3 @@ class Detector:
                 height=images[0].shape[0], width=images[0].shape[1]
             ),
         )
-
-    def load_weights(self, filepath: str):
-        """Load weights from disk."""
-        self.model.load_state_dict(torch.load(filepath, map_location=self.device))
-
-    def save_weights(self, filepath: str):
-        """Save weights to disk."""
-        torch.save(self.model.state_dict(), filepath)
