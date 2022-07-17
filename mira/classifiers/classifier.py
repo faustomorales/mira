@@ -54,7 +54,6 @@ class Classifier(mc.torchtools.BaseModule):
             iterator = tqdm.tqdm(iterator, total=math.ceil(len(images) / batch_size))
         for start in iterator:
             with torch.no_grad():
-                images = images[start : start + batch_size]
                 current_images, _ = self.resize_to_model_size(
                     [
                         mc.utils.read(image)
@@ -135,9 +134,11 @@ class Classifier(mc.torchtools.BaseModule):
                     fn = ((true == idx) & (pred != idx)).sum()
                     precision = tp / (tp + fp)
                     recall = tp / (tp + fn)
-                    summary[f"f1_{split}_{category.name}"] = (
+                    summary[f"{split}_{category.name}_f1"] = (
                         2 * precision * recall
                     ) / (precision + recall)
+                    summary[f"{split}_{category.name}_recall"] = tp / (tp + fn)
+                    summary[f"{split}_{category.name}_precision"] = tp / (tp + fp)
             state["train"] = {"true": [], "pred": []}
             state["val"] = {"true": [], "pred": []}
             return summary
@@ -177,4 +178,12 @@ class Classifier(mc.torchtools.BaseModule):
             on_epoch_start=on_epoch_start,
             on_epoch_end=on_epoch_end,
             **kwargs,
+        )
+
+    def n_parameters(self, trainable_only=False):
+        """Count the number of model parameters."""
+        return sum(
+            p.numel()
+            for p in self.model.parameters()
+            if p.requires_grad or not trainable_only
         )

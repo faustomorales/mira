@@ -40,7 +40,10 @@ class TVW(torch.nn.Module):
             assert (
                 list(self.model.classifier.children())[-1].out_features == num_classes
             )
-        self.backbone = self.model.features
+        if hasattr(self.model, "features"):
+            self.backbone = self.model.features
+        else:
+            self.backbone = self.model.layers
         self.loss = torch.nn.CrossEntropyLoss()
 
     def forward(self, x, targets=None):
