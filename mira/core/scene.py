@@ -1,6 +1,6 @@
 """Scene and SceneCollection objects"""
 
-# pylint: disable=invalid-name,len-as-condition,unsupported-assignment-operation,import-outside-toplevel
+# pylint: disable=invalid-name,too-many-instance-attributes,len-as-condition,unsupported-assignment-operation,import-outside-toplevel
 
 import os
 import io
@@ -19,10 +19,12 @@ import cv2
 
 from .protos import scene_pb2 as mps
 from .annotation import AnnotationConfiguration, Annotation, Label
-from . import utils, augmentations
+from . import utils, augmentations, imagemeta
 from ..thirdparty.albumentations import albumentations as A
 
 log = logging.getLogger(__name__)
+
+Dimensions = typing.NamedTuple("Dimensions", [("width", int), ("height", int)])
 
 
 class Scene:
@@ -43,9 +45,12 @@ class Scene:
             which parts of images are shown and hidden.
     """
 
+    _image: typing.Union[str, np.ndarray]
+    _dimensions: typing.Optional[Dimensions]
+
     def __init__(
         self,
-        annotation_config: AnnotationConfiguration,
+        annotation_config: typing.Union[typing.List[str], AnnotationConfiguration],
         image: typing.Union[np.ndarray, str],
         annotations: typing.List[Annotation] = None,
         metadata: dict = None,
@@ -59,9 +64,14 @@ class Scene:
         if masks is None:
             masks = []
         self._image = image
+        self._dimensions = None
         self.metadata = metadata
         self.annotations = annotations or []
-        self.annotation_config = annotation_config
+        self.annotation_config = (
+            annotation_config
+            if isinstance(annotation_config, AnnotationConfiguration)
+            else AnnotationConfiguration(annotation_config)
+        )
         self.labels = labels or []
         self.cache = cache
         self.masks = masks
@@ -234,6 +244,29 @@ class Scene:
                 for m in deserialized.masks
             ],
         )
+
+    @property
+    def dimensions(self) -> Dimensions:
+        """Get size of image, attempting to get it without reading the entire file, if possible."""
+        if self._dimensions is None:
+            dimensions: typing.Optional[Dimensions] = None
+            if isinstance(self._image, str):
+                try:
+                    log.info("Attempting to get dimensions from %s.", self._image)
+                    meta = imagemeta.get_image_metadata(self._image)
+                    dimensions = Dimensions(width=meta.width, height=meta.height)
+                except Exception:  # pylint: disable=broad-except
+                    log.info(
+                        "Failed to load image metadata from disk for %s",
+                        self._image,
+                        exc_info=True,
+                    )
+            if dimensions is None:
+                log.info("Loading dimensions from actual image.")
+                image = self.image
+                dimensions = Dimensions(width=image.shape[1], height=image.shape[0])
+            self._dimensions = dimensions
+        return self._dimensions
 
     def toString(self):
         """Serialize scene to string."""
