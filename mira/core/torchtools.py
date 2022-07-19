@@ -321,7 +321,7 @@ def resize(
     return padded, scales, sizes  # type: ignore
 
 
-class BaseModule:
+class BaseModel:
     """Abstract base class for classifiers and detectors."""
 
     model: torch.nn.Module
@@ -382,3 +382,11 @@ class BaseModule:
                 m.train()
                 for p in m.parameters():
                     p.requires_grad = True
+
+    def n_parameters(self, trainable_only=False):
+        """Count the number of model parameters."""
+        return sum(
+            p.numel()
+            for p in self.model.parameters()
+            if p.requires_grad or not trainable_only
+        )

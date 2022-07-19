@@ -28,7 +28,7 @@ LOGGER = logging.getLogger(__name__)
 TrainState = tx.TypedDict("TrainState", {"directory": tempfile.TemporaryDirectory})
 
 
-class Detector(mc.torchtools.BaseModule):
+class Detector(mc.torchtools.BaseModel):
     """Abstract base class for a detector."""
 
     @abc.abstractmethod

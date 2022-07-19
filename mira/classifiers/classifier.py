@@ -26,7 +26,7 @@ TrainState = tx.TypedDict(
 )
 
 
-class Classifier(mc.torchtools.BaseModule):
+class Classifier(mc.torchtools.BaseModel):
     """Abstract base class for classifier."""
 
     @abc.abstractmethod
@@ -178,12 +178,4 @@ class Classifier(mc.torchtools.BaseModule):
             on_epoch_start=on_epoch_start,
             on_epoch_end=on_epoch_end,
             **kwargs,
-        )
-
-    def n_parameters(self, trainable_only=False):
-        """Count the number of model parameters."""
-        return sum(
-            p.numel()
-            for p in self.model.parameters()
-            if p.requires_grad or not trainable_only
         )
