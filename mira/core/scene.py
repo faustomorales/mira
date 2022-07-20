@@ -11,6 +11,7 @@ import tarfile
 import tempfile
 
 import tqdm
+import validators
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -46,6 +47,7 @@ class Scene:
     """
 
     _image: typing.Union[str, np.ndarray]
+    _tfile: typing.Optional[tempfile._TemporaryFileWrapper]
     _dimensions: typing.Optional[Dimensions]
 
     def __init__(
@@ -65,12 +67,52 @@ class Scene:
             masks = []
         self._image = image
         self._dimensions = None
+        self._tfile = None
         self.metadata = metadata
         self.annotations = annotations or []
         self.categories = Categories.from_categories(categories)
         self.labels = labels or []
         self.cache = cache
         self.masks = masks
+
+    def filepath(self, directory: str = None):
+        """Gets a filepath for this image. If it is not currently a file,
+        a file will be created in a temporary directory."""
+        if (
+            isinstance(self._image, str)
+            and not validators.url(self._image)
+            and not self.masks
+        ):
+            return self._image
+        image = self.image
+        hashstr = str(
+            hash(
+                tuple(m["contour"].tobytes() for m in (self.masks or []))
+                + tuple(
+                    image.tobytes(),
+                )
+            )
+        )
+        if (
+            self._tfile is None
+            or hashstr not in os.path.basename(self._tfile.name)
+            or (
+                directory is not None
+                and os.path.abspath(os.path.dirname(self._tfile.name))
+                != os.path.abspath(directory)
+            )
+        ):
+            if directory is not None:
+                os.makedirs(directory, exist_ok=True)
+            if self._tfile:
+                self._tfile.close()
+            self._tfile = (
+                tempfile.NamedTemporaryFile(  # pylint: disable=consider-using-with
+                    suffix=".png", prefix=hashstr, dir=directory
+                )
+            )
+            cv2.imwrite(self._tfile.name, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+        return self._tfile.name
 
     @property
     def image(self) -> np.ndarray:
