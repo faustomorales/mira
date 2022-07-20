@@ -36,7 +36,7 @@ class Classifier(mc.torchtools.BaseModel):
     @abc.abstractmethod
     def compute_targets(
         self,
-        label_groups: typing.List[typing.List[mc.annotation.AnnotationCategory]],
+        label_groups: typing.List[typing.List[mc.annotation.Category]],
     ):
         """Compute the targets for a batch of labeled images."""
 
@@ -101,10 +101,10 @@ class Classifier(mc.torchtools.BaseModel):
             )
             predictions = self.invert_targets(y)
             state[items[0].split]["true"].extend(
-                [self.annotation_config.index(s.labels[0].category) for s in batch]
+                [self.categories.index(s.labels[0].category) for s in batch]
             )
             state[items[0].split]["pred"].extend(
-                [self.annotation_config.index(p["label"].category) for p in predictions]
+                [self.categories.index(p["label"].category) for p in predictions]
             )
             return y["loss"]
 
@@ -128,7 +128,7 @@ class Classifier(mc.torchtools.BaseModel):
             for split, data in zip(["train", "val"], [state["train"], state["val"]]):
                 true = np.array(data["true"])
                 pred = np.array(data["pred"])
-                for idx, category in enumerate(self.annotation_config):
+                for idx, category in enumerate(self.categories):
                     tp = ((true == idx) & (pred == idx)).sum()
                     fp = ((true != idx) & (pred == idx)).sum()
                     fn = ((true == idx) & (pred != idx)).sum()

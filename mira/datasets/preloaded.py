@@ -16,23 +16,23 @@ from .voc import load_voc
 
 log = logging.getLogger(__name__)
 
-COCOAnnotationConfiguration = core.AnnotationConfiguration(
+COCOCategories = core.Categories(
     resource_string(__name__, "assets/coco_classes.txt").decode("utf-8").split("\n")
 )
-VOCAnnotationConfiguration = core.AnnotationConfiguration(
+VOCCategories = core.Categories(
     resource_string(__name__, "assets/voc_classes.txt").decode("utf-8").split("\n")
 )
-COCOAnnotationConfiguration90 = core.AnnotationConfiguration(
+COCOCategories90 = core.Categories(
     resource_string(__name__, "assets/coco_classes_90.txt").decode("utf-8").split("\n")
 )
-ImageNet1KAnnotationConfiguration = core.AnnotationConfiguration(
+ImageNet1KCategories = core.Categories(
     resource_string(__name__, "assets/imagenet1k_classes.txt")
     .decode("utf-8")
     .lower()
     .split("\n")
 )
 
-ShapeAnnotationConfig = core.AnnotationConfiguration(
+ShapeAnnotationConfig = core.Categories(
     [
         " ".join([s, c])
         for s, c in product(["RED", "BLUE", "GREEN"], ["RECTANGLE", "CIRCLE"])
@@ -49,14 +49,14 @@ def load_random_images():
         "https://upload.wikimedia.org/wikipedia/commons/2/2c/1996_Porsche_911_993_GT2_-_Flickr_-_The_Car_Spy_%284%29.jpg",
         "https://upload.wikimedia.org/wikipedia/commons/1/1e/Handheld_blowdryer.jpg",
     ]
-    annotation_config = core.AnnotationConfiguration([])
+    categories = core.Categories([])
     return core.SceneCollection(
-        annotation_config=annotation_config,
+        categories=categories,
         scenes=[
             core.Scene(
                 image=core.utils.read(url),
                 annotations=[],
-                annotation_config=annotation_config,
+                categories=categories,
             )
             for url in urls
         ],
@@ -116,7 +116,7 @@ def load_voc2012(subset="train") -> core.SceneCollection:
     ]
     return load_voc(
         filepaths=filepaths,
-        annotation_config=VOCAnnotationConfiguration,
+        categories=VOCCategories,
         image_dir=image_dir,
     )
 
@@ -199,7 +199,7 @@ def make_shape_scene(
             )
         annotations.append(annotation)
     return core.Scene(
-        annotations=annotations, image=image, annotation_config=ShapeAnnotationConfig
+        annotations=annotations, image=image, categories=ShapeAnnotationConfig
     )
 
 
@@ -285,7 +285,7 @@ def load_oxfordiiitpets(breed=True) -> core.SceneCollection:
     image_dir = path.join(image_dir, "images")
     collection = load_voc(
         filepaths=filepaths,
-        annotation_config=core.AnnotationConfiguration(["dog", "cat"]),
+        categories=core.Categories(["dog", "cat"]),
         image_dir=image_dir,
     )
     if not breed:
@@ -296,17 +296,16 @@ def load_oxfordiiitpets(breed=True) -> core.SceneCollection:
     labels = [
         "_".join(path.splitext(path.split(f)[1])[0].split("_")[:-1]) for f in filepaths
     ]
-    annotation_config = core.AnnotationConfiguration(sorted(set(labels)))
+    categories = core.Categories(sorted(set(labels)))
     return core.SceneCollection(
         scenes=[
             scene.assign(
                 annotations=[
-                    a.assign(category=annotation_config[label])
-                    for a in scene.annotations
+                    a.assign(category=categories[label]) for a in scene.annotations
                 ],
-                annotation_config=annotation_config,
+                categories=categories,
             )
             for scene, label in zip(collection.scenes, labels)
         ],
-        annotation_config=annotation_config,
+        categories=categories,
     )

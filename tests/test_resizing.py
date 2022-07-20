@@ -1,7 +1,7 @@
 import torch
 import pytest
 import numpy as np
-from mira.core.torchtools import resize
+from mira.core.resizing import resize
 
 base_examples = [
     np.zeros((256, 128, 3)).astype("uint8") + 255,

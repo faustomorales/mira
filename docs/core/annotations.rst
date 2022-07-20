@@ -4,5 +4,5 @@ Annotations
 .. autoclass:: mira.core.Annotation
     :members:
 
-.. autoclass:: mira.core.AnnotationConfiguration
+.. autoclass:: mira.core.Categories
     :members:

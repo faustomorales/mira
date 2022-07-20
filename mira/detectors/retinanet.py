@@ -157,7 +157,7 @@ class RetinaNet(detector.Detector):
 
     def __init__(
         self,
-        annotation_config=mds.COCOAnnotationConfiguration90,
+        categories=mds.COCOCategories90,
         pretrained_backbone: bool = True,
         pretrained_top: bool = False,
         backbone: tx.Literal["resnet50"] = "resnet50",
@@ -168,7 +168,7 @@ class RetinaNet(detector.Detector):
         resize_config: mc.resizing.ResizeConfig = None,
     ):
         super().__init__()
-        self.annotation_config = annotation_config
+        self.categories = mc.Categories.from_categories(categories)
         self.backbone_name = backbone
         if pretrained_top:
             pretrained_backbone = False
@@ -191,7 +191,7 @@ class RetinaNet(detector.Detector):
         )
         self.model = ModifiedRetinaNet(
             backbone=fpn,
-            num_classes=len(annotation_config) + 1,
+            num_classes=len(categories) + 1,
             anchor_generator=anchor_generator,
             **self.detector_kwargs,
         )
@@ -214,7 +214,7 @@ class RetinaNet(detector.Detector):
         return (
             pkg_resources.resource_string("mira", "detectors/assets/serve/retinanet.py")
             .decode("utf-8")
-            .replace("NUM_CLASSES", str(len(self.annotation_config) + 1))
+            .replace("NUM_CLASSES", str(len(self.categories) + 1))
             .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
             .replace("RESIZE_CONFIG", str(self.resize_config))
             .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
@@ -226,7 +226,7 @@ class RetinaNet(detector.Detector):
         return [
             [
                 mc.Annotation(
-                    category=self.annotation_config[int(labelIdx) - 1],
+                    category=self.categories[int(labelIdx) - 1],
                     x1=x1,
                     y1=y1,
                     x2=x2,
@@ -249,9 +249,7 @@ class RetinaNet(detector.Detector):
                 "boxes": torch.tensor(b[:, :4], dtype=torch.float32).to(self.device),
                 "labels": torch.tensor(b[:, -1] + 1, dtype=torch.int64).to(self.device),
             }
-            for b in [
-                self.annotation_config.bboxes_from_group(g) for g in annotation_groups
-            ]
+            for b in [self.categories.bboxes_from_group(g) for g in annotation_groups]
         ]
 
     def compute_anchor_boxes(self, width, height):

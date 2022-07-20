@@ -90,10 +90,10 @@ def data_dir_to_collections(data_dir: str, threshold: float, detector: "Detector
                     [
                         core.Scene(
                             image=filepath,
-                            annotation_config=detector.annotation_config,
+                            categories=detector.categories,
                             annotations=[
                                 core.Annotation(
-                                    detector.annotation_config[cIdx], x1, y1, x2, y2
+                                    detector.categories[cIdx], x1, y1, x2, y2
                                 )
                                 for x1, y1, x2, y2, cIdx in np.load(
                                     filepath + ".bboxes.npz"
@@ -102,13 +102,13 @@ def data_dir_to_collections(data_dir: str, threshold: float, detector: "Detector
                         )
                         for filepath in images
                     ],
-                    annotation_config=detector.annotation_config,
+                    categories=detector.categories,
                 ),
                 "pred_collection": core.SceneCollection(
                     [
                         core.Scene(
                             image=filepath,
-                            annotation_config=detector.annotation_config,
+                            categories=detector.categories,
                             annotations=annotations,
                         )
                         for filepath, annotations in zip(
@@ -129,7 +129,7 @@ def data_dir_to_collections(data_dir: str, threshold: float, detector: "Detector
                             ),
                         )
                     ],
-                    annotation_config=detector.annotation_config,
+                    categories=detector.categories,
                 ),
             },
             "transforms": transforms,

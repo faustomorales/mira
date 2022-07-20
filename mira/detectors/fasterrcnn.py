@@ -185,7 +185,7 @@ class FasterRCNN(detector.Detector):
 
     def __init__(
         self,
-        annotation_config=mds.COCOAnnotationConfiguration90,
+        categories=mds.COCOCategories90,
         pretrained_backbone: bool = True,
         pretrained_top: bool = False,
         backbone: tx.Literal[
@@ -197,7 +197,7 @@ class FasterRCNN(detector.Detector):
         anchor_kwargs=None,
         resize_config: mc.resizing.ResizeConfig = None,
     ):
-        self.annotation_config = annotation_config
+        self.categories = mc.Categories.from_categories(categories)
         self.backbone_name = backbone
         if pretrained_top:
             pretrained_backbone = False
@@ -220,7 +220,7 @@ class FasterRCNN(detector.Detector):
         )
         self.model = ModifiedFasterRCNN(
             fpn,
-            len(annotation_config) + 1,
+            len(categories) + 1,
             rpn_anchor_generator=anchor_generator,
             **self.detector_kwargs,
         )
@@ -241,7 +241,7 @@ class FasterRCNN(detector.Detector):
                 "mira", "detectors/assets/serve/fasterrcnn.py"
             )
             .decode("utf-8")
-            .replace("NUM_CLASSES", str(len(self.annotation_config) + 1))
+            .replace("NUM_CLASSES", str(len(self.categories) + 1))
             .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
             .replace("RESIZE_CONFIG", str(self.resize_config))
             .replace("DETECTOR_KWARGS", str(self.detector_kwargs))
@@ -253,7 +253,7 @@ class FasterRCNN(detector.Detector):
         return [
             [
                 mc.Annotation(
-                    category=self.annotation_config[int(labelIdx) - 1],
+                    category=self.categories[int(labelIdx) - 1],
                     x1=x1,
                     y1=y1,
                     x2=x2,
@@ -276,9 +276,7 @@ class FasterRCNN(detector.Detector):
                 "boxes": torch.tensor(b[:, :4], dtype=torch.float32).to(self.device),
                 "labels": torch.tensor(b[:, -1] + 1, dtype=torch.int64).to(self.device),
             }
-            for b in [
-                self.annotation_config.bboxes_from_group(g) for g in annotation_groups
-            ]
+            for b in [self.categories.bboxes_from_group(g) for g in annotation_groups]
         ]
 
     def compute_anchor_boxes(self, width, height):

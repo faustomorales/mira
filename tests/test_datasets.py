@@ -87,7 +87,7 @@ def test_voc():
 
         original = datasets.load_voc(
             filepaths=[fpath_xml],
-            annotation_config=core.AnnotationConfiguration(["person"]),
+            categories=core.Categories(["person"]),
             image_dir=tempdir,
         )
         assert len(original[0].annotations) == 1

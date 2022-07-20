@@ -18,7 +18,7 @@ import numpy as np
 import cv2
 
 from .protos import scene_pb2 as mps
-from .annotation import AnnotationConfiguration, Annotation, Label
+from .annotation import Categories, Annotation, Label
 from . import utils, augmentations, imagemeta
 from ..thirdparty.albumentations import albumentations as A
 
@@ -31,7 +31,7 @@ class Scene:
     """A single annotated image.
 
     Args:
-        annotation_config: The configuration for annotations for the
+        categories: The configuration for annotations for the
             image.
         annotations: The list of annotations.
         image: The image that was annotated. Can be lazy-loaded by passing
@@ -50,7 +50,7 @@ class Scene:
 
     def __init__(
         self,
-        annotation_config: typing.Union[typing.List[str], AnnotationConfiguration],
+        categories: typing.Union[typing.List[str], Categories],
         image: typing.Union[np.ndarray, str],
         annotations: typing.List[Annotation] = None,
         metadata: dict = None,
@@ -67,11 +67,7 @@ class Scene:
         self._dimensions = None
         self.metadata = metadata
         self.annotations = annotations or []
-        self.annotation_config = (
-            annotation_config
-            if isinstance(annotation_config, AnnotationConfiguration)
-            else AnnotationConfiguration(annotation_config)
-        )
+        self.categories = Categories.from_categories(categories)
         self.labels = labels or []
         self.cache = cache
         self.masks = masks
@@ -117,7 +113,7 @@ class Scene:
         cls,
         item: typing.Dict,
         label_key: str,
-        annotation_config: AnnotationConfiguration,
+        categories: Categories,
     ):
         """Create a scene from a set of QSL labels.
 
@@ -125,7 +121,7 @@ class Scene:
             item: The QSL labeling item.
             label_key: The key for the region label to use
                 for annotation.
-            annotation_config: The annotation configuration for the
+            categories: The annotation configuration for the
                 resulting scene.
         """
         import qsl
@@ -140,7 +136,7 @@ class Scene:
                 continue
             annotations.append(
                 Annotation(
-                    category=annotation_config[box["labels"][label_key][0]],
+                    category=categories[box["labels"][label_key][0]],
                     x1=box["pt1"]["x"] * dimensions["width"],
                     y1=box["pt1"]["y"] * dimensions["height"],
                     x2=box["pt2"]["x"] * dimensions["width"],
@@ -162,7 +158,7 @@ class Scene:
             annotations.extend(
                 [
                     Annotation(
-                        category=annotation_config[mask["labels"][label_key][0]],
+                        category=categories[mask["labels"][label_key][0]],
                         points=contour[:, 0, :] * [scalex, scaley],
                     )
                     for contour in contours
@@ -176,7 +172,7 @@ class Scene:
                 continue
             annotations.append(
                 Annotation(
-                    category=annotation_config[polygon["labels"][label_key][0]],
+                    category=categories[polygon["labels"][label_key][0]],
                     points=np.array([[p["x"], p["y"]] for p in polygon["points"]])
                     * [dimensions["width"], dimensions["height"]],
                 )
@@ -184,7 +180,7 @@ class Scene:
         return cls(
             image=target,
             annotations=annotations,
-            annotation_config=annotation_config,
+            categories=categories,
             metadata=item.get("metadata", {}),
         )
 
@@ -192,16 +188,14 @@ class Scene:
     def fromString(cls, string):
         """Deserialize scene from string."""
         deserialized = mps.Scene.FromString(string)
-        annotation_config = AnnotationConfiguration(
-            deserialized.annotation_config.categories
-        )
+        categories = Categories(deserialized.categories.categories)
         image = cv2.imdecode(
             np.frombuffer(deserialized.image, dtype="uint8"), cv2.IMREAD_COLOR
         )
         annotations = []
         for annotation in deserialized.annotations:
             common = {
-                "category": annotation_config[annotation.category],
+                "category": categories[annotation.category],
                 "metadata": json.loads(annotation.metadata),
                 "score": annotation.score,
             }
@@ -227,14 +221,14 @@ class Scene:
             metadata=json.loads(deserialized.metadata),
             labels=[
                 Label(
-                    category=annotation_config[ann.category],
+                    category=categories[ann.category],
                     metadata=json.loads(ann.metadata),
                     score=ann.score,
                 )
                 for ann in deserialized.labels
             ],
             annotations=annotations,
-            annotation_config=annotation_config,
+            categories=categories,
             masks=[
                 {
                     "visible": m.visible,
@@ -272,9 +266,7 @@ class Scene:
         """Serialize scene to string."""
         return mps.Scene(
             image=cv2.imencode(".png", self.image)[1].tobytes(),
-            annotation_config=mps.AnnotationConfiguration(
-                categories=[c.name for c in self.annotation_config]
-            ),
+            categories=mps.Categories(categories=[c.name for c in self.categories]),
             metadata=json.dumps(self.metadata or {}),
             masks=[
                 mps.Mask(
@@ -286,7 +278,7 @@ class Scene:
             ],
             labels=[
                 mps.Label(
-                    category=self.annotation_config.index(ann.category),
+                    category=self.categories.index(ann.category),
                     score=ann.score,
                     metadata=json.dumps(ann.metadata or {}),
                 )
@@ -294,7 +286,7 @@ class Scene:
             ],
             annotations=[
                 mps.Annotation(
-                    category=self.annotation_config.index(ann.category),
+                    category=self.categories.index(ann.category),
                     x1=ann.x1,
                     y1=ann.y1,
                     x2=ann.x2,
@@ -311,22 +303,21 @@ class Scene:
     def assign(self, **kwargs) -> "Scene":
         """Get a new scene with only the supplied
         keyword arguments changed."""
-        if "annotation_config" in kwargs:
+        if "categories" in kwargs:
             # We need to change all the categories for annotations
             # to match the new annotation configuration.
-            annotation_config = kwargs["annotation_config"]
+            categories = kwargs["categories"]
             kwargs["annotations"] = [
-                ann.convert(annotation_config)
+                ann.convert(categories)
                 for ann in kwargs.get("annotations", self.annotations)
             ]
             kwargs["labels"] = [
-                ann.convert(annotation_config)
-                for ann in kwargs.get("labels", self.labels)
+                ann.convert(categories) for ann in kwargs.get("labels", self.labels)
             ]
         # We use the _image instead of image to avoid triggering an
         # unnecessary read of the actual image.
         defaults = {
-            "annotation_config": self.annotation_config,
+            "categories": self.categories,
             "annotations": self.annotations,
             "image": self._image,
             "cache": self.cache,
@@ -354,7 +345,7 @@ class Scene:
         from the annotation configuration."""
         # We reshape in order to avoid indexing problems when
         # there are no annotations.
-        return self.annotation_config.bboxes_from_group(self.annotations)
+        return self.categories.bboxes_from_group(self.annotations)
 
     def show_annotations(self, **kwargs):
         """Show annotations as individual plots. All arguments
@@ -383,7 +374,7 @@ class Scene:
                 equal to this threshold.
         """
         annotations = []
-        for current_category in self.annotation_config:
+        for current_category in self.categories:
             current_annotations = [
                 ann for ann in self.annotations if ann.category == current_category
             ]
@@ -393,7 +384,7 @@ class Scene:
                     current_annotations[idx]
                     for idx in (
                         utils.find_largest_unique_boxes(
-                            bboxes=self.annotation_config.bboxes_from_group(
+                            bboxes=self.categories.bboxes_from_group(
                                 current_annotations
                             )[:, :4],
                             method=method,
@@ -609,8 +600,8 @@ class Scene:
                 # annotations into this crop.
                 ann_inc = [annotation] + others[:r]
                 ann_exc = [a for a in annotations if a not in ann_inc]
-                box_inc = self.annotation_config.bboxes_from_group(ann_inc)[:, :4]
-                box_exc = self.annotation_config.bboxes_from_group(ann_exc)[:, :4]
+                box_inc = self.categories.bboxes_from_group(ann_inc)[:, :4]
+                box_exc = self.categories.bboxes_from_group(ann_exc)[:, :4]
                 xmin, ymin = box_inc[:, :2].min(axis=0)
                 xmax, ymax = box_inc[:, 2:].max(axis=0)
                 if max(xmax - xmin, ymax - ymin) > max_size:
@@ -679,7 +670,7 @@ class SceneCollection:
     """A collection of scenes.
 
     Args:
-        annotation_config: The configuration that should be used for all
+        categories: The configuration that should be used for all
             underlying scenes.
         scenes: The list of scenes.
     """
@@ -687,16 +678,16 @@ class SceneCollection:
     def __init__(
         self,
         scenes: typing.List[Scene],
-        annotation_config: AnnotationConfiguration = None,
+        categories: Categories = None,
     ):
-        if annotation_config is None:
-            annotation_config = scenes[0].annotation_config
+        if categories is None:
+            categories = scenes[0].categories
         for i, s in enumerate(scenes):
-            if s.annotation_config != annotation_config:
+            if s.categories != categories:
                 raise ValueError(
                     f"Scene {i+1} of {len(scenes)} has inconsistent configuration."
                 )
-        self._annotation_config = annotation_config
+        self._categories = Categories.from_categories(categories)
         self._scenes = scenes
 
     def __getitem__(self, key):
@@ -722,9 +713,9 @@ class SceneCollection:
         return self._scenes
 
     @property
-    def annotation_config(self):
+    def categories(self):
         """The annotation configuration"""
-        return self._annotation_config
+        return self._categories
 
     @property
     def annotation_groups(self):
@@ -761,7 +752,7 @@ class SceneCollection:
     def consistent(self):
         """Specifies whether all scenes have the same annotation
         configuration."""
-        return all(s.annotation_config == self.annotation_config for s in self.scenes)
+        return all(s.categories == self.categories for s in self.scenes)
 
     @property
     def images(self):
@@ -836,20 +827,18 @@ class SceneCollection:
 
     def assign(self, **kwargs) -> "SceneCollection":
         """Obtain a new scene with the given keyword arguments
-        changing. If `annotation_config` is provided, the annotations
-        are converted to the new `annotation_config` first.
+        changing. If `categories` is provided, the annotations
+        are converted to the new `categories` first.
 
         Returns:
             A new scene
 
         """
-        if "annotation_config" in kwargs:
-            annotation_config = kwargs["annotation_config"]
+        if "categories" in kwargs:
+            categories = kwargs["categories"]
             scenes = kwargs.get("scenes", self.scenes)
-            kwargs["scenes"] = [
-                s.assign(annotation_config=annotation_config) for s in scenes
-            ]
-        defaults = {"scenes": self.scenes, "annotation_config": self.annotation_config}
+            kwargs["scenes"] = [s.assign(categories=categories) for s in scenes]
+        defaults = {"scenes": self.scenes, "categories": self.categories}
         kwargs = {**defaults, **kwargs}
         return SceneCollection(**kwargs)
 
@@ -935,7 +924,7 @@ class SceneCollection:
                 scenes.append(scene)
         if len(scenes) == 0:
             raise ValueError("No scenes found.")
-        return cls(scenes=scenes, annotation_config=scenes[0].annotation_config)
+        return cls(scenes=scenes, categories=scenes[0].categories)
 
     @classmethod
     def from_qsl(cls, jsonpath: str, label_key: str):
@@ -947,9 +936,7 @@ class SceneCollection:
         )
         if rconfig is None:
             raise ValueError(f"{label_key} region configuration not found.")
-        annotation_config = AnnotationConfiguration(
-            [o["name"] for o in rconfig["options"]]
-        )
+        categories = Categories([o["name"] for o in rconfig["options"]])
         scenes = []
         for item in project["items"]:
             if item.get("type", "image") != "image":
@@ -962,8 +949,6 @@ class SceneCollection:
                 log.info("Skipping %s because labels are missing.", item["target"])
                 continue
             scenes.append(
-                Scene.from_qsl(
-                    item=item, label_key=label_key, annotation_config=annotation_config
-                )
+                Scene.from_qsl(item=item, label_key=label_key, categories=categories)
             )
         return cls(scenes=scenes)

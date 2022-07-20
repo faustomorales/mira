@@ -6,7 +6,7 @@ import torchvision
 
 from .. import core as mc
 from .classifier import Classifier
-from ..datasets.preloaded import ImageNet1KAnnotationConfiguration
+from ..datasets.preloaded import ImageNet1KCategories
 
 
 class TVW(torch.nn.Module):
@@ -60,7 +60,7 @@ class TorchVisionClassifier(Classifier):
 
     def __init__(
         self,
-        annotation_config=ImageNet1KAnnotationConfiguration,
+        categories=ImageNet1KCategories,
         model_name="efficientnet_b0",
         weights=torchvision.models.EfficientNet_B0_Weights.IMAGENET1K_V1,
         pretrained_top=False,
@@ -72,9 +72,9 @@ class TorchVisionClassifier(Classifier):
             "width": 224,
             "height": 224,
         }
-        self.annotation_config = annotation_config
+        self.categories = mc.Categories.from_categories(categories)
         self.model = TVW(
-            num_classes=len(self.annotation_config),
+            num_classes=len(self.categories),
             initializer=getattr(torchvision.models, model_name),
             weights=weights,
             pretrained_top=pretrained_top,
@@ -88,14 +88,14 @@ class TorchVisionClassifier(Classifier):
         return [
             {
                 "label": mc.Label(
-                    category=self.annotation_config[classIdx],
+                    category=self.categories[classIdx],
                     score=score,
                 ),
                 "logit": logit,
                 "raw": {
                     category.name: {"score": score, "logit": logit}
                     for category, score, logit in zip(
-                        self.annotation_config,
+                        self.categories,
                         catscores.tolist(),
                         catlogits.tolist(),
                     )
@@ -114,8 +114,8 @@ class TorchVisionClassifier(Classifier):
         self,
         label_groups,
     ):
-        y = np.zeros((len(label_groups), len(self.annotation_config)), dtype="float32")
+        y = np.zeros((len(label_groups), len(self.categories)), dtype="float32")
         for bi, labels in enumerate(label_groups):
             for label in labels:
-                y[bi, self.annotation_config.index(label.category)] = 1
+                y[bi, self.categories.index(label.category)] = 1
         return torch.Tensor(y).to(self.device)

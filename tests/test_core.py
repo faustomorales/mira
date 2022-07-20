@@ -25,7 +25,7 @@ def test_blank_and_properties():
 
 
 def test_scene_deduplication():
-    ac = mc.AnnotationConfiguration(["foo", "bar"])
+    ac = mc.Categories(["foo", "bar"])
     scene = mc.Scene(
         image=mc.utils.get_blank_image(width=200, height=100, n_channels=2, cval=125),
         annotations=[
@@ -62,7 +62,7 @@ def test_scene_deduplication():
                 metadata={"tag": "keep-me"},
             ),
         ],
-        annotation_config=ac,
+        categories=ac,
     )
     for convert_to_polygon in [False, True]:
         test_scene = (
@@ -208,7 +208,7 @@ def test_serialization():
 
 def test_safe_crop():
     size = 8
-    config = mc.AnnotationConfiguration(["square"])
+    config = mc.Categories(["square"])
     canvas = np.zeros((256, 256, 3), dtype="uint8")
     annotations = []
     for x, y in itertools.permutations(np.arange(32, 256, 64), 2):
@@ -228,7 +228,7 @@ def test_safe_crop():
             color=(0, 0, 255),
             thickness=-1,
         )
-    scene = mc.Scene(annotation_config=config, image=canvas, annotations=annotations)
+    scene = mc.Scene(categories=config, image=canvas, annotations=annotations)
     for wiggle in [True, False]:
         augmenter = A.Compose(
             transforms=[

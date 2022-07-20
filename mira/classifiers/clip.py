@@ -27,7 +27,7 @@ class ModifiedCLIP(torch.nn.Module):
 class CLIP(Classifier):
     """A wrapper for OpenAI's CLIP classifier."""
 
-    def __init__(self, annotation_config, model_name="RN50", device="cpu"):
+    def __init__(self, categories, model_name="RN50", device="cpu"):
         self.model = ModifiedCLIP(model_name, device=device)
         self.resize_config = {
             "method": "fit",
@@ -44,9 +44,9 @@ class CLIP(Classifier):
         )
         self.set_device(device)
         self.model_name = model_name
-        self.annotation_config = annotation_config
+        self.categories = mira.core.Categories.from_categories(categories)
         self.text_vectors = self.model.encode_text(
-            clip.tokenize([c.name for c in self.annotation_config]).to(self.device)
+            clip.tokenize([c.name for c in self.categories]).to(self.device)
         )
 
     def compute_inputs(self, images: np.ndarray):
@@ -66,14 +66,14 @@ class CLIP(Classifier):
         return [
             {
                 "label": mira.core.Label(
-                    category=self.annotation_config[classIdx],
+                    category=self.categories[classIdx],
                     score=score,
                 ),
                 "logit": logit,
                 "raw": {
                     category.name: {"score": score, "logit": logit}
                     for category, score, logit in zip(
-                        self.annotation_config,
+                        self.categories,
                         catscores.tolist(),
                         catlogits.tolist(),
                     )

@@ -10,7 +10,7 @@ from tqdm import tqdm
 from ..core import (
     Scene,
     SceneCollection,
-    AnnotationConfiguration,
+    Categories,
     Annotation,
 )
 
@@ -52,7 +52,7 @@ def map_xml_to_metadata(
 
 def load_voc(
     filepaths: typing.List[str],
-    annotation_config: AnnotationConfiguration,
+    categories: Categories,
     image_dir: str = None,
 ) -> SceneCollection:
     """Read a scene from a VOC XML annotation file. Remaining arguments
@@ -63,7 +63,7 @@ def load_voc(
         image_folder: Folder in which to look for images. Defaults to same
             folder as XML file prepended to the folder specified in the
             XML file.
-        annotation_config: The annotation configuration to use.
+        categories: The annotation configuration to use.
 
     Returns:
         A new scene collection, one scene per VOC file
@@ -85,7 +85,7 @@ def load_voc(
 
         image_path = os.path.join(image_dir, scene_metadata["filename"])
         for obj in root.findall("object"):
-            category = annotation_config[obj.find("name").text]  # type: ignore
+            category = categories[obj.find("name").text]  # type: ignore
             bndbox = obj.find("bndbox")
             xmin, ymin, xmax, ymax = [
                 int(float(bndbox.find(k).text))  # type: ignore
@@ -96,9 +96,9 @@ def load_voc(
             )
         scenes.append(
             Scene(
-                annotation_config=annotation_config,
+                categories=categories,
                 annotations=annotations,
                 image=image_path,
             )
         )
-    return SceneCollection(scenes=scenes, annotation_config=annotation_config)
+    return SceneCollection(scenes=scenes, categories=categories)

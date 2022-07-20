@@ -38,7 +38,7 @@ class SMP(mdd.Detector):
     under the hood to build quasi-object-detection models.
 
     Args:
-        annotation_config: A configuration for annotations.
+        categories: A configuration for annotations.
         arch: A segmentation_models_pytorch model class to use.
             Defaults to smp.UnetPlusPlus.
         device: The device to load the model onto.
@@ -50,7 +50,7 @@ class SMP(mdd.Detector):
 
     def __init__(
         self,
-        annotation_config: mc.AnnotationConfiguration,
+        categories: mc.Categories,
         pretrained_backbone: bool = True,
         arch="UnetPlusPlus",
         device="cpu",
@@ -74,11 +74,11 @@ class SMP(mdd.Detector):
             "pretrained": "imagenet",
         }
         self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 64}
-        self.annotation_config = annotation_config
+        self.categories = mc.Categories.from_categories(categories)
         self.model = SMPWrapper(
             model=getattr(smp, self.arch)(
                 **self.backbone_kwargs,
-                classes=len(annotation_config),
+                classes=len(categories),
                 encoder_weights="imagenet" if pretrained_backbone else None,
             ),
             **self.detector_kwargs,
@@ -99,12 +99,12 @@ class SMP(mdd.Detector):
 
     def compute_targets(self, annotation_groups, width, height):
         segmaps = np.zeros(
-            (len(annotation_groups), len(self.annotation_config), height, width),
+            (len(annotation_groups), len(self.categories), height, width),
             dtype="float32",
         )
         for annotations, segmap in zip(annotation_groups, segmaps):
             for annotation in annotations:
-                index = self.annotation_config.index(annotation.category)
+                index = self.categories.index(annotation.category)
                 annotation.draw(segmap[index], color=1, opaque=True)
         return torch.tensor(segmaps, device=self.device)
 
@@ -147,7 +147,7 @@ class SMP(mdd.Detector):
                         if ann.score > threshold
                     ]
                     for catmap, category in zip(
-                        segmap["map"].detach().cpu().numpy(), self.annotation_config
+                        segmap["map"].detach().cpu().numpy(), self.categories
                     )
                 ]
             )
@@ -158,7 +158,7 @@ class SMP(mdd.Detector):
         return (
             pkg_resources.resource_string("mira", "detectors/assets/serve/smp.py")
             .decode("utf-8")
-            .replace("NUM_CLASSES", str(len(self.annotation_config)))
+            .replace("NUM_CLASSES", str(len(self.categories)))
             .replace("BACKBONE_KWARGS", str(self.backbone_kwargs))
             .replace("RESIZE_CONFIG", str(self.resize_config))
             .replace("DETECTOR_KWARGS", str({**self.detector_kwargs, "loss": None}))

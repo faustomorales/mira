@@ -161,7 +161,7 @@ class BaseModel:
 
     model: torch.nn.Module
     backbone: torch.nn.Module
-    annotation_config: annotation.AnnotationConfiguration
+    categories: annotation.Categories
     device: typing.Any
     resize_config: resizing.ResizeConfig
 

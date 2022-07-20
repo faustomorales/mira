@@ -26,9 +26,9 @@ def precision_recall_curve(
         predicted boxes for the category.
     """
     assert (
-        true_collection.annotation_config == pred_collection.annotation_config
+        true_collection.categories == pred_collection.categories
     ), "Annotation configurations must match"
-    annotation_config = true_collection.annotation_config
+    categories = true_collection.categories
     assert len(true_collection.scenes) == len(
         pred_collection.scenes
     ), "Must have same scenes in each collection"
@@ -38,12 +38,12 @@ def precision_recall_curve(
     # false positives, along with the score at which the change
     # occurred for the ith class.
     tfs: typing.List[typing.List[typing.List[int]]] = [
-        [[], [], []] for c in range(len(annotation_config))
+        [[], [], []] for c in range(len(categories))
     ]
 
     # The ith entry in tfs is the number of true boxes
     # for the ith class.
-    pos = [0 for c in range(len(annotation_config))]
+    pos = [0 for c in range(len(categories))]
 
     for true, pred in zip(true_collection, pred_collection):
         pred_bboxes = pred.bboxes()
@@ -53,7 +53,7 @@ def precision_recall_curve(
             s is not None for s in pred_scores
         ), "All annotations must have a score."
 
-        for classIdx in range(len(annotation_config)):
+        for classIdx in range(len(categories)):
             pred_bboxes_cur = pred_bboxes[pred_bboxes[:, 4] == classIdx]
             true_bboxes_cur = true_bboxes[true_bboxes[:, 4] == classIdx]
             pred_scores_cur = pred_scores[pred_bboxes[:, 4] == classIdx]
@@ -109,9 +109,9 @@ def precision_recall_curve(
                 tfs[classIdx][1].append(fp_delta)
                 tfs[classIdx][2].append(pred_scores_cur[i])
 
-    prs = [None for n in range(len(annotation_config))]
+    prs = [None for n in range(len(categories))]
 
-    for classIdx, tfs_cur, pos_cur in zip(range(len(annotation_config)), tfs, pos):
+    for classIdx, tfs_cur, pos_cur in zip(range(len(categories)), tfs, pos):
         # If we had no detections AND there
         # were no true boxes, precision and recall
         # are not defined.
@@ -124,7 +124,7 @@ def precision_recall_curve(
         precisions = tp / (tp + fp)
         recalls = tp / pos_cur
         prs[classIdx] = np.vstack([precisions, recalls, scores]).T  # type: ignore
-    return dict(zip([c.name for c in annotation_config], prs))  # type: ignore
+    return dict(zip([c.name for c in categories], prs))  # type: ignore
 
 
 def mAP(

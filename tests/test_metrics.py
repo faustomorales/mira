@@ -10,37 +10,37 @@ def test_mAP():
     """Make sure mAP makes sense."""
     image = np.random.randint(low=0, high=255, size=(100, 100, 3)).astype("uint8")
 
-    annotation_config = core.AnnotationConfiguration(["foo", "bar", "baz"])
+    categories = core.Categories(["foo", "bar", "baz"])
     true = core.Scene(
         image=image,
-        annotation_config=annotation_config,
+        categories=categories,
         annotations=[
             core.Annotation(
                 x1=0,
                 y1=0,
                 x2=10,
                 y2=10,
-                category=annotation_config["foo"],
+                category=categories["foo"],
             ),
             core.Annotation(
                 x1=40,
                 y1=40,
                 x2=50,
                 y2=50,
-                category=annotation_config["baz"],
+                category=categories["baz"],
             ),
         ],
     )
     pred = core.Scene(
         image=image,
-        annotation_config=annotation_config,
+        categories=categories,
         annotations=[
             core.Annotation(
                 x1=0,
                 y1=0,
                 x2=10,
                 y2=10,
-                category=annotation_config["foo"],
+                category=categories["foo"],
                 score=0.9,
             ),
             core.Annotation(
@@ -48,7 +48,7 @@ def test_mAP():
                 y1=15,
                 x2=30,
                 y2=30,
-                category=annotation_config["foo"],
+                category=categories["foo"],
                 score=0.5,
             ),
             core.Annotation(
@@ -56,14 +56,14 @@ def test_mAP():
                 y1=45,
                 x2=50,
                 y2=50,
-                category=annotation_config["baz"],
+                category=categories["baz"],
                 score=0.8,
             ),
         ],
     )
 
-    true_collection = core.SceneCollection([true], annotation_config=annotation_config)
-    pred_collection = core.SceneCollection([pred], annotation_config=annotation_config)
+    true_collection = core.SceneCollection([true], categories=categories)
+    pred_collection = core.SceneCollection([pred], categories=categories)
 
     maps1 = metrics.mAP(true_collection, pred_collection, iou_threshold=0.2)
     maps2 = metrics.mAP(true_collection, pred_collection, iou_threshold=0.3)

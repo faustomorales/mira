@@ -27,7 +27,7 @@ def test_detector_edge_cases(detector_class):
                         y1=0,
                         x2=base.image.shape[1],
                         y2=base.image.shape[0],
-                        category=dataset.annotation_config["blue circle"],
+                        category=dataset.categories["blue circle"],
                     )
                 ],
                 image=cv2.circle(  # A full screen annotation.
@@ -45,7 +45,7 @@ def test_detector_edge_cases(detector_class):
                         y1=base.image.shape[0] // 2 - 1,
                         x2=base.image.shape[1] // 2 + 1,
                         y2=base.image.shape[0] // 2 + 1,
-                        category=dataset.annotation_config["blue circle"],
+                        category=dataset.categories["blue circle"],
                     )
                 ],
                 image=cv2.circle(  # A very small circle.
@@ -65,14 +65,12 @@ def test_detector_edge_cases(detector_class):
                         y2=base.image.shape[0],
                         category=c,
                     )
-                    for c in dataset.annotation_config
+                    for c in dataset.categories
                 ]
             ),
         ]
     )
-    detector = detector_class(
-        pretrained_backbone=False, annotation_config=dataset.annotation_config
-    )
+    detector = detector_class(pretrained_backbone=False, categories=dataset.categories)
     detector.model.train()
 
     # Verify that we can handle a batch of all edge cases.

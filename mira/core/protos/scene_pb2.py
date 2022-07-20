@@ -14,14 +14,14 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12protos/scene.proto\x12\x04mira\"\x1d\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\"\x9d\x01\n\nAnnotation\x12\x10\n\x08\x63\x61tegory\x18\x01 \x01(\x05\x12\n\n\x02x1\x18\x02 \x01(\x05\x12\n\n\x02x2\x18\x03 \x01(\x05\x12\n\n\x02y1\x18\x04 \x01(\x05\x12\n\n\x02y2\x18\x05 \x01(\x05\x12\x0f\n\x07is_rect\x18\x06 \x01(\x08\x12\x1b\n\x06points\x18\x07 \x03(\x0b\x32\x0b.mira.Point\x12\r\n\x05score\x18\x08 \x01(\x02\x12\x10\n\x08metadata\x18\t \x01(\t\":\n\x05Label\x12\x10\n\x08\x63\x61tegory\x18\x01 \x01(\x05\x12\r\n\x05score\x18\x02 \x01(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\t\"-\n\x17\x41nnotationConfiguration\x12\x12\n\ncategories\x18\x01 \x03(\t\"C\n\x04Mask\x12\x0f\n\x07visible\x18\x01 \x01(\x08\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x1c\n\x07\x63ontour\x18\x03 \x03(\x0b\x32\x0b.mira.Point\"\xc1\x01\n\x05Scene\x12\x38\n\x11\x61nnotation_config\x18\x01 \x01(\x0b\x32\x1d.mira.AnnotationConfiguration\x12%\n\x0b\x61nnotations\x18\x02 \x03(\x0b\x32\x10.mira.Annotation\x12\x19\n\x05masks\x18\x03 \x03(\x0b\x32\n.mira.Mask\x12\r\n\x05image\x18\x04 \x01(\x0c\x12\x10\n\x08metadata\x18\x05 \x01(\t\x12\x1b\n\x06labels\x18\x06 \x03(\x0b\x32\x0b.mira.Labelb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12protos/scene.proto\x12\x04mira\"\x1d\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\"\x9d\x01\n\nAnnotation\x12\x10\n\x08\x63\x61tegory\x18\x01 \x01(\x05\x12\n\n\x02x1\x18\x02 \x01(\x05\x12\n\n\x02x2\x18\x03 \x01(\x05\x12\n\n\x02y1\x18\x04 \x01(\x05\x12\n\n\x02y2\x18\x05 \x01(\x05\x12\x0f\n\x07is_rect\x18\x06 \x01(\x08\x12\x1b\n\x06points\x18\x07 \x03(\x0b\x32\x0b.mira.Point\x12\r\n\x05score\x18\x08 \x01(\x02\x12\x10\n\x08metadata\x18\t \x01(\t\":\n\x05Label\x12\x10\n\x08\x63\x61tegory\x18\x01 \x01(\x05\x12\r\n\x05score\x18\x02 \x01(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\t\" \n\nCategories\x12\x12\n\ncategories\x18\x01 \x03(\t\"C\n\x04Mask\x12\x0f\n\x07visible\x18\x01 \x01(\x08\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x1c\n\x07\x63ontour\x18\x03 \x03(\x0b\x32\x0b.mira.Point\"\xad\x01\n\x05Scene\x12$\n\ncategories\x18\x01 \x01(\x0b\x32\x10.mira.Categories\x12%\n\x0b\x61nnotations\x18\x02 \x03(\x0b\x32\x10.mira.Annotation\x12\x19\n\x05masks\x18\x03 \x03(\x0b\x32\n.mira.Mask\x12\r\n\x05image\x18\x04 \x01(\x0c\x12\x10\n\x08metadata\x18\x05 \x01(\t\x12\x1b\n\x06labels\x18\x06 \x03(\x0b\x32\x0b.mira.Labelb\x06proto3')
 
 
 
 _POINT = DESCRIPTOR.message_types_by_name['Point']
 _ANNOTATION = DESCRIPTOR.message_types_by_name['Annotation']
 _LABEL = DESCRIPTOR.message_types_by_name['Label']
-_ANNOTATIONCONFIGURATION = DESCRIPTOR.message_types_by_name['AnnotationConfiguration']
+_CATEGORIES = DESCRIPTOR.message_types_by_name['Categories']
 _MASK = DESCRIPTOR.message_types_by_name['Mask']
 _SCENE = DESCRIPTOR.message_types_by_name['Scene']
 Point = _reflection.GeneratedProtocolMessageType('Point', (_message.Message,), {
@@ -45,12 +45,12 @@ Label = _reflection.GeneratedProtocolMessageType('Label', (_message.Message,), {
   })
 _sym_db.RegisterMessage(Label)
 
-AnnotationConfiguration = _reflection.GeneratedProtocolMessageType('AnnotationConfiguration', (_message.Message,), {
-  'DESCRIPTOR' : _ANNOTATIONCONFIGURATION,
+Categories = _reflection.GeneratedProtocolMessageType('Categories', (_message.Message,), {
+  'DESCRIPTOR' : _CATEGORIES,
   '__module__' : 'protos.scene_pb2'
-  # @@protoc_insertion_point(class_scope:mira.AnnotationConfiguration)
+  # @@protoc_insertion_point(class_scope:mira.Categories)
   })
-_sym_db.RegisterMessage(AnnotationConfiguration)
+_sym_db.RegisterMessage(Categories)
 
 Mask = _reflection.GeneratedProtocolMessageType('Mask', (_message.Message,), {
   'DESCRIPTOR' : _MASK,
@@ -75,10 +75,10 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _ANNOTATION._serialized_end=217
   _LABEL._serialized_start=219
   _LABEL._serialized_end=277
-  _ANNOTATIONCONFIGURATION._serialized_start=279
-  _ANNOTATIONCONFIGURATION._serialized_end=324
-  _MASK._serialized_start=326
-  _MASK._serialized_end=393
-  _SCENE._serialized_start=396
-  _SCENE._serialized_end=589
+  _CATEGORIES._serialized_start=279
+  _CATEGORIES._serialized_end=311
+  _MASK._serialized_start=313
+  _MASK._serialized_end=380
+  _SCENE._serialized_start=383
+  _SCENE._serialized_end=556
 # @@protoc_insertion_point(module_scope)

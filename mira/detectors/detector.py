@@ -138,7 +138,7 @@ class Detector(mc.torchtools.BaseModel):
                 )
                 np.savez(
                     base_path + ".png.bboxes.npz",
-                    bboxes=batch.annotation_config.bboxes_from_group(anns),
+                    bboxes=batch.categories.bboxes_from_group(anns),
                 )
                 np.savez(
                     base_path + ".png.transform.npz",
@@ -363,7 +363,7 @@ class Detector(mc.torchtools.BaseModel):
                             **{0: "__background__"},
                             **{
                                 str(idx + 1): label.name
-                                for idx, label in enumerate(self.annotation_config)
+                                for idx, label in enumerate(self.categories)
                             },
                         }
                     )
@@ -399,7 +399,7 @@ class Detector(mc.torchtools.BaseModel):
         """Compute the IoU between annotatons for a scene and the anchors for the detector."""
         images, scales = self.resize_to_model_size([scene.image])
         return mc.utils.compute_iou(
-            scene.annotation_config.bboxes_from_group(
+            scene.categories.bboxes_from_group(
                 [ann.resize(scales[0][::-1]) for ann in scene.annotations]
             )[:, :4],
             self.compute_anchor_boxes(

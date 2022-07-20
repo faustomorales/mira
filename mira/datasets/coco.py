@@ -11,7 +11,7 @@ import numpy as np
 from ..core import (
     Scene,
     SceneCollection,
-    AnnotationConfiguration,
+    Categories,
     Annotation,
 )
 
@@ -21,14 +21,14 @@ log = logging.getLogger(__name__)
 def load_coco(
     annotations_file: str,
     image_dir: str,
-    annotation_config: AnnotationConfiguration = None,
+    categories: Categories = None,
 ) -> SceneCollection:
     """Obtain a scene collection from a COCO JSON file.
 
     Args:
         annotations_file: The annotation file to load
         image_dir: The directory in which to look for images
-        annotation_config: The annotation configuration to
+        categories: The annotation configuration to
             use. If None, it is inferred from the annotations
             category file.
 
@@ -39,22 +39,22 @@ def load_coco(
         image_dir = path.split(annotations_file)[0]
     with open(annotations_file, "r", encoding="utf8") as f:
         data = json.load(f)
-    categories = {}
+    cococategories = {}
     for category in data["categories"]:
-        categories[category["id"]] = category["name"]
-    category_names = [
-        c[1] for c in sorted(list(categories.items()), key=lambda x: x[0])
+        cococategories[category["id"]] = category["name"]
+    cococategory_names = [
+        c[1] for c in sorted(list(cococategories.items()), key=lambda x: x[0])
     ]
-    if annotation_config is None:
-        annotation_config = AnnotationConfiguration(category_names)
+    if categories is None:
+        categories = Categories(cococategory_names)
     assert len(categories) == len(
-        annotation_config
+        cococategories
     ), "Annotation configuration incompatible with in-file categories"
     assert all(
-        c in annotation_config for c in category_names
+        c in categories for c in cococategory_names
     ), "Some in-file categories not in annotation configuration"
     assert all(
-        c.name in category_names for c in annotation_config
+        c.name in cococategory_names for c in categories
     ), "Some annotation configuration categories not in file"
 
     annotations = np.array(
@@ -74,10 +74,10 @@ def load_coco(
         scenes.append(
             Scene(
                 image=path.join(image_dir, image["file_name"]),
-                annotation_config=annotation_config,
+                categories=categories,
                 annotations=[
                     Annotation(
-                        category=annotation_config[categories[int(ann[0])]],
+                        category=categories[cococategories[int(ann[0])]],
                         x1=ann[1],
                         y1=ann[2],
                         x2=ann[1] + ann[3],
@@ -87,13 +87,13 @@ def load_coco(
                 ],
             )
         )
-    return SceneCollection(scenes=scenes, annotation_config=annotation_config)
+    return SceneCollection(scenes=scenes, categories=categories)
 
 
 def load_coco_text(
     annotations_file: str,
     image_dir: str,
-    annotation_config: AnnotationConfiguration = None,
+    categories: Categories = None,
 ) -> SceneCollection:
     """Obtain a scene collection from a COCO Text JSON file
     (e.g., that which can be obtained from https://bgshih.github.io/cocotext/)
@@ -101,7 +101,7 @@ def load_coco_text(
     Args:
         annotations_file: The annotation file to load
         image_dir: The directory in which to look for images
-        annotation_config: The annotation configuration to
+        categories: The annotation configuration to
             use. If None, it is inferred from the annotations
             category file.
 
@@ -112,16 +112,16 @@ def load_coco_text(
         data = json.load(f)
 
     category_names = set(ann["class"] for ann in data["anns"].values())
-    if annotation_config is None:
-        annotation_config = AnnotationConfiguration(sorted(list(category_names)))
+    if categories is None:
+        categories = Categories(sorted(list(category_names)))
     assert len(category_names) == len(
-        annotation_config
+        categories
     ), "Annotation configuration incompatible with in-file categories"
     assert all(
-        c in annotation_config for c in category_names
+        c in categories for c in category_names
     ), "Some in-file categories not in annotation configuration"
     assert all(
-        c.name in category_names for c in annotation_config
+        c.name in category_names for c in categories
     ), "Some annotation configuration categories not in file"
 
     images = data["imgs"]
@@ -132,11 +132,11 @@ def load_coco_text(
         anns = [data["anns"][str(annId)] for annId in data["imgToAnns"][imageId]]
         scenes.append(
             Scene(
-                annotation_config=annotation_config,
+                categories=categories,
                 image=path.join(image_dir, imageData["file_name"]),
                 annotations=[
                     Annotation(
-                        category=annotation_config[ann["class"]],
+                        category=categories[ann["class"]],
                         x1=ann["bbox"][0],
                         y1=ann["bbox"][1],
                         x2=ann["bbox"][0] + ann["bbox"][2],
@@ -146,4 +146,4 @@ def load_coco_text(
                 ],
             )
         )
-    return SceneCollection(scenes=scenes, annotation_config=annotation_config)
+    return SceneCollection(scenes=scenes, categories=categories)

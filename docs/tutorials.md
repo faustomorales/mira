@@ -89,11 +89,11 @@ ax_faster.set_title('FasterRCNN')
 # reflecting the detector's prediction.
 predicted_retinanet = scene.assign(
     annotations=detector_retina.detect(scene.image),
-    annotation_config=detector_retina.annotation_config
+    categories=detector_retina.categories
 )
 predicted_faster = scene.assign(
     annotations=detector_faster.detect(scene.image, threshold=0.4),
-    annotation_config=detector_faster.annotation_config
+    categories=detector_faster.categories
 )
 
 # Plot both predictions. The calls to annotation() get us
@@ -122,7 +122,7 @@ dataset = datasets.load_oxfordiiitpets(breed=True)
 detector = detectors.FasterRCNN(
     pretrained_top=False,
     pretrained_backbone=True,
-    annotation_config=dataset.annotation_config,
+    categories=dataset.categories,
 )
 
 # Split our dataset into training, validation,
@@ -188,7 +188,7 @@ And now we can train a detector.
 from mira import detectors
 
 detector = detectors.FasterRCNN(
-    annotation_config=training.annotation_config
+    categories=training.categories
 )
 detector.train(
     training=training,
@@ -223,18 +223,18 @@ with open("path/to/image.jpg", "rb") as f:
     data = f.read()
     prediction1 = requests.post("http://localhost:8080/predictions/fastrcnn", data=data).json()
     prediction2 = requests.post("http://localhost:8080/predictions/retinanet", data=data).json()
-    annotation_config = mc.AnnotationConfiguration(list(set(p["label"] for p in prediction1 + prediction2)))
+    categories = mc.Categories(list(set(p["label"] for p in prediction1 + prediction2)))
 scene1, scene2 = [
     mc.Scene(
         image=filename,
-        annotation_config=annotation_config,
+        categories=categories,
         annotations=[
             mc.Annotation(
                 x1=p["x1"],
                 y1=p["y1"],
                 x2=p["x2"],
                 y2=p["y2"],
-                category=annotation_config[p["label"]],
+                category=categories[p["label"]],
                 score=p["score"]
             ) for p in prediction
         ]

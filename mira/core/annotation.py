@@ -9,7 +9,7 @@ from . import utils
 log = logging.getLogger(__name__)
 
 
-class AnnotationCategory:
+class Category:
     """Defines a category of an annotation along
     with all associated properties.
 
@@ -32,32 +32,30 @@ class AnnotationCategory:
     def __repr__(self):
         return repr(self._name)
 
-    def convert(self, annotation_config) -> "AnnotationCategory":
+    def convert(self, categories) -> "Category":
         """Convert an annotation to match another annotation config."""
         name = self._name
-        if name in annotation_config:
-            return annotation_config[name]
+        if name in categories:
+            return categories[name]
         raise ValueError(f"{name} is not in the new annotation configuration.")
 
 
 class Label:
     """An image-level label."""
 
-    category: AnnotationCategory
+    category: Category
     metadata: dict
     score: typing.Optional[float]
 
-    def __init__(
-        self, category: AnnotationCategory, score: float = None, metadata: dict = None
-    ):
+    def __init__(self, category: Category, score: float = None, metadata: dict = None):
         self.category = category
         self.score = score
         self.metadata = metadata or {}
 
-    def convert(self, annotation_config) -> "Label":
+    def convert(self, categories) -> "Label":
         """Convert an annotation to match another annotation config."""
         return self.assign(
-            category=self.category.convert(annotation_config),
+            category=self.category.convert(categories),
         )
 
     def assign(self, **kwargs) -> "Label":
@@ -92,7 +90,7 @@ class Annotation(
 
     def __init__(
         self,
-        category: AnnotationCategory,
+        category: Category,
         x1: int = None,
         y1: int = None,
         x2: int = None,
@@ -256,10 +254,10 @@ class Annotation(
             else self.assign(points=self.points * scale)
         )
 
-    def convert(self, annotation_config) -> "Annotation":
+    def convert(self, categories) -> "Annotation":
         """Convert an annotation to match another annotation config."""
         return self.assign(
-            category=self.category.convert(annotation_config),
+            category=self.category.convert(categories),
         )
 
     def assign(self, **kwargs) -> "Annotation":
@@ -309,7 +307,7 @@ class Annotation(
         )
 
 
-class AnnotationConfiguration:
+class Categories:
     """A class defining a list of annotation
     types for an object detection class.
 
@@ -321,7 +319,16 @@ class AnnotationConfiguration:
         names = [s.lower() for s in names]
         if len(names) != len(set(names)):
             raise ValueError("All class names must be unique (case-insensitive).")
-        self._types = [AnnotationCategory(name=name) for name in names]
+        self._types = [Category(name=name) for name in names]
+
+    @classmethod
+    def from_categories(
+        cls, categories: typing.Union["Categories", typing.List[str]]
+    ) -> "Categories":
+        """Convert a list of strings to categories if it is not already."""
+        if isinstance(categories, cls):
+            return categories
+        return cls(typing.cast(typing.List[str], categories))
 
     def bboxes_from_group(self, annotations: typing.List[Annotation]):
         """Obtain an array of shape (N, 5) where the columns are
@@ -354,9 +361,9 @@ class AnnotationConfiguration:
     def __contains__(self, key):
         if isinstance(key, str):
             return any(e.name == key for e in self._types)
-        if isinstance(key, AnnotationCategory):
+        if isinstance(key, Category):
             return any(e == key for e in self._types)
-        raise ValueError("Key must be str or AnnotationCategory, not " + str(type(key)))
+        raise ValueError("Key must be str or Category, not " + str(type(key)))
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
