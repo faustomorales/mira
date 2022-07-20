@@ -160,6 +160,7 @@ class Detector(mc.torchtools.BaseModel):
         callbacks: typing.List[mdcb.CallbackProtocol] = None,
         data_dir_prefix=None,
         validation_transforms: np.ndarray = None,
+        min_visibility: float = None,
         **kwargs,
     ):
         """Run training job. All other arguments passed to mira.core.training.train.
@@ -198,7 +199,11 @@ class Detector(mc.torchtools.BaseModel):
                     transform=np.matmul(transform, base.transform),
                 )
                 for (scene, transform), base in zip(
-                    [i.scene.augment(augmenter) for i in items], items
+                    [
+                        i.scene.augment(augmenter, min_visibility=min_visibility)
+                        for i in items
+                    ],
+                    items,
                 )
             ]
 

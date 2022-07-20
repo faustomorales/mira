@@ -216,8 +216,8 @@ class Annotation(
         )
         redrawn = redrawn[-min(baseline[1], 0) :, -min(baseline[0], 0) :]
         redrawn = redrawn[
-            : (height - baseline[1].clip(0) + 1).clip(0),
-            : (width - baseline[0].clip(0) + 1).clip(0),
+            : (height - baseline[1].clip(0)).clip(0),
+            : (width - baseline[0].clip(0)).clip(0),
         ]
         if redrawn.shape[0] == 0 or redrawn.shape[1] == 0 or (redrawn == 0).all():
             return []
@@ -228,6 +228,7 @@ class Annotation(
             for c in cv2.findContours(
                 redrawn, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE
             )[-2]
+            if len(c) > 1
         ]
 
     def resize(self, scale: typing.Union[float, np.ndarray]) -> "Annotation":

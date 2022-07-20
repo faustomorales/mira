@@ -230,14 +230,12 @@ def test_safe_crop():
         )
     scene = mc.Scene(categories=config, image=canvas, annotations=annotations)
     for wiggle in [True, False]:
-        augmenter = A.Compose(
-            transforms=[
+        augmenter = mc.augmentations.compose(
+            [
                 mc.augmentations.RandomCropBBoxSafe(
                     width=size * 4, height=size * 4, prob_box=1.0, wiggle=wiggle
                 )
-            ],
-            bbox_params=mc.augmentations.BboxParams,
-            keypoint_params=mc.augmentations.KeypointParams,
+            ]
         )
         positions = []
         for _ in range(25):

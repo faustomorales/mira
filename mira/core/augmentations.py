@@ -13,13 +13,6 @@ from . import utils as mcu
 
 LOGGER = logging.getLogger(__name__)
 
-BboxParams = A.BboxParams(
-    format="pascal_voc", label_fields=["bbox_indices"], check_each_transform=False
-)
-KeypointParams = A.KeypointParams(
-    format="xy", label_fields=["keypoint_indices"], remove_invisible=False
-)
-
 CoarseDropoutExpansion = tx.TypedDict(
     "CoarseDropoutExpansion",
     {
@@ -43,7 +36,17 @@ AugmentedResult = tx.TypedDict(
 
 def compose(transforms: typing.List[A.BasicTransform]):
     """Build a list of augmenters into an augmentation pipeline."""
-    return A.Compose(transforms, bbox_params=BboxParams, keypoint_params=KeypointParams)
+    return A.Compose(
+        transforms,
+        bbox_params=A.BboxParams(
+            format="pascal_voc",
+            label_fields=["bbox_indices"],
+            check_each_transform=False,
+        ),
+        keypoint_params=A.KeypointParams(
+            format="xy", label_fields=["keypoint_indices"], remove_invisible=False
+        ),
+    )
 
 
 # pylint: disable=too-few-public-methods
