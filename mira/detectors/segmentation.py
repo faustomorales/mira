@@ -58,7 +58,7 @@ class SMP(mdd.Detector):
         detector_kwargs=None,
         backbone_kwargs=None,
         preprocessing_kwargs=None,
-        resize_config: mc.torchtools.ResizeConfig = None,
+        resize_config: mc.resizing.ResizeConfig = None,
         base_threshold: float = 0.5,
     ):
         self.arch = arch

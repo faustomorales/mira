@@ -64,7 +64,7 @@ class TorchVisionClassifier(Classifier):
         model_name="efficientnet_b0",
         weights=torchvision.models.EfficientNet_B0_Weights.IMAGENET1K_V1,
         pretrained_top=False,
-        resize_config: mc.torchtools.ResizeConfig = None,
+        resize_config: mc.resizing.ResizeConfig = None,
         device="cpu",
     ):
         self.resize_config = resize_config or {

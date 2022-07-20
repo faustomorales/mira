@@ -4,7 +4,6 @@ import cv2
 import torch
 import numpy as np
 import mira.core
-import mira.detectors.common as mdc
 import mira.detectors.segmentation as mds
 
 
@@ -24,7 +23,7 @@ class SMPObjectDetector(torch.nn.Module):
         )
 
     def forward(self, x):
-        x, scales, sizes = mdc.resize(x, resize_config=RESIZE_CONFIG)
+        x, scales, sizes = mira.core.resizing.resize(x, resize_config=RESIZE_CONFIG)
         x = (
             self.preprocessing_fn(x.permute(0, 2, 3, 1))
             .permute(0, 3, 1, 2)

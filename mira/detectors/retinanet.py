@@ -165,7 +165,7 @@ class RetinaNet(detector.Detector):
         fpn_kwargs=None,
         detector_kwargs=None,
         anchor_kwargs=None,
-        resize_config: mc.torchtools.ResizeConfig = None,
+        resize_config: mc.resizing.ResizeConfig = None,
     ):
         super().__init__()
         self.annotation_config = annotation_config

@@ -73,11 +73,11 @@ class BackboneWithTIMM(torch.nn.Module):
 
 
 def torchvision_serve_inference(
-    model, x: typing.List[torch.Tensor], resize_config: core.torchtools.ResizeConfig
+    model, x: typing.List[torch.Tensor], resize_config: core.resizing.ResizeConfig
 ):
     """A convenience function for performing inference using torchvision
     object detectors in a common way with different resize methods."""
-    resized, scales, sizes = core.torchtools.resize(x, resize_config=resize_config)
+    resized, scales, sizes = core.resizing.resize(x, resize_config=resize_config)
     # Go from [sy, sx] to [sx, sy, sx, sy]
     scales = scales[:, [1, 0]].repeat((1, 2))
     sizes = sizes[:, [1, 0]].repeat((1, 2))
@@ -173,7 +173,7 @@ def initialize_basic(
     fpn_kwargs: dict = None,
     anchor_kwargs: dict = None,
     detector_kwargs: dict = None,
-    resize_config: core.torchtools.ResizeConfig = None,
+    resize_config: core.resizing.ResizeConfig = None,
     pretrained_backbone: bool = True,
 ):
     """Initialize basic FPN-based model."""
