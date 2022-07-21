@@ -96,8 +96,8 @@ class Classifier(mc.torchtools.BaseModel):
         def loss(items: typing.List[mc.torchtools.TrainItem]) -> torch.Tensor:
             batch = training.assign(scenes=[i.scene for i in items])
             y = self.model(
-                self.compute_inputs(self.resize_to_model_size(batch.images)[0]),
-                self.compute_targets(batch.label_groups),
+                self.compute_inputs(self.resize_to_model_size(batch.images())[0]),
+                self.compute_targets(batch.label_groups()),
             )
             predictions = self.invert_targets(y)
             state[items[0].split]["true"].extend(

@@ -1,6 +1,6 @@
 """Scene and SceneCollection objects"""
 
-# pylint: disable=invalid-name,too-many-instance-attributes,len-as-condition,unsupported-assignment-operation,import-outside-toplevel
+# pylint: disable=too-many-lines,invalid-name,too-many-instance-attributes,len-as-condition,unsupported-assignment-operation,import-outside-toplevel
 
 import os
 import io
@@ -114,6 +114,10 @@ class Scene:
             cv2.imwrite(self._tfile.name, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
         return self._tfile.name
 
+    def deferred_image(self) -> typing.Callable[[], np.ndarray]:
+        """Create a deferred image."""
+        return lambda: self.image
+
     @property
     def image(self) -> np.ndarray:
         """The image that is being annotated"""
@@ -156,6 +160,7 @@ class Scene:
         item: typing.Dict,
         label_key: str,
         categories: Categories,
+        base_dir: str = ".",
     ):
         """Create a scene from a set of QSL labels.
 
@@ -220,7 +225,7 @@ class Scene:
                 )
             )
         return cls(
-            image=target,
+            image=os.path.join(base_dir, target),
             annotations=annotations,
             categories=categories,
             metadata=item.get("metadata", {}),
@@ -759,48 +764,55 @@ class SceneCollection:
         """The annotation configuration"""
         return self._categories
 
-    @property
     def annotation_groups(self):
         """The groups of annotations in the collection."""
         return [s.annotations for s in self.scenes]
 
-    @property
     def label_groups(self):
         """The groups of labels in the collection."""
         return [s.labels for s in self.scenes]
 
-    @property
     def uniform(self):
         """Specifies whether all scenes in the collection are
         of the same size. Note: This will trigger an image load."""
         return (
-            np.unique(np.array([s.image.shape for s in self.scenes]), axis=0).shape[0]
+            np.unique(
+                np.array(
+                    [[s.dimensions.width, s.dimensions.height] for s in self.scenes]
+                ),
+                axis=0,
+            ).shape[0]
             == 1
         )
 
-    @property
     def annotation_sizes(self):
         """An array of dimensions for the annotations in the collection."""
-        return np.diff(
-            np.array(
-                utils.flatten(
-                    [[a.x1y1x2y2() for a in g] for g in self.annotation_groups]
-                )
-            ).reshape((-1, 2, 2)),
-            axis=1,
-        )[:, 0, :]
+        return [
+            np.diff(np.array([a.x1y1x2y2() for a in g]).reshape((-1, 2, 2)), axis=1)[
+                :, 0, :
+            ]
+            for g in self.annotation_groups()
+        ]
 
-    @property
+    def image_sizes(self):
+        """An array of dimensions for the images in the collection."""
+        return np.array(
+            [[scene.dimensions.width, scene.dimensions.height] for scene in self.scenes]
+        )
+
     def consistent(self):
         """Specifies whether all scenes have the same annotation
         configuration."""
         return all(s.categories == self.categories for s in self.scenes)
 
-    @property
     def images(self):
         """All the images for a scene collection.
         All images will be loaded if not already cached."""
         return [s.image for s in self.scenes]
+
+    def deferred_images(self):
+        """Returns a series of callables that, when called, will load the image."""
+        return [s.deferred_image() for s in self.scenes]
 
     def augment(self, augmenter: augmentations.AugmenterProtocol, **kwargs):
         """Obtained an augmented version of the given collection.
@@ -969,7 +981,7 @@ class SceneCollection:
         return cls(scenes=scenes, categories=scenes[0].categories)
 
     @classmethod
-    def from_qsl(cls, jsonpath: str, label_key: str):
+    def from_qsl(cls, jsonpath: str, label_key: str, base_dir="."):
         """Build a scene collection from a QSL JSON project file."""
         with open(jsonpath, "r", encoding="utf8") as f:
             project = json.loads(f.read())
@@ -991,6 +1003,11 @@ class SceneCollection:
                 log.info("Skipping %s because labels are missing.", item["target"])
                 continue
             scenes.append(
-                Scene.from_qsl(item=item, label_key=label_key, categories=categories)
+                Scene.from_qsl(
+                    item=item,
+                    label_key=label_key,
+                    categories=categories,
+                    base_dir=base_dir,
+                )
             )
         return cls(scenes=scenes)

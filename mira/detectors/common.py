@@ -26,10 +26,17 @@ class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
         return args[0], args[2]
 
 
+class LastLevelMaxPool(torchvision.ops.feature_pyramid_network.LastLevelMaxPool):
+    """A last level max pool that ignores in_channels / out_channels arguments."""
+
+    def __init__(self, *args, in_channels=None, out_channels=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 EXTRA_BLOCKS_MAP = {
     "lastlevelp6p7": torchvision.ops.feature_pyramid_network.LastLevelP6P7,
     "noop": LastLevelNoop,
-    "lastlevelmaxpool": torchvision.ops.feature_pyramid_network.LastLevelMaxPool,
+    "lastlevelmaxpool": LastLevelMaxPool,
 }
 
 

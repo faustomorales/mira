@@ -7,12 +7,7 @@ import logging
 
 from tqdm import tqdm
 
-from ..core import (
-    Scene,
-    SceneCollection,
-    Categories,
-    Annotation,
-)
+from .. import core
 
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -52,9 +47,9 @@ def map_xml_to_metadata(
 
 def load_voc(
     filepaths: typing.List[str],
-    categories: Categories,
+    categories: core.Categories,
     image_dir: str = None,
-) -> SceneCollection:
+) -> core.SceneCollection:
     """Read a scene from a VOC XML annotation file. Remaining arguments
     passed to scene constructor.
 
@@ -92,13 +87,13 @@ def load_voc(
                 for k in ["xmin", "ymin", "xmax", "ymax"]
             ]
             annotations.append(
-                Annotation(x1=xmin, y1=ymin, x2=xmax, y2=ymax, category=category)
+                core.Annotation(x1=xmin, y1=ymin, x2=xmax, y2=ymax, category=category)
             )
         scenes.append(
-            Scene(
+            core.Scene(
                 categories=categories,
                 annotations=annotations,
                 image=image_path,
             )
         )
-    return SceneCollection(scenes=scenes, categories=categories)
+    return core.SceneCollection(scenes=scenes, categories=categories)

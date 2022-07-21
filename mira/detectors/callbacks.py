@@ -209,7 +209,7 @@ def error_examples(
         ).items():
             for imageIdx, image, examples, metadata, transform in zip(
                 split_data["indices"],
-                split_data["collections"]["true_collection"].images,
+                split_data["collections"]["true_collection"].images(),
                 metrics.crop_error_examples(
                     **split_data["collections"],
                     threshold=threshold,

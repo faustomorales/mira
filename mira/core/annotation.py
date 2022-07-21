@@ -233,7 +233,8 @@ class Annotation(
 
     def resize(self, scale: typing.Union[float, np.ndarray]) -> "Annotation":
         """Obtain a revised selection with a given
-        uniform scaling."""
+        uniform scaling. Scale should be provided as either a single
+        float or as an array with scaling factors provided as [sx, sy]"""
         return (
             self.assign(
                 **{

@@ -70,6 +70,55 @@ def fit(
     return padded, (scale, scale), (target_height, target_width)
 
 
+def check_resize_method(method: str):
+    """Verify that a resize method is okay."""
+    assert method in [
+        "fit",
+        "pad",
+        "force",
+        "none",
+        "pad_to_multiple",
+    ], f"Unknown resize method {method}."
+
+
+def compute_resize_dimensions(shapes: np.ndarray, resize_config: ResizeConfig):
+    """Compute the expected output size for a series of sizes (avoids having
+    to actually "do" the resizing."""
+    check_resize_method(resize_config["method"])
+    max_size = shapes.max(axis=0)
+    if resize_config["method"] in ("fit", "pad", "force"):
+        resize_config = typing.cast(FixedSizeConfig, resize_config)
+        dimensions = np.array([resize_config["height"], resize_config["width"]])
+    elif resize_config["method"] == "pad_to_multiple":
+        base = resize_config["base"]
+        dimensions = (
+            (np.ceil(max_size / base) * base).round().astype("int32")[np.newaxis]
+        )
+    elif resize_config["method"] == "none":
+        dimensions = max_size[np.newaxis]
+    else:
+        raise ValueError("Failed to compute dimensions.")
+    if resize_config["method"] == "fit":
+        scalesout = (
+            (dimensions / shapes).min(axis=1)[:, np.newaxis].repeat(repeats=2, axis=1)
+        )
+        sizesout = (scalesout * shapes).round()
+    elif resize_config["method"] in ("pad", "pad_to_multiple"):
+        scalesout = np.ones((len(shapes), 2))
+        sizesout = shapes
+        assert (shapes <= dimensions).all(), "Cannot pad images to this size."
+    elif resize_config["method"] == "force":
+        scalesout = dimensions / shapes
+        sizesout = dimensions.repeat(repeats=len(sizesout), axis=0)
+    # Follow the convention from resize where we provide dimensions in
+    # y, x order.
+    return (
+        dimensions[np.newaxis, ::-1].repeat(repeats=len(shapes), axis=0),
+        scalesout,
+        sizesout,
+    )
+
+
 def resize(
     x: typing.List[ArrayType], resize_config: ResizeConfig
 ) -> typing.Tuple[ArrayType, ArrayType, ArrayType]:
@@ -84,13 +133,7 @@ def resize(
     assert (
         not isinstance(x, list) or len(x) > 0
     ), "When providing a list, it must not be empty."
-    assert resize_config["method"] in [
-        "fit",
-        "pad",
-        "none",
-        "force",
-        "pad_to_multiple",
-    ], f"Unknown resize method {resize_config['method']}."
+    check_resize_method(resize_config["method"])
     use_torch_ops = isinstance(x, torch.Tensor) or (
         isinstance(x, list) and isinstance(x[0], torch.Tensor)
     )

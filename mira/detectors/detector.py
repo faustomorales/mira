@@ -80,7 +80,7 @@ class Detector(mc.torchtools.BaseModel):
     ) -> torch.Tensor:
         """Compute the loss for a batch of scenes."""
         assert self.model.training, "Model not in training mode."
-        images, scales = self.resize_to_model_size(batch.images)
+        images, scales = self.resize_to_model_size(batch.images())
         LOGGER.debug(
             "Obtained images array with size %s and scales varying from %s to %s",
             images.shape,
@@ -259,7 +259,10 @@ class Detector(mc.torchtools.BaseModel):
 
     def detect(
         self,
-        images: typing.Union[typing.List[np.ndarray], np.ndarray],
+        images: typing.Union[
+            typing.List[typing.Union[np.ndarray, typing.Callable[[], np.ndarray]]],
+            np.ndarray,
+        ],
         batch_size: int = 32,
         **kwargs,
     ) -> typing.Union[
@@ -282,10 +285,17 @@ class Detector(mc.torchtools.BaseModel):
         with torch.no_grad():
             for start in range(0, 1 if single else len(images), batch_size):
                 current_images, current_scales = self.resize_to_model_size(
-                    typing.cast(
-                        typing.List[np.ndarray],
-                        [images] if single else images[start : start + batch_size],
-                    )
+                    [
+                        image if isinstance(image, np.ndarray) else image()
+                        for image in typing.cast(
+                            typing.List[
+                                typing.Union[
+                                    np.ndarray, typing.Callable[[], np.ndarray]
+                                ]
+                            ],
+                            [images] if single else images[start : start + batch_size],
+                        )
+                    ]
                 )
                 annotation_groups.extend(
                     [
@@ -329,7 +339,7 @@ class Detector(mc.torchtools.BaseModel):
                 for scene, annotations in zip(
                     collection,
                     self.detect(
-                        images=collection.images,
+                        images=collection.images(),
                         threshold=min_threshold,
                         batch_size=batch_size,
                     ),
@@ -400,14 +410,25 @@ class Detector(mc.torchtools.BaseModel):
                 args=args, manifest=marmpu.ModelExportUtils.generate_manifest_json(args)
             )
 
-    def compute_anchor_iou(self, scene: mc.Scene) -> np.ndarray:
-        """Compute the IoU between annotatons for a scene and the anchors for the detector."""
-        images, scales = self.resize_to_model_size([scene.image])
-        return mc.utils.compute_iou(
-            scene.categories.bboxes_from_group(
-                [ann.resize(scales[0][::-1]) for ann in scene.annotations]
-            )[:, :4],
-            self.compute_anchor_boxes(
-                height=images[0].shape[0], width=images[0].shape[1]
+    def compute_anchor_iou(
+        self, collection: mc.SceneCollection
+    ) -> typing.List[np.ndarray]:
+        """Compute the IoU between annotatons for a scene collection and the anchors for the detector.
+        Accounts for scaling depending on this detectors resize configuration."""
+        dimensions, scales, _ = mc.resizing.compute_resize_dimensions(
+            np.array(
+                [
+                    [scene.dimensions.height, scene.dimensions.width]
+                    for scene in collection
+                ]
             ),
+            self.resize_config,
         )
+        bboxes = [
+            np.array([ann.resize(scale[::-1]).x1y1x2y2() for ann in scene.annotations])
+            for scene, scale in zip(collection, scales)
+        ]
+        anchors = self.compute_anchor_boxes(
+            height=dimensions[0][0], width=dimensions[0][1]
+        )
+        return [mc.utils.compute_iou(group, anchors) for group in bboxes]

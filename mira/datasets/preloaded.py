@@ -10,7 +10,6 @@ import numpy as np
 import cv2
 from pkg_resources import resource_string
 
-from .. import utils
 from .. import core
 from .voc import load_voc
 
@@ -90,13 +89,12 @@ def load_voc2012(subset="train") -> core.SceneCollection:
         annotation_files = glob(path.join(annotation_dir, "*.xml"))
         return len(annotation_files) == 17125 and len(image_files) == 17125
 
-    root_dir = utils.get_file(
+    root_dir = core.files.get_file(
         origin="http://pjreddie.com/media/files/VOCtrainval_11-May-2012.tar",
         file_hash="e14f763270cf193d0b5f74b169f44157a4b0c6efa708f4dd0ff78ee691763bcb",
+        fname="VOCtrainval_11-May-2012.tar",
         cache_subdir=path.join("datasets", "voc2012"),
-        hash_algorithm="sha256",
         extract=True,
-        archive_format="tar",
         extract_check_fn=extract_check_fn,
     )
     image_dir = path.join(root_dir, "vocdevkit", "voc2012", "jpegimages")
@@ -257,25 +255,23 @@ def load_oxfordiiitpets(breed=True) -> core.SceneCollection:
     Returns:
         A scene collection containing the dataset
     """
-    image_dir = utils.get_file(
+    image_dir = core.files.get_file(
         origin="http://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz",
+        fname="images.tar.gz",
         file_hash="67195c5e1c01f1ab5f9b6a5d22b8c27a580d896ece458917e61d459337fa318d",
         cache_subdir=path.join("datasets", "oxfordiiitpets"),
-        hash_algorithm="sha256",
         extract=True,
-        archive_format="tar",
         extract_check_fn=lambda directory: len(
             glob(path.join(directory, "images", "*.jpg"))
         )
         == 7390,
     )
-    annotations_dir = utils.get_file(
+    annotations_dir = core.files.get_file(
         origin="http://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz",
+        fname="annotations.tar.gz",
         file_hash="52425fb6de5c424942b7626b428656fcbd798db970a937df61750c0f1d358e91",
         cache_subdir=path.join("datasets", "oxfordiiitpets"),
-        hash_algorithm="sha256",
         extract=True,
-        archive_format="tar",
         extract_check_fn=lambda directory: len(
             glob(path.join(directory, "annotations", "xmls", "*.xml"))
         )
