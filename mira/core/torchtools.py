@@ -142,7 +142,7 @@ def train(
                             for vstart in range(0, len(validation), batch_size)
                         ]
                     ) / len(validation)
-                summaries[-1]["lr"] = next(g["lr"] for g in optimizer.param_groups)
+                summaries[-1]["lr"] = max(g["lr"] for g in optimizer.param_groups)
                 if on_epoch_end:
                     try:
                         summaries[-1] = {**summaries[-1], **on_epoch_end(summaries)}
@@ -226,3 +226,26 @@ class BaseModel:
             for p in self.model.parameters()
             if p.requires_grad or not trainable_only
         )
+
+
+def get_linear_lr_scales(model, frozen=0, min_scale=None):
+    """Build a timm-compatible array of parameter groups
+    with a specific number or portion of parameters
+    left frozen. The remaining parameters will have
+    learning rate scales linearly increasing from
+    0 to 1."""
+    parameters = list(p for p in model.parameters())
+    ngroups = len(parameters)
+    if isinstance(frozen, float) and 0 <= frozen <= 1:
+        frozen = int(round(frozen * ngroups))
+    ngroups = ngroups - frozen
+    if min_scale is None:
+        min_scale = 1 / ngroups
+    slope = (1 - min_scale) / ngroups
+    return [
+        {
+            "params": p,
+            "lr_scale": 0 if idx < frozen else slope * (idx - frozen + 1) + min_scale,
+        }
+        for idx, p in enumerate(parameters)
+    ]

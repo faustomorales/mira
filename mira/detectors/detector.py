@@ -226,7 +226,7 @@ class Detector(mc.torchtools.BaseModel):
             else:
                 self.freeze_backbone()
 
-        mc.torchtools.train(
+        return mc.torchtools.train(
             model=self.model,
             training=[
                 mc.torchtools.TrainItem(
