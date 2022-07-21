@@ -79,9 +79,10 @@ def train(
     """
     assert timm is not None, "timm is required for this function"
     assert torch is not None, "torch is required for this function."
-    optimizer = timm.optim.create_optimizer_v2(
-        model, **(optimizer_params or DEFAULT_OPTIMIZER_PARAMS)
-    )
+    optimizer_params = optimizer_params or DEFAULT_OPTIMIZER_PARAMS
+    if "model_or_params" not in optimizer_params:
+        optimizer_params["model_or_params"] = model
+    optimizer = timm.optim.create_optimizer_v2(**optimizer_params)
     scheduler, _ = timm.scheduler.create_scheduler(
         types.SimpleNamespace(**(scheduler_params or DEFAULT_SCHEDULER_PARAMS)),
         optimizer=optimizer,
