@@ -130,10 +130,14 @@ BACKBONE_TO_PARAMS = {
     "resnet50": {
         "weights_url": "https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth",
         "fpn_func": torchvision.models.detection.backbone_utils.resnet_fpn_backbone,
+        "fpn_extra_blocks_kwargs": {
+            "in_channels": 256,
+            "out_channels": 256,
+        },
         "default_fpn_kwargs": {
             "trainable_layers": 3,
             "backbone_name": "resnet50",
-            "extra_blocks": "lastlevelp6p7_256",
+            "extra_blocks": "lastlevelp6p7",
             "returned_layers": [2, 3, 4],
         },
         "default_anchor_kwargs": DEFAULT_ANCHOR_KWARGS,

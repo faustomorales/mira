@@ -1,6 +1,5 @@
-# pylint: disable=unexpected-keyword-arg
+# pylint: disable=unexpected-keyword-arg,unused-argument
 import typing
-import functools
 import collections
 import timm
 import torch
@@ -16,19 +15,19 @@ class LastLevelNoop(torchvision.ops.feature_pyramid_network.ExtraFPNBlock):
     extra_blocks to None.
     """
 
-    # "results" refers to feature pyramid outputs
-    # "x" refers to convolutional layer outputs.
-    def forward(self, results, x, names):  # pylint: disable=unused-argument
-        return results, names
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+    # args are pyramid outputs, conv outputs, and names
+    # We can't use named arguments because the signature for
+    # lastlevelp6py differs from that of maxpool which differs
+    # from that of the base class.
+    def forward(self, *args):  # pylint: disable=unused-argument
+        return args[0], args[2]
 
 
 EXTRA_BLOCKS_MAP = {
-    "lastlevelp6p7": lambda: torchvision.ops.feature_pyramid_network.LastLevelP6P7,
-    "lastlevelp6p7_256": functools.partial(
-        torchvision.ops.feature_pyramid_network.LastLevelP6P7,
-        in_channels=256,
-        out_channels=256,
-    ),
+    "lastlevelp6p7": torchvision.ops.feature_pyramid_network.LastLevelP6P7,
     "noop": LastLevelNoop,
     "lastlevelmaxpool": torchvision.ops.feature_pyramid_network.LastLevelMaxPool,
 }
@@ -68,7 +67,7 @@ class BackboneWithTIMM(torch.nn.Module):
         c = self.body(x)
         p = list(self.fpn(collections.OrderedDict(zip(names, c))).values())
         if self.extra_blocks is not None:
-            p, names = self.extra_blocks(c=c, p=p, names=names)
+            p, names = self.extra_blocks(p, c, names)
         return collections.OrderedDict(zip(names, p))
 
 
@@ -154,17 +153,20 @@ def get_torchvision_anchor_boxes(
     )
 
 
-def interpret_fpn_kwargs(fpn_kwargs):
+def interpret_fpn_kwargs(fpn_kwargs, extra_blocks_kwargs: dict = None):
     """Interpret fpn kwargs to extract extra blocks."""
-    return {
+    interpreted = {
         k: (
             v
             if k != "extra_blocks"
             or isinstance(v, torchvision.ops.feature_pyramid_network.ExtraFPNBlock)
-            else EXTRA_BLOCKS_MAP[typing.cast(str, v)]()  # type: ignore
+            else EXTRA_BLOCKS_MAP[typing.cast(str, v)]  # type: ignore
         )
         for k, v in fpn_kwargs.items()
     }
+    if "extra_blocks" in interpreted and extra_blocks_kwargs is not None:
+        interpreted["extra_blocks"] = interpreted["extra_blocks"](**extra_blocks_kwargs)
+    return interpreted
 
 
 def initialize_basic(
@@ -185,7 +187,12 @@ def initialize_basic(
     detector_kwargs = (
         detector_kwargs or default_map[backbone]["default_detector_kwargs"]
     )
-    fpn = default_map[backbone]["fpn_func"](**interpret_fpn_kwargs(fpn_kwargs))
+    fpn = default_map[backbone]["fpn_func"](
+        **interpret_fpn_kwargs(
+            fpn_kwargs,
+            extra_blocks_kwargs=default_map[backbone].get("fpn_extra_blocks_kwargs"),
+        )
+    )
     resize_config = resize_config or {"method": "pad_to_multiple", "base": 128}
     # In mira, backbone has meaning because we use it to skip
     # training these weights. But the FPN includes feature extraction

@@ -16,6 +16,7 @@ BACKBONE_TO_PARAMS = {
     "resnet50": {
         "weights_url": "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
         "fpn_func": torchvision.models.detection.backbone_utils.resnet_fpn_backbone,
+        "fpn_extra_blocks_kwargs": {},
         "default_fpn_kwargs": {
             "trainable_layers": 3,
             "backbone_name": "resnet50",
@@ -44,6 +45,7 @@ BACKBONE_TO_PARAMS = {
     },
     "mobilenet_large": {
         "weights_url": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
+        "fpn_extra_blocks_kwargs": {},
         "fpn_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
         "default_fpn_kwargs": {
             "trainable_layers": 3,
@@ -70,6 +72,7 @@ BACKBONE_TO_PARAMS = {
     },
     "mobilenet_large_320": {
         "weights_url": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
+        "fpn_extra_blocks_kwargs": {},
         "fpn_func": torchvision.models.detection.backbone_utils.mobilenet_backbone,
         "default_fpn_kwargs": {
             "trainable_layers": 3,
