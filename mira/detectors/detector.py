@@ -163,7 +163,7 @@ class Detector(mc.torchtools.BaseModel):
         min_visibility: float = None,
         **kwargs,
     ):
-        """Run training job. All other arguments passed to mira.core.training.train.
+        """Run training job. All other arguments passed to mira.core.torchtools.train.
 
         Args:
             training: The collection of training images

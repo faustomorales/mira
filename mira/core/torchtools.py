@@ -49,6 +49,7 @@ def train(
     model: "torch.nn.Module",
     loss: typing.Callable[[typing.List[InputType]], "torch.Tensor"],
     training: typing.List[InputType],
+    skip_partial_batches=False,
     validation: typing.List[InputType] = None,
     batch_size: int = 1,
     augment: typing.Callable[[typing.List[InputType]], typing.List[InputType]] = None,
@@ -110,6 +111,8 @@ def train(
                         random.shuffle(train_index)
                     end = min(start + batch_size, len(train_index))
                     batch = [training[train_index[idx]] for idx in range(start, end)]
+                    if len(batch) < batch_size and skip_partial_batches:
+                        continue
                     if augment:
                         batch = augment(batch)
                     optimizer.zero_grad()

@@ -407,7 +407,7 @@ class Scene:
             ax.imshow(ann.extract(image))
             ax.set_title(ann.category.name)
         fig.tight_layout()
-        return fig
+        return fig, axs
 
     def drop_duplicates(self, threshold=1, method: utils.DeduplicationMethod = "iou"):
         """Remove annotations of the same class where one annotation covers similar or equal area as another.
