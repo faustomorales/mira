@@ -83,8 +83,9 @@ def train(
     if "model_or_params" not in optimizer_params:
         optimizer_params["model_or_params"] = model
     optimizer = timm.optim.create_optimizer_v2(**optimizer_params)
+    scheduler_params = scheduler_params or DEFAULT_SCHEDULER_PARAMS
     scheduler, _ = timm.scheduler.create_scheduler(
-        types.SimpleNamespace(**(scheduler_params or DEFAULT_SCHEDULER_PARAMS)),
+        types.SimpleNamespace(**scheduler_params),
         optimizer=optimizer,
     )
     train_index = np.arange(len(training)).tolist()
@@ -98,8 +99,8 @@ def train(
                 scheduler.step(
                     epoch=epoch,
                     metric=None
-                    if not summaries
-                    else summaries[-1].get("val_loss", summaries[-1]["loss"]),
+                    if not summaries or "eval_metric" not in scheduler_params
+                    else summaries[-1][scheduler_params["eval_metric"]],
                 )
                 if on_epoch_start:
                     on_epoch_start()

@@ -284,6 +284,7 @@ def split(
     random_state: int = 42,
     stratify: typing.Sequence[typing.Hashable] = None,
     group: typing.Sequence[typing.Hashable] = None,
+    preserve: typing.Sequence[typing.Optional[int]] = None,
 ) -> typing.Sequence[typing.Any]:
     """Split a list of items into groups of specific proportions.
 
@@ -326,10 +327,37 @@ def split(
     Returns:
         A train and test scene collection.
     """
+    splits: typing.List[typing.List[typing.Any]] = [[] for _ in range(len(sizes))]
     if group is None:
         group = list(range(len(items)))
     if stratify is None:
         stratify = [0] * len(items)
+    if preserve is not None:
+        assert len(items) == len(
+            preserve
+        ), "When preserve is provided, it must be the same length as items."
+        for item, preserveIdx in zip(items, preserve):
+            if preserveIdx is not None:
+                splits[preserveIdx].append(item)
+        ideal_counts = [s * len(items) for s in sizes]
+        items, stratify, group = [
+            [
+                entry
+                for entry, preserveIdx in zip(current_list, preserve)
+                if preserveIdx is None
+            ]
+            for current_list in [items, stratify, group]
+        ]
+        if len(items) == 0:
+            # There's nothing left to split.
+            return splits
+        # Rebalance sizes so that we shuffle the remaining
+        # items into the splits to try and match the originally
+        # desired sizes.
+        sizes = [
+            max(target - len(split), 0) / len(items)
+            for split, target in zip(splits, ideal_counts)
+        ]
     assert sum(sizes) == 1.0, "The sizes must add up to 1.0."
     assert len(group) == len(items), "group must be the same length as the collection."
     assert len(stratify) == len(
@@ -341,10 +369,6 @@ def split(
         hash(tuple(set(s for s, g in zip(stratify, group) if g == u))) for u in unique
     ]
     totals = collections.Counter(hashes)
-    assert len(unique) >= len(
-        sizes
-    ), "Cannot group when number of unique groups is less than len(sizes)."
-    splits: typing.List[typing.List[typing.Any]] = [[] for _ in range(len(sizes))]
     for ht, t in totals.items():
         for a, u in zip(
             rng.choice(len(sizes), size=t, p=sizes),

@@ -160,7 +160,7 @@ class Scene:
         item: typing.Dict,
         label_key: str,
         categories: Categories,
-        base_dir: str = ".",
+        base_dir: str = None,
     ):
         """Create a scene from a set of QSL labels.
 
@@ -225,7 +225,7 @@ class Scene:
                 )
             )
         return cls(
-            image=os.path.join(base_dir, target),
+            image=target if base_dir is None else os.path.join(base_dir, target),
             annotations=annotations,
             categories=categories,
             metadata=item.get("metadata", {}),
@@ -737,6 +737,22 @@ class SceneCollection:
         self._categories = Categories.from_categories(categories)
         self._scenes = scenes
 
+    def filter(self, path: typing.Tuple[str], value: typing.Any):
+        """Find scenes in the collection based on metadata."""
+        scenes = []
+        for scene in self.scenes:
+            success = True
+            current_value = scene.metadata
+            for p in path:
+                try:
+                    current_value = current_value[p]
+                except Exception:  # pylint: disable=broad-except
+                    success = False
+                    break
+            if success and current_value == value:
+                scenes.append(scene)
+        return self.assign(scenes=scenes)
+
     def __getitem__(self, key):
         return self.scenes[key]
 
@@ -828,6 +844,7 @@ class SceneCollection:
         random_state: int = 42,
         stratify: typing.Sequence[typing.Hashable] = None,
         group: typing.Sequence[typing.Hashable] = None,
+        preserve: typing.Sequence[int] = None,
     ) -> typing.Sequence["SceneCollection"]:
         """Obtain new scene collections, split based on a
         given set of proportios.
@@ -876,6 +893,7 @@ class SceneCollection:
                 random_state=random_state,
                 stratify=stratify,
                 group=group,
+                preserve=preserve,
             )
         ]
 
@@ -981,7 +999,7 @@ class SceneCollection:
         return cls(scenes=scenes, categories=scenes[0].categories)
 
     @classmethod
-    def from_qsl(cls, jsonpath: str, label_key: str, base_dir="."):
+    def from_qsl(cls, jsonpath: str, label_key: str, base_dir=None):
         """Build a scene collection from a QSL JSON project file."""
         with open(jsonpath, "r", encoding="utf8") as f:
             project = json.loads(f.read())
