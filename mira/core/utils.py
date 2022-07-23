@@ -354,11 +354,13 @@ def split(
         # Rebalance sizes so that we shuffle the remaining
         # items into the splits to try and match the originally
         # desired sizes.
-        sizes = [
-            max(target - len(split), 0) / len(items)
-            for split, target in zip(splits, ideal_counts)
+        offsets = [
+            max(target - len(split), 0) for split, target in zip(splits, ideal_counts)
         ]
-    assert sum(sizes) == 1.0, "The sizes must add up to 1.0."
+        sizes = [offset / sum(offsets) for offset in offsets]
+    assert (
+        sum(sizes) == 1.0
+    ), f"The sizes must add up to 1.0 (they added up to {sum(sizes)})."
     assert len(group) == len(items), "group must be the same length as the collection."
     assert len(stratify) == len(
         items
