@@ -144,6 +144,8 @@ def train(
                             .cpu()
                             .numpy()
                             for vstart in range(0, len(validation), batch_size)
+                            if not skip_partial_batches
+                            or len(validation) - vstart >= batch_size
                         ]
                     ) / len(validation)
                 summaries[-1]["lr"] = max(g["lr"] for g in optimizer.param_groups)

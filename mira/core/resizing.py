@@ -83,7 +83,8 @@ def check_resize_method(method: str):
 
 def compute_resize_dimensions(shapes: np.ndarray, resize_config: ResizeConfig):
     """Compute the expected output size for a series of sizes (avoids having
-    to actually "do" the resizing."""
+    to actually "do" the resizing. Note that this function follows the y, x
+    convention."""
     check_resize_method(resize_config["method"])
     max_size = shapes.max(axis=0)
     if resize_config["method"] in ("fit", "pad", "force"):
@@ -91,11 +92,9 @@ def compute_resize_dimensions(shapes: np.ndarray, resize_config: ResizeConfig):
         dimensions = np.array([resize_config["height"], resize_config["width"]])
     elif resize_config["method"] == "pad_to_multiple":
         base = resize_config["base"]
-        dimensions = (
-            (np.ceil(max_size / base) * base).round().astype("int32")[np.newaxis]
-        )
+        dimensions = (np.ceil(max_size / base) * base).round().astype("int32")
     elif resize_config["method"] == "none":
-        dimensions = max_size[np.newaxis]
+        dimensions = max_size
     else:
         raise ValueError("Failed to compute dimensions.")
     if resize_config["method"] == "fit":
@@ -109,7 +108,7 @@ def compute_resize_dimensions(shapes: np.ndarray, resize_config: ResizeConfig):
         assert (shapes <= dimensions).all(), "Cannot pad images to this size."
     elif resize_config["method"] == "force":
         scalesout = dimensions / shapes
-        sizesout = dimensions.repeat(repeats=len(sizesout), axis=0)
+        sizesout = dimensions.repeat(repeats=len(shapes), axis=0)
     # Follow the convention from resize where we provide dimensions in
     # y, x order.
     return (
