@@ -8,6 +8,7 @@ import logging
 import tempfile
 
 import cv2
+import tqdm
 import torch
 import numpy as np
 import pkg_resources
@@ -425,10 +426,16 @@ class Detector(mc.torchtools.BaseModel):
             self.resize_config,
         )
         bboxes = [
-            np.array([ann.resize(scale[::-1]).x1y1x2y2() for ann in scene.annotations])
+            np.array(
+                [ann.resize(scale[::-1]).x1y1x2y2() for ann in scene.annotations],
+                ndmin=2,
+            )
             for scene, scale in zip(collection, scales)
         ]
         anchors = self.compute_anchor_boxes(
             height=dimensions[0][0], width=dimensions[0][1]
         )
-        return [mc.utils.compute_iou(group, anchors) for group in bboxes]
+        return [
+            mc.utils.compute_iou(group, anchors)
+            for group in tqdm.tqdm(bboxes, desc="Computing IoU matrices.")
+        ]
