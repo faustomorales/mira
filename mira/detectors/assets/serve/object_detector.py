@@ -39,7 +39,7 @@ class ThresholdConfigurableObjectDetector(ObjectDetector):
         return output
 
     def postprocess(self, data, thresholds):
-        if API_MODE == "torch":
+        if API_MODE == "torchserve":
             return super().postprocess(data)
         return [
             [
