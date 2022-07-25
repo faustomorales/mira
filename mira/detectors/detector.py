@@ -394,7 +394,7 @@ class Detector(mc.torchtools.BaseModel):
                     )
                     .decode("utf-8")
                     .replace("SCORE_THRESHOLD", str(score_threshold))  # type: ignore
-                    .replace("API_MODE", api_mode)
+                    .replace("API_MODE", f"'{api_mode}'")
                 )
             args = types.SimpleNamespace(
                 model_name=model_name,
