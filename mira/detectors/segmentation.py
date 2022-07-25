@@ -73,7 +73,11 @@ class SMP(mdd.Detector):
             "encoder_name": self.backbone_kwargs["encoder_name"],
             "pretrained": "imagenet",
         }
-        self.resize_config = resize_config or {"method": "pad_to_multiple", "base": 64}
+        self.resize_config = resize_config or {
+            "method": "pad_to_multiple",
+            "base": 64,
+            "max": None,
+        }
         self.categories = mc.Categories.from_categories(categories)
         self.model = SMPWrapper(
             model=getattr(smp, self.arch)(

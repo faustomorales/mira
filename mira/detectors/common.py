@@ -200,7 +200,11 @@ def initialize_basic(
             extra_blocks_kwargs=default_map[backbone].get("fpn_extra_blocks_kwargs"),
         )
     )
-    resize_config = resize_config or {"method": "pad_to_multiple", "base": 128}
+    resize_config = resize_config or {
+        "method": "pad_to_multiple",
+        "base": 128,
+        "max": None,
+    }
     # In mira, backbone has meaning because we use it to skip
     # training these weights. But the FPN includes feature extraction
     # layers that we likely we want to change, so we distinguish

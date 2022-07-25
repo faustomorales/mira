@@ -20,7 +20,7 @@ import cv2
 
 from .protos import scene_pb2 as mps
 from .annotation import Categories, Annotation, Label
-from . import utils, augmentations, imagemeta
+from . import utils, augmentations, imagemeta, resizing
 from ..thirdparty.albumentations import albumentations as A
 
 log = logging.getLogger(__name__)
@@ -74,6 +74,15 @@ class Scene:
         self.labels = labels or []
         self.cache = cache
         self.masks = masks
+
+    def resize(self, resize_config: resizing.ResizeConfig):
+        """Resize a scene using a custom resizing configuration."""
+        images, scales, _ = resizing.resize([self.image], resize_config=resize_config)
+        return self.assign(
+            image=images[0],
+            annotations=[ann.resize(scales[0][::-1]) for ann in self.annotations],
+            masks=[],
+        )
 
     def filepath(self, directory: str = None):
         """Gets a filepath for this image. If it is not currently a file,

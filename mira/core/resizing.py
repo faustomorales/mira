@@ -18,7 +18,8 @@ FixedSizeConfig = tx.TypedDict(
     {"method": tx.Literal["fit", "pad", "force"], "width": int, "height": int},
 )
 VariableSizeConfig = tx.TypedDict(
-    "VariableSizeConfig", {"method": tx.Literal["pad_to_multiple"], "base": int}
+    "VariableSizeConfig",
+    {"method": tx.Literal["pad_to_multiple"], "base": int, "max": typing.Optional[int]},
 )
 ResizeConfig = typing.Union[
     FixedSizeConfig,
@@ -102,10 +103,23 @@ def compute_resize_dimensions(shapes: np.ndarray, resize_config: ResizeConfig):
             (dimensions / shapes).min(axis=1)[:, np.newaxis].repeat(repeats=2, axis=1)
         )
         sizesout = (scalesout * shapes).round()
-    elif resize_config["method"] in ("pad", "pad_to_multiple"):
+    elif resize_config["method"] == "pad":
         scalesout = np.ones((len(shapes), 2))
         sizesout = shapes
         assert (shapes <= dimensions).all(), "Cannot pad images to this size."
+    elif resize_config["method"] == "pad_to_multiple":
+        pad_max = resize_config.get("max")
+        if pad_max is not None:
+            assert pad_max % base == 0, "max padding size must be multiple of base."
+            dimensions = dimensions.clip(0, pad_max)
+        scalesout = np.ones((len(shapes), 2))
+        downsampled = (dimensions < shapes).any(axis=1)
+        scalesout[downsampled] = (
+            (dimensions / shapes)[downsampled]
+            .min(axis=1)[:, np.newaxis]
+            .repeat(repeats=2, axis=1)
+        )
+        sizesout = (scalesout * shapes).round()
     elif resize_config["method"] == "force":
         scalesout = dimensions / shapes
         sizesout = dimensions.repeat(repeats=len(shapes), axis=0)
@@ -168,47 +182,67 @@ def resize(
                 np.array(size_list),
             )
         )
-    img_dimensions = np.array(
-        [i.shape[1:3] if use_torch_ops else i.shape[:2] for i in x]
-    )
-    scales = (
-        torch.tensor(np.ones_like(img_dimensions))
-        if use_torch_ops
-        else np.ones_like(img_dimensions)
-    )
-    sizes = torch.tensor(img_dimensions) if use_torch_ops else np.array(img_dimensions)
+    raw_shapes = np.array([i.shape[1:3] if use_torch_ops else i.shape[:2] for i in x])
+    sizes_arr = raw_shapes.copy()
+    scales_arr = np.ones_like(sizes_arr, dtype="float32")
     if resize_config["method"] == "pad":
         assert (
             height is not None and width is not None
         ), "You must provide width and height when using pad."
-        pad_dimensions = np.array([[height, width]]) - img_dimensions
+        pad_dimensions = np.array([[height, width]]) - sizes_arr
+        assert (
+            pad_dimensions >= 0
+        ).all(), "Input image is larger than target size, but method is 'pad.'"
     if resize_config["method"] == "pad_to_multiple":
         assert base is not None, "pad_to_multiple requires a base to be provided."
+        pad_max = resize_config.get("max")
+        if pad_max is not None:
+            assert pad_max % base == 0, "max padding size must be multiple of base."
+            sizes_arr = sizes_arr.clip(0, pad_max)
+        downsampled = (sizes_arr < raw_shapes).any(axis=1)
+        scales_arr[downsampled] = (
+            (sizes_arr / raw_shapes)[downsampled]
+            .min(axis=1)[:, np.newaxis]
+            .repeat(repeats=2, axis=1)
+        )
+        sizes_arr = (scales_arr * raw_shapes).round().astype("int32")
         pad_dimensions = (
-            (np.ceil(img_dimensions.max(axis=0) / base) * base)
-            .clip(base)
-            .astype("int32")
-        ) - img_dimensions
+            (np.ceil(sizes_arr.max(axis=0) / base) * base).clip(base).astype("int32")
+        ) - raw_shapes
     if resize_config["method"] == "none":
         # pylint: disable=unexpected-keyword-arg
-        pad_dimensions = img_dimensions.max(axis=0, keepdims=True) - img_dimensions
-    assert (
-        pad_dimensions >= 0
-    ).all(), "Input image is larger than target size, but method is 'pad.'"
+        pad_dimensions = sizes_arr.max(axis=0, keepdims=True) - sizes_arr
     padded = (
         torch.cat(
             [
                 torch.nn.functional.pad(i, (0, pad_x, 0, pad_y)).unsqueeze(0)  # type: ignore
-                for i, (pad_y, pad_x) in zip(x, pad_dimensions)
+                if pad_y >= 0 and pad_x >= 0
+                else fit(
+                    typing.cast(torch.Tensor, i),
+                    height=raw_height + pad_y,
+                    width=raw_width + pad_x,
+                    force=False,
+                )[0].unsqueeze(0)
+                for i, (pad_y, pad_x), (raw_height, raw_width) in zip(
+                    x, pad_dimensions, raw_shapes
+                )
             ]
         )
         if use_torch_ops
         else np.concatenate(
             [
                 np.pad(i, ((0, pad_y), (0, pad_x), (0, 0)))[np.newaxis]
-                for i, (pad_y, pad_x) in zip(x, pad_dimensions)
+                if pad_y >= 0 and pad_x >= 0
+                else fit(
+                    i, height=raw_height + pad_y, width=raw_width + pad_x, force=False
+                )[0][np.newaxis]
+                for i, (pad_y, pad_x), (raw_height, raw_width) in zip(
+                    x, pad_dimensions, raw_shapes
+                )
             ],
             axis=0,
         )
     )
+    scales = torch.tensor(scales_arr) if use_torch_ops else scales_arr
+    sizes = torch.tensor(sizes_arr) if use_torch_ops else sizes_arr
     return padded, scales, sizes  # type: ignore

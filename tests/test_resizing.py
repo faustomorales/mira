@@ -45,7 +45,8 @@ def test_resize_pad(examples, tensor_mode):
 @pytest.mark.parametrize("examples,tensor_mode", typed_examples)
 def test_resize_pad_to_multiple(examples, tensor_mode):
     resized, scales, sizes = resize(
-        x=examples, resize_config={"method": "pad_to_multiple", "base": 512}
+        x=examples,
+        resize_config={"method": "pad_to_multiple", "base": 512, "max": None},
     )
     assert (resized.shape[2:] if tensor_mode else resized.shape[1:3]) == (512, 512)
     assert (scales == 1).all()
