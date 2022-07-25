@@ -260,14 +260,19 @@ class Detector(mc.torchtools.BaseModel):
 
     def detect(
         self,
-        images: typing.Union[
+        items: typing.Union[
             typing.List[typing.Union[np.ndarray, typing.Callable[[], np.ndarray]]],
             np.ndarray,
+            mc.SceneCollection,
+            mc.Scene,
         ],
         batch_size: int = 32,
         **kwargs,
     ) -> typing.Union[
-        typing.List[typing.List[mc.Annotation]], typing.List[mc.Annotation]
+        typing.List[typing.List[mc.Annotation]],
+        typing.List[mc.Annotation],
+        mc.SceneCollection,
+        mc.Scene,
     ]:
         """
         Perform object detection on a batch of images or single image.
@@ -280,7 +285,15 @@ class Detector(mc.torchtools.BaseModel):
         Returns:
             A list of lists of annotations.
         """
-        single = isinstance(images, np.ndarray) and len(images.shape) == 3
+        single = False
+        if isinstance(items, mc.SceneCollection):
+            images = items.deferred_images()
+        elif isinstance(items, mc.Scene):
+            single = True
+            images = items.image
+        else:
+            images = items
+            single = isinstance(items, np.ndarray) and len(images.shape) == 3
         self.model.eval()
         annotation_groups = []
         with torch.no_grad():
@@ -312,6 +325,14 @@ class Detector(mc.torchtools.BaseModel):
                         )
                     ]
                 )
+        if isinstance(items, mc.SceneCollection):
+            return items.assign(
+                scenes=[
+                    s.assign(annotations=g) for s, g in zip(items, annotation_groups)
+                ]
+            )
+        if isinstance(items, mc.Scene):
+            return items.assign(annotations=annotation_groups[0])
         return annotation_groups[0] if single else annotation_groups
 
     def mAP(
@@ -334,22 +355,16 @@ class Detector(mc.torchtools.BaseModel):
         Returns:
             mAP score
         """
-        pred = collection.assign(
-            scenes=[
-                scene.assign(annotations=annotations)
-                for scene, annotations in zip(
-                    collection,
-                    self.detect(
-                        images=collection.images(),
-                        threshold=min_threshold,
-                        batch_size=batch_size,
-                    ),
-                )
-            ]
-        )
         return mm.mAP(
             true_collection=collection,
-            pred_collection=pred,
+            pred_collection=typing.cast(
+                mc.SceneCollection,
+                self.detect(
+                    collection,
+                    threshold=min_threshold,
+                    batch_size=batch_size,
+                ),
+            ),
             iou_threshold=iou_threshold,
         )
 
