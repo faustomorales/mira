@@ -13,7 +13,7 @@ class RetinaNetObjectDetector(torch.nn.Module):
             backbone=mdr.BACKBONE_TO_PARAMS[BACKBONE_NAME]["fpn_func"](
                 **mdc.interpret_fpn_kwargs(
                     FPN_KWARGS,
-                    extra_blocks_kwargs=mdf.BACKBONE_TO_PARAMS[BACKBONE_NAME].get(
+                    extra_blocks_kwargs=mdr.BACKBONE_TO_PARAMS[BACKBONE_NAME].get(
                         "fpn_extra_blocks_kwargs"
                     ),
                 )
