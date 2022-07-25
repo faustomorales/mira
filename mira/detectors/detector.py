@@ -360,6 +360,7 @@ class Detector(mc.torchtools.BaseModel):
         archive_format: tx.Literal["default", "no-archive"] = "default",
         score_threshold: float = 0.5,
         model_version="1.0",
+        api_mode: tx.Literal["mira", "torchserver"] = "mira",
     ):
         """Build a TorchServe-compatible MAR file for this model."""
         assert (
@@ -393,6 +394,7 @@ class Detector(mc.torchtools.BaseModel):
                     )
                     .decode("utf-8")
                     .replace("SCORE_THRESHOLD", str(score_threshold))  # type: ignore
+                    .replace("API_MODE", api_mode)
                 )
             args = types.SimpleNamespace(
                 model_name=model_name,
