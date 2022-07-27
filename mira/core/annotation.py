@@ -24,6 +24,9 @@ class Category:
     def __eq__(self, other):
         return self._name == other._name
 
+    def __str__(self):
+        return self._name
+
     @property
     def name(self):
         """The name of the category."""
@@ -68,6 +71,9 @@ class Label:
         }
         kwargs = {**defaults, **kwargs}
         return Label(**kwargs)
+
+    def __repr__(self):
+        return f"Label(category={self.category}, score={self.score})"
 
 
 class Annotation(

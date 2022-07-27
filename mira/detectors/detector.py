@@ -260,13 +260,9 @@ class Detector(mc.torchtools.BaseModel):
 
     def detect(
         self,
-        items: typing.Union[
-            typing.List[typing.Union[np.ndarray, typing.Callable[[], np.ndarray]]],
-            np.ndarray,
-            mc.SceneCollection,
-            mc.Scene,
-        ],
+        items: mc.torchtools.BatchInferenceItem,
         batch_size: int = 32,
+        progress=False,
         **kwargs,
     ) -> typing.Union[
         typing.List[typing.List[mc.Annotation]],
@@ -285,46 +281,23 @@ class Detector(mc.torchtools.BaseModel):
         Returns:
             A list of lists of annotations.
         """
-        single = False
-        if isinstance(items, mc.SceneCollection):
-            images = items.deferred_images()
-        elif isinstance(items, mc.Scene):
-            single = True
-            images = items.image
-        else:
-            images = items
-            single = isinstance(items, np.ndarray) and len(images.shape) == 3
-        self.model.eval()
-        annotation_groups = []
-        with torch.no_grad():
-            for start in range(0, 1 if single else len(images), batch_size):
-                current_images, current_scales = self.resize_to_model_size(
-                    [
-                        image if isinstance(image, np.ndarray) else image()
-                        for image in typing.cast(
-                            typing.List[
-                                typing.Union[
-                                    np.ndarray, typing.Callable[[], np.ndarray]
-                                ]
-                            ],
-                            [images] if single else images[start : start + batch_size],
-                        )
-                    ]
+        single, annotation_groups = self.batch_inference(
+            items=items,
+            batch_size=batch_size,
+            progress=progress,
+            process=lambda batch: [
+                [a.resize(1 / scale) for a in annotations]
+                for scale, annotations in zip(
+                    batch.scales[:, ::-1],
+                    self.invert_targets(
+                        self.model(
+                            self.compute_inputs(batch.images),
+                        ),
+                        **kwargs,
+                    ),
                 )
-                annotation_groups.extend(
-                    [
-                        [a.resize(1 / scale) for a in annotations]
-                        for scale, annotations in zip(
-                            current_scales[:, ::-1],
-                            self.invert_targets(
-                                self.model(
-                                    self.compute_inputs(current_images),
-                                ),
-                                **kwargs,
-                            ),
-                        )
-                    ]
-                )
+            ],
+        )
         if isinstance(items, mc.SceneCollection):
             return items.assign(
                 scenes=[

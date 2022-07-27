@@ -1,3 +1,4 @@
+import math
 import types
 import typing
 import random
@@ -163,6 +164,18 @@ def train(
     return summaries
 
 
+BatchInferenceItem = typing.Union[
+    typing.List[typing.Union[np.ndarray, typing.Callable[[], np.ndarray]]],
+    np.ndarray,
+    scene.SceneCollection,
+    scene.Scene,
+]
+BatchInferenceOutput = typing.TypeVar("BatchInferenceOutput")
+BatchInferenceInput = typing.NamedTuple(
+    "BatchInferenceInput", [("images", np.ndarray), ("scales", np.ndarray)]
+)
+
+
 class BaseModel:
     """Abstract base class for classifiers and detectors."""
 
@@ -232,6 +245,57 @@ class BaseModel:
             for p in self.model.parameters()
             if p.requires_grad or not trainable_only
         )
+
+    def batch_inference(
+        self,
+        items: BatchInferenceItem,
+        process: typing.Callable[
+            [BatchInferenceInput],
+            typing.List[BatchInferenceOutput],
+        ],
+        batch_size: int,
+        progress: bool,
+    ) -> typing.Tuple[bool, typing.List[BatchInferenceOutput]]:
+        """Given some set of items, which could be a scene collection or a scene
+        or a list of images or deferred images (pretty much anything), batch it
+        into (images, scales) tuples."""
+        single = False
+        images: typing.Sequence[
+            typing.Union[np.ndarray, typing.Callable[[], np.ndarray]]
+        ]
+        if isinstance(items, scene.SceneCollection):
+            images = items.deferred_images()
+        elif isinstance(items, scene.Scene):
+            single = True
+            images = [items.image]
+        else:
+            single = (
+                isinstance(items, np.ndarray)
+                and len(typing.cast(np.ndarray, items).shape) == 3
+            )
+            images = typing.cast(typing.List[np.ndarray], [items] if single else items)
+        self.model.eval()
+
+        iterator = range(0, len(images), batch_size)
+        if progress:
+            iterator = tqdm.tqdm(iterator, total=math.ceil(len(images) / batch_size))
+        accumulated = []
+        with torch.no_grad():
+            for start in iterator:
+                accumulated.extend(
+                    process(
+                        BatchInferenceInput(
+                            *self.resize_to_model_size(
+                                [
+                                    image if isinstance(image, np.ndarray) else image()
+                                    for image in images[start : start + batch_size]
+                                ]
+                            )
+                        )
+                    )
+                )
+
+        return single, accumulated
 
 
 def get_linear_lr_scales(model, frozen=0, min_scale=None):

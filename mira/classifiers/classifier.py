@@ -1,23 +1,12 @@
 import abc
-import math
 import typing
 
-import tqdm
 import torch
 import numpy as np
 import typing_extensions as tx
 
 from .. import core as mc
 
-SimplePrediction = tx.TypedDict("SimplePrediction", {"logit": float, "score": float})
-ClassifierPrediction = tx.TypedDict(
-    "ClassifierPrediction",
-    {
-        "label": mc.Label,
-        "logit": float,
-        "raw": typing.Dict[str, SimplePrediction],
-    },
-)
 TrainSplitState = tx.TypedDict(
     "TrainSplitState", {"true": typing.List[int], "pred": typing.List[int]}
 )
@@ -30,7 +19,7 @@ class Classifier(mc.torchtools.BaseModel):
     """Abstract base class for classifier."""
 
     @abc.abstractmethod
-    def invert_targets(self, y: typing.Any) -> typing.List[ClassifierPrediction]:
+    def invert_targets(self, y: typing.Any) -> typing.List[typing.List[mc.Label]]:
         """Convert model outputs back into predictions."""
 
     @abc.abstractmethod
@@ -42,28 +31,31 @@ class Classifier(mc.torchtools.BaseModel):
 
     def classify(
         self,
-        images: typing.List[typing.Union[str, np.ndarray]],
+        items: mc.torchtools.BatchInferenceItem,
         batch_size=32,
         progress=False,
-    ) -> typing.List[ClassifierPrediction]:
+    ) -> typing.Union[
+        typing.List[mc.Label],
+        typing.List[typing.List[mc.Label]],
+        mc.SceneCollection,
+        mc.Scene,
+    ]:
         """Classify a batch of images."""
-        self.model.eval()
-        predictions: typing.List[ClassifierPrediction] = []
-        iterator = range(0, len(images), batch_size)
-        if progress:
-            iterator = tqdm.tqdm(iterator, total=math.ceil(len(images) / batch_size))
-        for start in iterator:
-            with torch.no_grad():
-                current_images, _ = self.resize_to_model_size(
-                    [
-                        mc.utils.read(image)
-                        for image in images[start : start + batch_size]
-                    ]
-                )
-                predictions.extend(
-                    self.invert_targets(self.model(self.compute_inputs(current_images)))
-                )
-        return predictions
+        single, predictions = self.batch_inference(
+            items=items,
+            batch_size=batch_size,
+            progress=progress,
+            process=lambda batch: self.invert_targets(
+                self.model(self.compute_inputs(batch.images))
+            ),
+        )
+        if isinstance(items, mc.SceneCollection):
+            return items.assign(
+                scenes=[s.assign(labels=g) for s, g in zip(items, predictions)]
+            )
+        if isinstance(items, mc.Scene):
+            return items.assign(labels=predictions[0])
+        return predictions[0] if single else predictions
 
     def train(
         self,
@@ -104,7 +96,7 @@ class Classifier(mc.torchtools.BaseModel):
                 [self.categories.index(s.labels[0].category) for s in batch]
             )
             state[items[0].split]["pred"].extend(
-                [self.categories.index(p["label"].category) for p in predictions]
+                [self.categories.index(p[0].category) for p in predictions]
             )
             return y["loss"]
 

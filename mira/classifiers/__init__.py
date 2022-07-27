@@ -1,2 +1,2 @@
 from .torchvision import TorchVisionClassifier
-from .clip import CLIP
+from .clip import CLIP, CLIPNearestNeighbors

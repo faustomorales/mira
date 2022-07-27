@@ -390,10 +390,17 @@ class Scene:
         """
         return utils.imshow(self.annotated(**(annotation_kwargs or {})), **kwargs)
 
-    def scores(self):
+    def scores(self, level: typing.Literal["annotation", "label"] = "annotation"):
         """Obtain an array containing the confidence
         score for each annotation."""
-        return np.array([a.score for a in self.annotations])
+        arr: typing.Sequence[typing.Union[Annotation, Label]]
+        if level == "label":
+            arr = self.labels
+        elif level == "annotation":
+            arr = self.annotations
+        else:
+            raise ValueError(f"Unsupported level: {level}")
+        return np.array([a.score for a in arr])
 
     def bboxes(self):
         """Obtain an array of shape (N, 5) where the columns are
@@ -402,6 +409,16 @@ class Scene:
         # We reshape in order to avoid indexing problems when
         # there are no annotations.
         return self.categories.bboxes_from_group(self.annotations)
+
+    def label_arr(self):
+        """Obtain a vector of shape N, where each entry is the
+        score for a category."""
+        return np.array(
+            [
+                max((l.score or 1 for l in self.labels if l.category == c), default=0)
+                for c in self.categories
+            ]
+        )
 
     def show_annotations(self, **kwargs):
         """Show annotations as individual plots. All arguments
@@ -761,6 +778,11 @@ class SceneCollection:
             if success and current_value == value:
                 scenes.append(scene)
         return self.assign(scenes=scenes)
+
+    def label_matrix(self):
+        """Get a matrix of shape (N, C) indicating the label(s)
+        for the the images in this scene."""
+        return np.array([s.label_arr() for s in self.scenes])
 
     def __getitem__(self, key):
         return self.scenes[key]
