@@ -172,7 +172,7 @@ def get_file(
         except Exception:  # pylint: disable=broad-except
             if os.path.exists(fpath):
                 os.remove(fpath)
-                raise
+            raise
     if extract:
         extract_target = os.path.join(
             datadir, os.path.split(fpath)[1].split(os.extsep)[0]

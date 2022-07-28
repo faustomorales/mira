@@ -16,6 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import typing_extensions as tx
 import cv2
 
 from .protos import scene_pb2 as mps
@@ -390,7 +391,7 @@ class Scene:
         """
         return utils.imshow(self.annotated(**(annotation_kwargs or {})), **kwargs)
 
-    def scores(self, level: typing.Literal["annotation", "label"] = "annotation"):
+    def scores(self, level: tx.Literal["annotation", "label"] = "annotation"):
         """Obtain an array containing the confidence
         score for each annotation."""
         arr: typing.Sequence[typing.Union[Annotation, Label]]
