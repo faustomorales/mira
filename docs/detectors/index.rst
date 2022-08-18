@@ -10,4 +10,4 @@ There are currently four implemented architectures.
 
 .. toctree::
    fasterrcnn
-   efficientdet
+   retinanet

@@ -175,12 +175,13 @@ def crop_error_examples(
     iou_threshold=0.1,
 ) -> typing.List[typing.Dict[str, typing.List[Annotation]]]:
     """Get crops of true positives, false negatives, and false positives.
+
     Args:
         true_collection: A collection of the ground truth scenes.
         pred_collection: A collection of the predicted scenes.
-        threshold: The score threshold for selecting annotations from predicted
-            scenes.
+        threshold: The score threshold for selecting annotations from predicted scenes.
         iou_threhsold: The IoU threshold for counting a box as a true positive.
+
     Returns:
         A list of dicts with "tps", "fps", and "fns"
         with the same length of the input collections. The values in each dict
