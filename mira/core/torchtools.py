@@ -1,9 +1,14 @@
+import os
+import abc
+import glob
+import json
 import math
 import types
 import typing
 import random
 import logging
-import tqdm
+import tempfile
+
 
 try:
     import timm
@@ -15,9 +20,12 @@ try:
     import torch
 except ImportError:
     torch = None  # type: ignore
+import cv2
+import tqdm
 import numpy as np
+import pandas as pd
 import typing_extensions as tx
-from . import annotation, resizing, scene
+from . import annotation, resizing, scene, augmentations, utils
 
 LOGGER = logging.getLogger()
 DEFAULT_SCHEDULER_PARAMS = dict(
@@ -44,6 +52,42 @@ TrainItem = typing.NamedTuple(
         ("scene", scene.Scene),
     ],
 )
+TrainState = tx.TypedDict("TrainState", {"directory": tempfile.TemporaryDirectory})
+InvertedTarget = typing.NamedTuple(
+    "InvertedTarget",
+    [
+        ("labels", typing.List[annotation.Label]),
+        ("annotations", typing.List[annotation.Annotation]),
+    ],
+)
+CollectionPair = tx.TypedDict(
+    "CollectionPair",
+    {
+        "true_collection": scene.SceneCollection,
+        "pred_collection": scene.SceneCollection,
+    },
+)
+SplitCollection = tx.TypedDict(
+    "SplitCollection",
+    {
+        "collections": CollectionPair,
+        "transforms": np.ndarray,
+        "metadata": pd.DataFrame,
+        "indices": typing.List[int],
+    },
+)
+
+# pylint: disable=too-few-public-methods
+class CallbackProtocol(tx.Protocol):
+    """A protocol defining how we expect callbacks to behave."""
+
+    def __call__(
+        self,
+        model: "BaseModel",
+        summaries: typing.List[typing.Dict[str, typing.Any]],
+        collections: typing.Dict[str, SplitCollection],
+    ) -> typing.Dict[str, typing.Any]:
+        pass
 
 
 def train(
@@ -176,6 +220,97 @@ BatchInferenceInput = typing.NamedTuple(
 )
 
 
+def data_dir_to_collections(
+    data_dir: str, threshold: float, model: "BaseModel"
+) -> typing.Dict[str, SplitCollection]:
+    """Convert a temporary training artifact directory into a set
+    of train and validation (if present) true/predicted collections."""
+    return {
+        split: {
+            "collections": {
+                "true_collection": scene.SceneCollection(
+                    [
+                        scene.Scene(
+                            image=filepath,
+                            categories=model.categories,
+                            annotations=[
+                                annotation.Annotation(
+                                    model.categories[cIdx], x1, y1, x2, y2
+                                )
+                                for x1, y1, x2, y2, cIdx in np.load(
+                                    filepath + ".bboxes.npz"
+                                )["bboxes"]
+                            ],
+                            labels=[
+                                annotation.Label(category=model.categories[cIdx])
+                                for cIdx, value in enumerate(
+                                    np.load(filepath + ".labels.npz")["labels"]
+                                )
+                                if value != 0
+                            ],
+                            metadata=metadata,
+                        )
+                        for filepath, metadata in zip(images, metadatas)
+                    ],
+                    categories=model.categories,
+                ),
+                "pred_collection": scene.SceneCollection(
+                    [
+                        scene.Scene(
+                            image=filepath,
+                            categories=model.categories,
+                            annotations=inverted.annotations,
+                            labels=inverted.labels,
+                            metadata=metadata,
+                        )
+                        for filepath, metadata, inverted in zip(
+                            images,
+                            metadatas,
+                            model.invert_targets(
+                                {
+                                    "output": [
+                                        {
+                                            k: torch.Tensor(v)
+                                            for k, v in np.load(
+                                                filepath + ".output.npz"
+                                            ).items()
+                                        }
+                                        for filepath in images
+                                    ]
+                                },
+                                threshold=threshold,
+                            ),
+                        )
+                    ],
+                    categories=model.categories,
+                ),
+            },
+            "transforms": typing.cast(np.ndarray, transforms),
+            "metadata": pd.json_normalize(metadatas),
+            "indices": [
+                int(os.path.basename(filepath).split(".")[0]) for filepath in images
+            ],
+        }
+        for split, images, metadatas, transforms in [
+            (
+                split,
+                images,
+                [utils.load_json(f + ".metadata.json") for f in images],
+                [np.load(f + ".transform.npz")["transform"] for f in images],
+            )
+            for split, images in [
+                (
+                    split,
+                    glob.glob(os.path.join(data_dir, split, "*.png"))
+                    + glob.glob(os.path.join(data_dir, split, "*", "*.png")),
+                )
+                for split in ["train", "val"]
+            ]
+        ]
+        if len(images) > 0
+    }
+
+
 class BaseModel:
     """Abstract base class for classifiers and detectors."""
 
@@ -184,6 +319,31 @@ class BaseModel:
     categories: annotation.Categories
     device: typing.Any
     resize_config: resizing.ResizeConfig
+
+    @abc.abstractmethod
+    def compute_targets(
+        self,
+        targets: typing.List[InvertedTarget],
+        width: int,
+        height: int,
+    ) -> typing.Union[typing.List[np.ndarray], np.ndarray]:
+        """Compute the expected outputs for a model. *You
+        usually should not need this method*. For training,
+        use `detector.train()`. For detection, use
+        `detector.detect()`.
+
+        Args:
+            annotation_groups: A list of lists of annotation groups.
+
+        Returns:
+            The output(s) that will be used by detector.train()
+        """
+
+    @abc.abstractmethod
+    def invert_targets(
+        self, y: typing.Any, threshold: float
+    ) -> typing.List[InvertedTarget]:
+        """Convert model outputs back into predictions."""
 
     def resize_to_model_size(
         self, images: typing.List[np.ndarray]
@@ -296,6 +456,205 @@ class BaseModel:
                 )
 
         return single, accumulated
+
+    def loss(
+        self,
+        batch: scene.SceneCollection,
+        data_dir: str = None,
+        transforms: np.ndarray = None,
+        indices: typing.List[int] = None,
+        save_images=False,
+    ) -> torch.Tensor:
+        """Compute the loss for a batch of scenes."""
+        assert self.model.training, "Model not in training mode."
+        images, scales = self.resize_to_model_size(batch.images())
+        LOGGER.debug(
+            "Obtained images array with size %s and scales varying from %s to %s",
+            images.shape,
+            scales.min(),
+            scales.max(),
+        )
+        itargets = [
+            InvertedTarget(
+                annotations=[ann.resize(scale) for ann in scene.annotations],
+                labels=scene.labels,
+            )
+            for scene, scale in zip(batch, scales[:, ::-1])
+        ]
+        output = self.model(
+            self.compute_inputs(images),
+            self.compute_targets(
+                targets=itargets,
+                width=images.shape[2],
+                height=images.shape[1],
+            ),
+        )
+        if data_dir is not None:
+            assert transforms is not None, "Transforms are required for data caching."
+            assert indices is not None, "Image indices are required for data caching."
+            os.makedirs(data_dir, exist_ok=True)
+            for outputIdx, (
+                idx,
+                image,
+                itarget,
+                lbls,
+                transform,
+                (scaley, scalex),
+                metadata,
+            ) in enumerate(
+                zip(
+                    indices,
+                    images,
+                    itargets,
+                    batch.onehot(),
+                    transforms,
+                    scales,
+                    [s.metadata for s in batch],
+                )
+            ):
+                base_path = os.path.join(data_dir, str(idx))
+                assert cv2.imwrite(
+                    base_path + ".png",
+                    image[..., ::-1]
+                    if save_images
+                    else np.ones((1, 1, 3), dtype="uint8"),
+                )
+
+                with open(
+                    base_path + ".png.metadata.json",
+                    "w",
+                    encoding="utf8",
+                ) as f:
+                    f.write(json.dumps(metadata or {}))
+                np.savez(
+                    base_path + ".png.output.npz",
+                    **{
+                        k: v.detach().cpu()
+                        for k, v in output["output"][outputIdx].items()
+                    },
+                )
+                np.savez(
+                    base_path + ".png.bboxes.npz",
+                    bboxes=batch.categories.bboxes_from_group(itarget.annotations),
+                )
+                np.savez(
+                    base_path + ".png.labels.npz",
+                    labels=lbls,
+                )
+                np.savez(
+                    base_path + ".png.transform.npz",
+                    transform=np.matmul(
+                        np.array([[scalex, 0, 0], [0, scaley, 0], [0, 0, 1]]),
+                        transform,
+                    ),
+                )
+        return output["loss"]
+
+    # pylint: disable=consider-using-with
+    def train(
+        self,
+        training: scene.SceneCollection,
+        validation: scene.SceneCollection = None,
+        augmenter: augmentations.AugmenterProtocol = None,
+        train_backbone: bool = True,
+        train_backbone_bn: bool = True,
+        callbacks: typing.List[CallbackProtocol] = None,
+        data_dir_prefix=None,
+        validation_transforms: np.ndarray = None,
+        min_visibility: float = None,
+        **kwargs,
+    ):
+        """Run training job. All other arguments passed to mira.core.torchtools.train.
+
+        Args:
+            training: The collection of training images
+            validation: The collection of validation images
+            augmenter: The augmenter for generating samples
+            train_backbone: Whether to fit the backbone.
+            train_backbone_bn: Whether to fit backbone batchnorm layers.
+            callbacks: A list of training callbacks.
+            data_dir_prefix: Prefix for the intermediate model artifacts directory.
+            validation_transforms: A list of transforms for the images in the validation
+                set. If not provided, we assume the identity transform.
+        """
+        state: TrainState = {
+            "directory": tempfile.TemporaryDirectory(prefix=data_dir_prefix),
+        }
+
+        def loss(items: typing.List[TrainItem]) -> torch.Tensor:
+            return self.loss(
+                training.assign(scenes=[i.scene for i in items]),
+                data_dir=os.path.join(state["directory"].name, items[0].split),
+                transforms=np.stack([i.transform for i in items]),
+                indices=[i.index for i in items],
+            )
+
+        def augment(items: typing.List[TrainItem]):
+            if not augmenter:
+                return items
+            return [
+                TrainItem(
+                    split=base.split,
+                    index=base.index,
+                    scene=scene,
+                    transform=np.matmul(transform, base.transform),
+                )
+                for (scene, transform), base in zip(
+                    [
+                        i.scene.augment(augmenter, min_visibility=min_visibility)
+                        for i in items
+                    ],
+                    items,
+                )
+            ]
+
+        def on_epoch_end(summaries: typing.List[dict]):
+            summary: typing.Dict[str, typing.Any] = summaries[-1]
+            if callbacks:
+                for callback in callbacks:
+                    for k, v in callback(
+                        model=self,
+                        summaries=summaries,
+                        collections=data_dir_to_collections(
+                            data_dir=state["directory"].name, threshold=0.01, model=self
+                        ),
+                    ).items():
+                        summary[k] = v
+            state["directory"] = tempfile.TemporaryDirectory(prefix=data_dir_prefix)
+            return summary
+
+        def on_epoch_start():
+            if train_backbone:
+                self.unfreeze_backbone(batchnorm=train_backbone_bn)
+            else:
+                self.freeze_backbone()
+
+        return train(
+            model=self.model,
+            training=[
+                TrainItem(split="train", index=index, transform=np.eye(3), scene=scene)
+                for index, scene in enumerate(training)
+            ],
+            validation=[
+                TrainItem(split="val", index=index, transform=transform, scene=scene)
+                for index, (scene, transform) in enumerate(
+                    zip(
+                        validation or [],
+                        (
+                            validation_transforms
+                            or np.eye(3, 3)[np.newaxis].repeat(len(validation), axis=0)
+                        )
+                        if validation
+                        else [],
+                    )
+                )
+            ],
+            loss=loss,
+            augment=augment,
+            on_epoch_start=on_epoch_start,
+            on_epoch_end=on_epoch_end,
+            **kwargs,
+        )
 
 
 def get_linear_lr_scales(model, frozen=0, min_scale=None):

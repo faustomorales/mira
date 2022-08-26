@@ -101,59 +101,63 @@ class SMP(mdd.Detector):
             device=self.device,
         ).permute(0, 3, 1, 2)
 
-    def compute_targets(self, annotation_groups, width, height):
+    def compute_targets(self, targets, width, height):
         segmaps = np.zeros(
-            (len(annotation_groups), len(self.categories), height, width),
+            (len(targets), len(self.categories), height, width),
             dtype="float32",
         )
-        for annotations, segmap in zip(annotation_groups, segmaps):
-            for annotation in annotations:
+        for target, segmap in zip(targets, segmaps):
+            for annotation in target.annotations:
                 index = self.categories.index(annotation.category)
                 annotation.draw(segmap[index], color=1, opaque=True)
         return torch.tensor(segmaps, device=self.device)
 
-    def invert_targets(self, y, threshold=0.5, **kwargs):
+    def invert_targets(self, y, threshold=0.5):
         return [
-            mc.utils.flatten(
-                [
+            mc.torchtools.InvertedTarget(
+                annotations=mc.utils.flatten(
                     [
-                        ann
-                        for ann in [
-                            mc.Annotation(
-                                points=contour[:, 0],
-                                category=category,
-                                score=catmap[
-                                    contour[:, 0, 1]
-                                    .min(axis=0) : contour[:, 0, 1]
-                                    .max(axis=0)
-                                    + 1,
-                                    contour[:, 0, 0].min() : contour[:, 0, 0].max() + 1,
-                                ].max()
-                                if np.product(
-                                    contour[:, 0].max(axis=0)
-                                    - contour[:, 0].min(axis=0)
+                        [
+                            ann
+                            for ann in [
+                                mc.Annotation(
+                                    points=contour[:, 0],
+                                    category=category,
+                                    score=catmap[
+                                        contour[:, 0, 1]
+                                        .min(axis=0) : contour[:, 0, 1]
+                                        .max(axis=0)
+                                        + 1,
+                                        contour[:, 0, 0].min() : contour[:, 0, 0].max()
+                                        + 1,
+                                    ].max()
+                                    if np.product(
+                                        contour[:, 0].max(axis=0)
+                                        - contour[:, 0].min(axis=0)
+                                    )
+                                    > 0
+                                    else self.base_threshold,
                                 )
-                                > 0
-                                else self.base_threshold,
-                            )
-                            for contour in sorted(
-                                cv2.findContours(
-                                    (
-                                        catmap > min(self.base_threshold, threshold)
-                                    ).astype("uint8"),
-                                    mode=cv2.RETR_LIST,
-                                    method=cv2.CHAIN_APPROX_SIMPLE,
-                                )[0],
-                                key=cv2.contourArea,
-                                reverse=True,
-                            )[: self.max_detections]
+                                for contour in sorted(
+                                    cv2.findContours(
+                                        (
+                                            catmap > min(self.base_threshold, threshold)
+                                        ).astype("uint8"),
+                                        mode=cv2.RETR_LIST,
+                                        method=cv2.CHAIN_APPROX_SIMPLE,
+                                    )[0],
+                                    key=cv2.contourArea,
+                                    reverse=True,
+                                )[: self.max_detections]
+                            ]
+                            if ann.score > threshold
                         ]
-                        if ann.score > threshold
+                        for catmap, category in zip(
+                            segmap["map"].detach().cpu().numpy(), self.categories
+                        )
                     ]
-                    for catmap, category in zip(
-                        segmap["map"].detach().cpu().numpy(), self.categories
-                    )
-                ]
+                ),
+                labels=[],
             )
             for segmap in y["output"]
         ]

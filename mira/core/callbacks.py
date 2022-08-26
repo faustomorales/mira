@@ -1,38 +1,17 @@
 import os
-import glob
-import json
 import typing
 import shutil
 
-try:
-    import torch
-except ImportError:
-    torch = None  # type: ignore
 import cv2
 import numpy as np
 import pandas as pd
-import typing_extensions as tx
-
-if typing.TYPE_CHECKING:
-    from .detector import Detector
-from .. import metrics, core
-
-# pylint: disable=too-few-public-methods
-class CallbackProtocol(tx.Protocol):
-    """A protocol defining how we expect callbacks to behave."""
-
-    def __call__(
-        self,
-        detector: "Detector",
-        summaries: typing.List[typing.Dict[str, typing.Any]],
-        data_dir: str,
-    ) -> typing.Dict[str, typing.Any]:
-        pass
+from . import torchtools, utils
+from .. import metrics
 
 
 def best_weights(
     filepath, metric="loss", method="min", key="saved"
-) -> CallbackProtocol:
+) -> torchtools.CallbackProtocol:
     """A callback that saves the best model weights according to a metric.
 
     Args:
@@ -43,7 +22,7 @@ def best_weights(
         key: What name to use for the saved flag.
     """
     # pylint: disable=unused-argument
-    def callback(detector, summaries, data_dir=None):
+    def callback(model, summaries, data_dir=None):
         saved = False
         summaries_df = pd.json_normalize(summaries)
         best_idx = (
@@ -52,14 +31,14 @@ def best_weights(
             else summaries_df[metric].idxmin()
         )
         if best_idx == len(summaries_df) - 1:
-            detector.save_weights(filepath)
+            model.save_weights(filepath)
             saved = True
         return {key: saved}
 
     return callback
 
 
-def csv_logger(filepath) -> CallbackProtocol:
+def csv_logger(filepath) -> torchtools.CallbackProtocol:
     """A callback that saves a CSV of the summaries to a specific
     filepath.
 
@@ -67,103 +46,19 @@ def csv_logger(filepath) -> CallbackProtocol:
         filepath: The filepath where the logs will be saved.
     """
     # pylint: disable=unused-argument
-    def callback(detector, summaries, data_dir):
+    def callback(model, summaries, data_dir):
         pd.json_normalize(summaries).to_csv(filepath, index=False)
         return {}
 
     return callback
 
 
-def load_json(filepath: str):
-    """Load JSON from file"""
-    with open(filepath, "r", encoding="utf8") as f:
-        return json.loads(f.read())
-
-
-def data_dir_to_collections(data_dir: str, threshold: float, detector: "Detector"):
-    """Convert a temporary training artifact directory into a set
-    of train and validation (if present) true/predicted collections."""
-    return {
-        split: {
-            "collections": {
-                "true_collection": core.SceneCollection(
-                    [
-                        core.Scene(
-                            image=filepath,
-                            categories=detector.categories,
-                            annotations=[
-                                core.Annotation(
-                                    detector.categories[cIdx], x1, y1, x2, y2
-                                )
-                                for x1, y1, x2, y2, cIdx in np.load(
-                                    filepath + ".bboxes.npz"
-                                )["bboxes"]
-                            ],
-                        )
-                        for filepath in images
-                    ],
-                    categories=detector.categories,
-                ),
-                "pred_collection": core.SceneCollection(
-                    [
-                        core.Scene(
-                            image=filepath,
-                            categories=detector.categories,
-                            annotations=annotations,
-                        )
-                        for filepath, annotations in zip(
-                            images,
-                            detector.invert_targets(
-                                {
-                                    "output": [
-                                        {
-                                            k: torch.Tensor(v)
-                                            for k, v in np.load(
-                                                filepath + ".output.npz"
-                                            ).items()
-                                        }
-                                        for filepath in images
-                                    ]
-                                },
-                                threshold=threshold,
-                            ),
-                        )
-                    ],
-                    categories=detector.categories,
-                ),
-            },
-            "transforms": transforms,
-            "metadata": pd.json_normalize(metadatas),
-            "indices": [
-                int(os.path.basename(filepath).split(".")[0]) for filepath in images
-            ],
-        }
-        for split, images, metadatas, transforms in [
-            (
-                split,
-                images,
-                [load_json(f + ".metadata.json") for f in images],
-                [np.load(f + ".transform.npz")["transform"] for f in images],
-            )
-            for split, images in [
-                (
-                    split,
-                    glob.glob(os.path.join(data_dir, split, "*.png"))
-                    + glob.glob(os.path.join(data_dir, split, "*", "*.png")),
-                )
-                for split in ["train", "val"]
-            ]
-        ]
-        if len(images) > 0
-    }
-
-
-def mAP(iou_threshold=0.5, threshold=0.01) -> CallbackProtocol:
+def mAP(iou_threshold=0.5) -> torchtools.CallbackProtocol:
     """Build a callback that computes mAP. All kwargs
-    passed to detector.mAP()"""
+    passed to metrics.mAP()"""
 
     # pylint: disable=unused-argument
-    def callback(detector, summaries, data_dir):
+    def callback(model, summaries, collections):
         return {
             f"{split}_mAP": round(
                 np.nanmean(
@@ -176,9 +71,7 @@ def mAP(iou_threshold=0.5, threshold=0.01) -> CallbackProtocol:
                 ),
                 2,
             )
-            for split, split_data in data_dir_to_collections(
-                data_dir, threshold=threshold, detector=detector
-            ).items()
+            for split, split_data in collections.items()
         }
 
     return callback
@@ -191,7 +84,7 @@ def error_examples(
     pad=10,
     max_crops_per_image=10,
     overwrite=False,
-) -> CallbackProtocol:
+) -> torchtools.CallbackProtocol:
     """Build a callback that saves errors to an output directory."""
     if os.path.isdir(examples_dir):
         if overwrite:
@@ -201,12 +94,11 @@ def error_examples(
                 "Directory already exists. Delete it or set overwrite=True."
             )
 
-    def callback(detector, summaries, data_dir):
+    # pylint: disable=unused-argument
+    def callback(model, summaries, collections):
         counts: typing.Dict[str, int] = {}
         entries: typing.List[dict] = []
-        for split, split_data in data_dir_to_collections(
-            data_dir, threshold=threshold, detector=detector
-        ).items():
+        for split, split_data in collections.items():
             for imageIdx, image, examples, metadata, transform in zip(
                 split_data["indices"],
                 split_data["collections"]["true_collection"].images(),
@@ -223,7 +115,7 @@ def error_examples(
                     directory = os.path.join(
                         examples_dir, str(len(summaries)), split, error_type
                     )
-                    bboxes = core.utils.transform_bboxes(
+                    bboxes = utils.transform_bboxes(
                         np.array([ann.x1y1x2y2() for ann in annotations]),
                         np.linalg.pinv(transform),
                         clip=False,
@@ -253,7 +145,7 @@ def error_examples(
                     )
                     os.makedirs(directory, exist_ok=True)
                     counts[error_type] = counts.get(error_type, 0) + len(annotations)
-                    for annIdx, annotation in enumerate(
+                    for annIdx, ann in enumerate(
                         sorted(
                             annotations,
                             key=lambda ann: ann.score
@@ -266,11 +158,42 @@ def error_examples(
                             break
                         cv2.imwrite(
                             os.path.join(directory, f"{imageIdx}_{annIdx}.png"),
-                            annotation.extract(image, pad=pad)[..., ::-1],
+                            ann.extract(image, pad=pad)[..., ::-1],
                         )
         pd.DataFrame(entries).to_csv(
             os.path.join(examples_dir, f"{len(summaries)}.csv"), index=False
         )
         return counts
+
+    return callback
+
+
+def classification_metrics(**kwargs) -> torchtools.CallbackProtocol:
+    """Returns classification metrics (precision, recall, f1). All arguments passed to metrics.classification_metrics"""
+    # pylint: disable=unused-argument
+    def callback(model, summaries, collections):
+        return dict(
+            utils.flatten(
+                [
+                    utils.flatten(
+                        [
+                            [
+                                (
+                                    f"{split}_{category}_{metric_name}",
+                                    round(metric_value, 2)
+                                    if np.isfinite(metric_value)
+                                    else np.nan,
+                                )
+                                for metric_name, metric_value in scores.items()
+                            ]
+                            for category, scores in metrics.classification_metrics(
+                                **split_data["collections"], **kwargs
+                            ).items()
+                        ]
+                    )
+                    for split, split_data in collections.items()
+                ]
+            )
+        )
 
     return callback

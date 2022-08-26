@@ -237,3 +237,26 @@ def crop_error_examples(
             }
         )
     return examples
+
+
+def classification_metrics(
+    true_collection: SceneCollection, pred_collection: SceneCollection
+):
+    """Compute precision/recall/f1 for each class."""
+    true = true_collection.onehot()
+    pred = pred_collection.onehot(binary=False).argmax(axis=1)
+    metrics = {}
+    for cIdx, category in enumerate(true_collection.categories):
+        pos = true[:, cIdx] == 1
+        prd = pred == cIdx
+        tps = (pos & prd).sum()
+        fps = (~pos & prd).sum()
+        fns = (pos & ~prd).sum()
+        precision = tps / (tps + fps)
+        recall = tps / (tps + fns)
+        metrics[category.name] = {
+            "precision": precision,
+            "recall": recall,
+            "f1": 2 * (precision * recall) / (precision + recall),
+        }
+    return metrics

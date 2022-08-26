@@ -22,8 +22,7 @@ import typing_extensions as tx
 import cv2
 
 from .protos import scene_pb2 as mps
-from .annotation import Categories, Annotation, Label
-from . import utils, augmentations, imagemeta, resizing
+from . import utils, augmentations, imagemeta, resizing, annotation
 from ..thirdparty.albumentations import albumentations as A
 
 log = logging.getLogger(__name__)
@@ -55,13 +54,13 @@ class Scene:
 
     def __init__(
         self,
-        categories: typing.Union[typing.List[str], Categories],
+        categories: typing.Union[typing.List[str], annotation.Categories],
         image: typing.Union[np.ndarray, str],
-        annotations: typing.List[Annotation] = None,
+        annotations: typing.List[annotation.Annotation] = None,
         metadata: dict = None,
         cache: bool = False,
         masks: typing.List[utils.MaskRegion] = None,
-        labels: typing.List[Label] = None,
+        labels: typing.List[annotation.Label] = None,
     ):
         assert isinstance(
             image, (np.ndarray, str)
@@ -73,7 +72,7 @@ class Scene:
         self._tfile = None
         self.metadata = metadata
         self.annotations = annotations or []
-        self.categories = Categories.from_categories(categories)
+        self.categories = annotation.Categories.from_categories(categories)
         self.labels = labels or []
         self.cache = cache
         self.masks = masks
@@ -177,7 +176,7 @@ class Scene:
         cls,
         item: typing.Dict,
         label_key: str,
-        categories: Categories,
+        categories: annotation.Categories,
         base_dir: str = None,
     ):
         """Create a scene from a set of QSL labels.
@@ -200,7 +199,7 @@ class Scene:
                 log.warning("A box in %s is missing %s. Skipping.", target, label_key)
                 continue
             annotations.append(
-                Annotation(
+                annotation.Annotation(
                     category=categories[box["labels"][label_key][0]],
                     x1=box["pt1"]["x"] * dimensions["width"],
                     y1=box["pt1"]["y"] * dimensions["height"],
@@ -222,7 +221,7 @@ class Scene:
             )[0]
             annotations.extend(
                 [
-                    Annotation(
+                    annotation.Annotation(
                         category=categories[mask["labels"][label_key][0]],
                         points=contour[:, 0, :] * [scalex, scaley],
                     )
@@ -236,7 +235,7 @@ class Scene:
                 )
                 continue
             annotations.append(
-                Annotation(
+                annotation.Annotation(
                     category=categories[polygon["labels"][label_key][0]],
                     points=np.array([[p["x"], p["y"]] for p in polygon["points"]])
                     * [dimensions["width"], dimensions["height"]],
@@ -253,31 +252,31 @@ class Scene:
     def fromString(cls, string):
         """Deserialize scene from string."""
         deserialized = mps.Scene.FromString(string)
-        categories = Categories(deserialized.categories.categories)
+        categories = annotation.Categories(deserialized.categories.categories)
         image = cv2.imdecode(
             np.frombuffer(deserialized.image, dtype="uint8"), cv2.IMREAD_COLOR
         )
         annotations = []
-        for annotation in deserialized.annotations:
+        for ann in deserialized.annotations:
             common = {
-                "category": categories[annotation.category],
-                "metadata": json.loads(annotation.metadata),
-                "score": annotation.score,
+                "category": categories[ann.category],
+                "metadata": json.loads(ann.metadata),
+                "score": ann.score,
             }
-            if annotation.is_rect:
+            if ann.is_rect:
                 annotations.append(
-                    Annotation(
-                        x1=annotation.x1,
-                        y1=annotation.y1,
-                        x2=annotation.x2,
-                        y2=annotation.y2,
+                    annotation.Annotation(
+                        x1=ann.x1,
+                        y1=ann.y1,
+                        x2=ann.x2,
+                        y2=ann.y2,
                         **common,
                     )
                 )
             else:
                 annotations.append(
-                    Annotation(
-                        points=np.array([[pt.x, pt.y] for pt in annotation.points]),
+                    annotation.Annotation(
+                        points=np.array([[pt.x, pt.y] for pt in ann.points]),
                         **common,
                     )
                 )
@@ -285,7 +284,7 @@ class Scene:
             image=image,
             metadata=json.loads(deserialized.metadata),
             labels=[
-                Label(
+                annotation.Label(
                     category=categories[ann.category],
                     metadata=json.loads(ann.metadata),
                     score=ann.score,
@@ -402,7 +401,7 @@ class Scene:
     def scores(self, level: tx.Literal["annotation", "label"] = "annotation"):
         """Obtain an array containing the confidence
         score for each annotation."""
-        arr: typing.Sequence[typing.Union[Annotation, Label]]
+        arr: typing.Sequence[typing.Union[annotation.Annotation, annotation.Label]]
         if level == "label":
             arr = self.labels
         elif level == "annotation":
@@ -418,16 +417,6 @@ class Scene:
         # We reshape in order to avoid indexing problems when
         # there are no annotations.
         return self.categories.bboxes_from_group(self.annotations)
-
-    def label_arr(self):
-        """Obtain a vector of shape N, where each entry is the
-        score for a category."""
-        return np.array(
-            [
-                max((l.score or 1 for l in self.labels if l.category == c), default=0)
-                for c in self.categories
-            ]
-        )
 
     def show_annotations(self, **kwargs):
         """Show annotations as individual plots. All arguments
@@ -581,7 +570,7 @@ class Scene:
         image = transformed["image"]
 
         annotations = [
-            Annotation(
+            annotation.Annotation(
                 x1=x1,
                 y1=y1,
                 x2=x2,
@@ -594,7 +583,7 @@ class Scene:
             )
             if annIdx > 0
         ] + [
-            Annotation(
+            annotation.Annotation(
                 points=keypoints.sort_values("keyIdx")[["x", "y"]].values,
                 category=self.annotations[annIdx - 1].category,
                 metadata=self.annotations[annIdx - 1].metadata,
@@ -658,17 +647,15 @@ class Scene:
         ih, iw = image.shape[:2]
         subcrops = []
         captured = []
-        for annotation in annotations:
-            if annotation in captured:
+        for ann in annotations:
+            if ann in captured:
                 # We already captured this annotation.
                 continue
             # Get the others, sorted by distance to the
             # current annotation.
-            axc, ayc = ((annotation.x1 + annotation.x2) / 2), (
-                (annotation.y1 + annotation.y2) / 2
-            )
+            axc, ayc = ((ann.x1 + ann.x2) / 2), ((ann.y1 + ann.y2) / 2)
             others = sorted(
-                [a for a in annotations if a is not annotation],
+                [a for a in annotations if a is not ann],
                 key=lambda a: np.square(
                     [
                         axc - ((a.x1 + a.x2) / 2),  # pylint: disable=cell-var-from-loop
@@ -680,7 +667,7 @@ class Scene:
             for r in range(len(others), -1, -1):
                 # Try to fit the annotation and the r-closest other
                 # annotations into this crop.
-                ann_inc = [annotation] + others[:r]
+                ann_inc = [ann] + others[:r]
                 ann_exc = [a for a in annotations if a not in ann_inc]
                 box_inc = self.categories.bboxes_from_group(ann_inc)[:, :4]
                 box_exc = self.categories.bboxes_from_group(ann_exc)[:, :4]
@@ -761,7 +748,7 @@ class SceneCollection:
     def __init__(
         self,
         scenes: typing.List[Scene],
-        categories: Categories = None,
+        categories: annotation.Categories = None,
     ):
         if categories is None:
             categories = scenes[0].categories
@@ -770,7 +757,7 @@ class SceneCollection:
                 raise ValueError(
                     f"Scene {i+1} of {len(scenes)} has inconsistent configuration."
                 )
-        self._categories = Categories.from_categories(categories)
+        self._categories = annotation.Categories.from_categories(categories)
         self._scenes = scenes
 
     def filter(self, path: typing.Tuple[str], value: typing.Any):
@@ -789,10 +776,16 @@ class SceneCollection:
                 scenes.append(scene)
         return self.assign(scenes=scenes)
 
-    def label_matrix(self):
-        """Get a matrix of shape (N, C) indicating the label(s)
-        for the the images in this scene."""
-        return np.array([s.label_arr() for s in self.scenes])
+    def onehot(self, binary=True) -> np.ndarray:
+        """Get the one-hot encoded (N, C) array for this scene collection. If binary
+        is false, the score is used instead of 0/1."""
+        return np.stack(
+            [
+                annotation.labels2onehot(s.labels, self.categories, binary=binary)
+                for s in self.scenes
+            ],
+            axis=0,
+        )
 
     def __getitem__(self, key):
         return self.scenes[key]
@@ -825,7 +818,7 @@ class SceneCollection:
         """The groups of annotations in the collection."""
         return [s.annotations for s in self.scenes]
 
-    def label_groups(self):
+    def label_groups(self) -> typing.List[typing.List[annotation.Label]]:
         """The groups of labels in the collection."""
         return [s.labels for s in self.scenes]
 
@@ -1077,7 +1070,7 @@ class SceneCollection:
         )
         if rconfig is None:
             raise ValueError(f"{label_key} region configuration not found.")
-        categories = Categories([o["name"] for o in rconfig["options"]])
+        categories = annotation.Categories([o["name"] for o in rconfig["options"]])
         scenes = []
         for item in project["items"]:
             if item.get("type", "image") != "image":

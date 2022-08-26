@@ -394,3 +394,16 @@ class Categories:
     def index(self, category):
         """Get the index for a category."""
         return next(i for i, cat in enumerate(self) if cat == category)
+
+
+def labels2onehot(
+    labels: typing.List[Label],
+    categories: Categories,
+    binary: bool,
+):
+    """Convert a list of annotations to onehot."""
+    y = np.zeros(len(categories), dtype="float32")
+    for label in labels:
+        ci = categories.index(label.category)
+        y[ci] = 1 if binary else max((label.score or 1), y[ci])
+    return y

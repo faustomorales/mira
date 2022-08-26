@@ -252,7 +252,7 @@ class FasterRCNN(detector.Detector):
             .replace("FPN_KWARGS", str({**self.fpn_kwargs, "pretrained": False}))
         )
 
-    def invert_targets(self, y, threshold=0.5, **kwargs):
+    def invert_targets(self, y, threshold=0.5):
         return [
             [
                 mc.Annotation(
@@ -273,13 +273,17 @@ class FasterRCNN(detector.Detector):
             for labels in y["output"]
         ]
 
-    def compute_targets(self, annotation_groups, width, height):
+    def compute_targets(self, targets, width, height):
         return [
             {
-                "boxes": torch.tensor(b[:, :4], dtype=torch.float32).to(self.device),
-                "labels": torch.tensor(b[:, -1] + 1, dtype=torch.int64).to(self.device),
+                "boxes": torch.tensor(
+                    b[:, :4], dtype=torch.float32, device=self.device
+                ),
+                "labels": torch.tensor(
+                    b[:, -1] + 1, dtype=torch.int64, device=self.device
+                ),
             }
-            for b in [self.categories.bboxes_from_group(g) for g in annotation_groups]
+            for b in [self.categories.bboxes_from_group(t.annotations) for t in targets]
         ]
 
     def compute_anchor_boxes(self, width, height):

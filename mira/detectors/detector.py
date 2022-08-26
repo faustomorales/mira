@@ -7,7 +7,6 @@ import typing
 import logging
 import tempfile
 
-import cv2
 import tqdm
 import torch
 import numpy as np
@@ -22,47 +21,16 @@ except ImportError:
 
 from .. import metrics as mm
 from .. import core as mc
-from . import callbacks as mdcb
 
 LOGGER = logging.getLogger(__name__)
-
-TrainState = tx.TypedDict("TrainState", {"directory": tempfile.TemporaryDirectory})
 
 
 class Detector(mc.torchtools.BaseModel):
     """Abstract base class for a detector."""
 
     @abc.abstractmethod
-    def invert_targets(
-        self,
-        y: typing.Any,
-        threshold: float = 0.5,
-        **kwargs,
-    ) -> typing.List[typing.List[mc.Annotation]]:
-        """Compute a list of annotation groups from model output."""
-
-    @abc.abstractmethod
     def serve_module_string(self) -> str:
         """Return the module string used as part of TorchServe."""
-
-    @abc.abstractmethod
-    def compute_targets(
-        self,
-        annotation_groups: typing.List[typing.List[mc.Annotation]],
-        width: int,
-        height: int,
-    ) -> typing.Union[typing.List[np.ndarray], np.ndarray]:
-        """Compute the expected outputs for a model. *You
-        usually should not need this method*. For training,
-        use `detector.train()`. For detection, use
-        `detector.detect()`.
-
-        Args:
-            annotation_groups: A list of lists of annotation groups.
-
-        Returns:
-            The output(s) that will be used by detector.train()
-        """
 
     @abc.abstractmethod
     def compute_anchor_boxes(self, width: int, height: int) -> np.ndarray:
@@ -71,192 +39,6 @@ class Detector(mc.torchtools.BaseModel):
 
         detector.compute_anchor_boxes(iwidth, iheight)[:, [0, 2, 1, 3]].reshape((-1, 2, 2))
         """
-
-    def loss(
-        self,
-        batch: mc.SceneCollection,
-        data_dir: str = None,
-        transforms: np.ndarray = None,
-        indices: typing.List[int] = None,
-    ) -> torch.Tensor:
-        """Compute the loss for a batch of scenes."""
-        assert self.model.training, "Model not in training mode."
-        images, scales = self.resize_to_model_size(batch.images())
-        LOGGER.debug(
-            "Obtained images array with size %s and scales varying from %s to %s",
-            images.shape,
-            scales.min(),
-            scales.max(),
-        )
-        annotation_groups = [
-            [ann.resize(scale) for ann in scene.annotations]
-            for scene, scale in zip(batch, scales[:, ::-1])
-        ]
-        output = self.model(
-            self.compute_inputs(images),
-            self.compute_targets(
-                annotation_groups=annotation_groups,
-                width=images.shape[2],
-                height=images.shape[1],
-            ),
-        )
-        if data_dir is not None:
-            assert transforms is not None, "Transforms are required for data caching."
-            assert indices is not None, "Image indices are required for data caching."
-            os.makedirs(data_dir, exist_ok=True)
-            for outputIdx, (
-                idx,
-                image,
-                anns,
-                transform,
-                (scaley, scalex),
-                metadata,
-            ) in enumerate(
-                zip(
-                    indices,
-                    images,
-                    annotation_groups,
-                    transforms,
-                    scales,
-                    [s.metadata for s in batch],
-                )
-            ):
-                base_path = os.path.join(data_dir, str(idx))
-                assert cv2.imwrite(base_path + ".png", image[..., ::-1])
-
-                with open(
-                    base_path + ".png.metadata.json",
-                    "w",
-                    encoding="utf8",
-                ) as f:
-                    f.write(json.dumps(metadata or {}))
-                np.savez(
-                    base_path + ".png.output.npz",
-                    **{
-                        k: v.detach().cpu()
-                        for k, v in output["output"][outputIdx].items()
-                    },
-                )
-                np.savez(
-                    base_path + ".png.bboxes.npz",
-                    bboxes=batch.categories.bboxes_from_group(anns),
-                )
-                np.savez(
-                    base_path + ".png.transform.npz",
-                    transform=np.matmul(
-                        np.array([[scalex, 0, 0], [0, scaley, 0], [0, 0, 1]]),
-                        transform,
-                    ),
-                )
-        return output["loss"]
-
-    # pylint: disable=consider-using-with
-    def train(
-        self,
-        training: mc.SceneCollection,
-        validation: mc.SceneCollection = None,
-        augmenter: mc.augmentations.AugmenterProtocol = None,
-        train_backbone: bool = True,
-        train_backbone_bn: bool = True,
-        callbacks: typing.List[mdcb.CallbackProtocol] = None,
-        data_dir_prefix=None,
-        validation_transforms: np.ndarray = None,
-        min_visibility: float = None,
-        **kwargs,
-    ):
-        """Run training job. All other arguments passed to mira.core.torchtools.train.
-
-        Args:
-            training: The collection of training images
-            validation: The collection of validation images
-            augmenter: The augmenter for generating samples
-            train_backbone: Whether to fit the backbone.
-            train_backbone_bn: Whether to fit backbone batchnorm layers.
-            callbacks: A list of training callbacks.
-            data_dir_prefix: Prefix for the intermediate model artifacts directory.
-            validation_transforms: A list of transforms for the images in the validation
-                set. If not provided, we assume the identity transform.
-        """
-        state: TrainState = {
-            "directory": tempfile.TemporaryDirectory(prefix=data_dir_prefix),
-        }
-
-        def loss(items: typing.List[mc.torchtools.TrainItem]) -> torch.Tensor:
-            return self.loss(
-                training.assign(scenes=[i.scene for i in items]),
-                data_dir=os.path.join(state["directory"].name, items[0].split),
-                transforms=np.stack([i.transform for i in items]),
-                indices=[i.index for i in items],
-            )
-
-        def augment(items: typing.List[mc.torchtools.TrainItem]):
-            if not augmenter:
-                return items
-            return [
-                mc.torchtools.TrainItem(
-                    split=base.split,
-                    index=base.index,
-                    scene=scene,
-                    transform=np.matmul(transform, base.transform),
-                )
-                for (scene, transform), base in zip(
-                    [
-                        i.scene.augment(augmenter, min_visibility=min_visibility)
-                        for i in items
-                    ],
-                    items,
-                )
-            ]
-
-        def on_epoch_end(summaries: typing.List[dict]):
-            summary: typing.Dict[str, typing.Any] = summaries[-1]
-            if callbacks:
-                for callback in callbacks:
-                    for k, v in callback(
-                        detector=self,
-                        summaries=summaries,
-                        data_dir=state["directory"].name,
-                    ).items():
-                        summary[k] = v
-            state["directory"] = tempfile.TemporaryDirectory(prefix=data_dir_prefix)
-            return summary
-
-        def on_epoch_start():
-            if train_backbone:
-                self.unfreeze_backbone(batchnorm=train_backbone_bn)
-            else:
-                self.freeze_backbone()
-
-        return mc.torchtools.train(
-            model=self.model,
-            training=[
-                mc.torchtools.TrainItem(
-                    split="train", index=index, transform=np.eye(3), scene=scene
-                )
-                for index, scene in enumerate(training)
-            ],
-            validation=[
-                mc.torchtools.TrainItem(
-                    split="val", index=index, transform=transform, scene=scene
-                )
-                for index, (scene, transform) in enumerate(
-                    zip(
-                        validation or [],
-                        (
-                            validation_transforms
-                            or np.eye(3, 3)[np.newaxis].repeat(len(validation), axis=0)
-                        )
-                        if validation
-                        else [],
-                    )
-                )
-            ],
-            loss=loss,
-            augment=augment,
-            on_epoch_start=on_epoch_start,
-            on_epoch_end=on_epoch_end,
-            **kwargs,
-        )
 
     def detect(
         self,
@@ -286,8 +68,8 @@ class Detector(mc.torchtools.BaseModel):
             batch_size=batch_size,
             progress=progress,
             process=lambda batch: [
-                [a.resize(1 / scale) for a in annotations]
-                for scale, annotations in zip(
+                [a.resize(1 / scale) for a in itarget.annotations]
+                for scale, itarget in zip(
                     batch.scales[:, ::-1],
                     self.invert_targets(
                         self.model(

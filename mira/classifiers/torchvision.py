@@ -1,10 +1,10 @@
 import typing
 
-import numpy as np
 import torch
 import torchvision
+import numpy as np
 
-from .. import core as mc
+from .. import core
 from .classifier import Classifier
 from ..datasets.preloaded import ImageNet1KCategories
 
@@ -50,7 +50,7 @@ class TVW(torch.nn.Module):
         """Perform forward pass on inputs."""
         y = self.model(self.transform(x))
         return {
-            "output": y,
+            "output": [{"logits": yi} for yi in y],
             "loss": self.loss(y, targets) if targets is not None else None,
         }
 
@@ -64,7 +64,7 @@ class TorchVisionClassifier(Classifier):
         model_name="efficientnet_b0",
         weights=torchvision.models.EfficientNet_B0_Weights.IMAGENET1K_V1,
         pretrained_top=False,
-        resize_config: mc.resizing.ResizeConfig = None,
+        resize_config: core.resizing.ResizeConfig = None,
         device="cpu",
     ):
         self.resize_config = resize_config or {
@@ -72,7 +72,7 @@ class TorchVisionClassifier(Classifier):
             "width": 224,
             "height": 224,
         }
-        self.categories = mc.Categories.from_categories(categories)
+        self.categories = core.Categories.from_categories(categories)
         self.model = TVW(
             num_classes=len(self.categories),
             initializer=getattr(torchvision.models, model_name),
@@ -82,27 +82,32 @@ class TorchVisionClassifier(Classifier):
         self.backbone = self.model.backbone
         self.set_device(device)
 
-    def invert_targets(self, y):
-        logits = y["output"].detach().cpu()
+    def invert_targets(self, y, threshold=0.0):
+        logits = torch.stack([o["logits"].detach().cpu() for o in y["output"]], axis=0)  # type: ignore
         scores = logits.softmax(dim=-1).numpy()
         return [
-            [
-                mc.Label(
-                    category=self.categories[classIdx],
-                    score=score,
-                    metadata={
-                        "logit": logit,
-                        "raw": {
-                            category.name: {"score": score, "logit": logit}
-                            for category, score, logit in zip(
-                                self.categories,
-                                catscores.tolist(),
-                                catlogits.tolist(),
-                            )
+            core.torchtools.InvertedTarget(
+                labels=[
+                    core.Label(
+                        category=self.categories[classIdx],
+                        score=score,
+                        metadata={
+                            "logit": logit,
+                            "raw": {
+                                category.name: {"score": score, "logit": logit}
+                                for category, score, logit in zip(
+                                    self.categories,
+                                    catscores.tolist(),
+                                    catlogits.tolist(),
+                                )
+                            },
                         },
-                    },
-                )
-            ]
+                    )
+                ]
+                if score >= threshold
+                else [],
+                annotations=[],
+            )
             for score, classIdx, logit, catscores, catlogits in zip(
                 scores.max(axis=1).tolist(),
                 scores.argmax(axis=1).tolist(),
@@ -112,12 +117,16 @@ class TorchVisionClassifier(Classifier):
             )
         ]
 
-    def compute_targets(
-        self,
-        label_groups,
-    ):
-        y = np.zeros((len(label_groups), len(self.categories)), dtype="float32")
-        for bi, labels in enumerate(label_groups):
-            for label in labels:
-                y[bi, self.categories.index(label.category)] = 1
-        return torch.Tensor(y).to(self.device)
+    def compute_targets(self, targets, width, height):
+        return torch.tensor(
+            np.stack(
+                [
+                    core.annotation.labels2onehot(
+                        labels=t.labels, categories=self.categories, binary=True
+                    )
+                    for t in targets
+                ],
+                axis=0,
+            ),
+            device=self.device,
+        )

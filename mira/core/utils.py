@@ -1,6 +1,7 @@
 # pylint: disable=unsupported-assignment-operation
 import io
 import os
+import json
 import typing
 import logging
 import collections
@@ -541,3 +542,9 @@ def transform_bboxes(
 def transform_contour(contour: np.ndarray, M):
     """Apply a transform to a contour."""
     return cv2.transform(contour[:, np.newaxis], m=M)[:, 0, :2]
+
+
+def load_json(filepath: str):
+    """Load JSON from file"""
+    with open(filepath, "r", encoding="utf8") as f:
+        return json.loads(f.read())

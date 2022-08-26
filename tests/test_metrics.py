@@ -74,3 +74,40 @@ def test_mAP():
     assert ~np.isfinite(maps2["bar"])
     assert maps1["baz"] == 1  # The IoU is just enough
     assert maps2["baz"] == 0  # The IoU is too small
+
+
+def test_classification():
+    image = np.random.randint(low=0, high=255, size=(100, 100, 3)).astype("uint8")
+    categories = core.Categories(["foo", "bar", "baz"])
+    true = core.SceneCollection(
+        [
+            core.Scene(
+                image=image,
+                categories=categories,
+                labels=[core.Label(categories["foo"])],
+            ),
+            core.Scene(
+                image=image,
+                categories=categories,
+                labels=[core.Label(categories["bar"])],
+            ),
+        ]
+    )
+    pred = core.SceneCollection(
+        [
+            core.Scene(
+                image=image,
+                categories=categories,
+                labels=[core.Label(categories["baz"], score=0.5)],
+            ),
+            core.Scene(
+                image=image,
+                categories=categories,
+                labels=[core.Label(categories["bar"], score=0.5)],
+            ),
+        ]
+    )
+    scores = metrics.classification_metrics(true_collection=true, pred_collection=pred)
+    assert scores["bar"]["recall"] == 1
+    assert scores["baz"]["precision"] == 0
+    assert scores["foo"]["recall"] == 0
