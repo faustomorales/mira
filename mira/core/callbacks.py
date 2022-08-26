@@ -22,7 +22,7 @@ def best_weights(
         key: What name to use for the saved flag.
     """
     # pylint: disable=unused-argument
-    def callback(model, summaries, data_dir=None):
+    def callback(model, summaries, collections):
         saved = False
         summaries_df = pd.json_normalize(summaries)
         best_idx = (
@@ -46,7 +46,7 @@ def csv_logger(filepath) -> torchtools.CallbackProtocol:
         filepath: The filepath where the logs will be saved.
     """
     # pylint: disable=unused-argument
-    def callback(model, summaries, data_dir):
+    def callback(model, summaries, collections):
         pd.json_normalize(summaries).to_csv(filepath, index=False)
         return {}
 

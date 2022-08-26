@@ -7,6 +7,7 @@ import types
 import typing
 import random
 import logging
+import warnings
 import tempfile
 
 
@@ -26,6 +27,11 @@ import numpy as np
 import pandas as pd
 import typing_extensions as tx
 from . import annotation, resizing, scene, augmentations, utils
+
+warnings.filterwarnings(
+    "ignore",
+    message="The epoch parameter.*",
+)
 
 LOGGER = logging.getLogger()
 DEFAULT_SCHEDULER_PARAMS = dict(
@@ -562,6 +568,7 @@ class BaseModel:
         data_dir_prefix=None,
         validation_transforms: np.ndarray = None,
         min_visibility: float = None,
+        save_images=True,
         **kwargs,
     ):
         """Run training job. All other arguments passed to mira.core.torchtools.train.
@@ -587,6 +594,7 @@ class BaseModel:
                 data_dir=os.path.join(state["directory"].name, items[0].split),
                 transforms=np.stack([i.transform for i in items]),
                 indices=[i.index for i in items],
+                save_images=save_images,
             )
 
         def augment(items: typing.List[TrainItem]):
