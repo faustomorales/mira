@@ -278,6 +278,15 @@ def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     return coverageA
 
 
+def groupby_unsorted(seq, key=lambda x: x):
+    """groupby for unsorted inputs, taken from https://code.activestate.com/recipes/580800-groupby-for-unsorted-input/#c1"""
+    indexes = collections.defaultdict(list)
+    for i, elem in enumerate(seq):
+        indexes[key(elem)].append(i)
+    for k, idxs in indexes.items():
+        yield k, (seq[i] for i in idxs)
+
+
 def split(
     items: typing.List[typing.Any],
     sizes: typing.List[float],
@@ -366,17 +375,25 @@ def split(
         items
     ), "stratify must be the same length as the collection."
     rng = np.random.default_rng(seed=random_state)
-    unique = collections.Counter(group)
-    hashes = [
-        hash(tuple(set(s for s, g in zip(stratify, group) if g == u))) for u in unique
+    grouped = [
+        {**dict(zip(["idxs", "stratifiers"], zip(*grouper))), "group": g}
+        for g, grouper in groupby_unsorted(
+            list(zip(range(len(stratify)), stratify)),
+            key=lambda v: typing.cast(typing.Sequence[typing.Hashable], group)[v[0]],
+        )
     ]
-    totals = collections.Counter(hashes)
-    for ht, t in totals.items():
+    hashes = {
+        h: list(g)
+        for h, g in groupby_unsorted(
+            grouped, key=lambda g: hash(tuple(set(g["stratifiers"])))
+        )
+    }
+    for subgroups in hashes.values():
         for a, u in zip(
-            rng.choice(len(sizes), size=t, p=sizes),
-            [u for h, u in zip(hashes, unique) if h == ht],
+            rng.choice(len(sizes), size=len(subgroups), p=sizes),
+            subgroups,
         ):
-            splits[a].extend(i for i, g in zip(items, group) if g == u)
+            splits[a].extend(items[idx] for idx in u["idxs"])
     return splits
 
 

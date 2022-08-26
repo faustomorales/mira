@@ -4,6 +4,7 @@
 
 import os
 import io
+import glob
 import json
 import typing
 import logging
@@ -28,7 +29,7 @@ log = logging.getLogger(__name__)
 
 Dimensions = typing.NamedTuple("Dimensions", [("width", int), ("height", int)])
 
-
+# pylint: disable=too-many-public-methods
 class Scene:
     """A single annotated image.
 
@@ -163,6 +164,12 @@ class Scene:
     def image_bytes(self) -> bytes:
         """Get the image as a PNG encoded to bytes."""
         return utils.image2bytes(self.image)
+
+    @classmethod
+    def load(cls, filepath: str):
+        """Load a scence from a filepath."""
+        with open(filepath, "rb") as f:
+            return cls.fromString(f.read())
 
     @classmethod
     def from_qsl(
@@ -319,10 +326,10 @@ class Scene:
             self._dimensions = dimensions
         return self._dimensions
 
-    def toString(self):
+    def toString(self, extension=".png"):
         """Serialize scene to string."""
         return mps.Scene(
-            image=cv2.imencode(".png", self.image)[1].tobytes(),
+            image=cv2.imencode(extension, self.image)[1].tobytes(),
             categories=mps.Categories(categories=[c.name for c in self.categories]),
             metadata=json.dumps(self.metadata or {}),
             masks=[
@@ -740,6 +747,7 @@ class Scene:
         return iou
 
 
+# pylint: disable=too-many-public-methods
 class SceneCollection:
     """A collection of scenes.
 
@@ -951,12 +959,12 @@ class SceneCollection:
         selected = np.random.choice(len(self.scenes), n, replace=replace)
         return self.assign(scenes=[self.scenes[i] for i in selected])
 
-    def save(self, filename: str):
+    def save(self, filename: str, **kwargs):
         """Save scene collection a tarball."""
         with tarfile.open(filename, mode="w") as tar:
             for idx, scene in enumerate(tqdm.tqdm(self.scenes)):
                 with tempfile.NamedTemporaryFile() as temp:
-                    temp.write(scene.toString())
+                    temp.write(scene.toString(**kwargs))
                     temp.flush()
                     tar.add(name=temp.name, arcname=str(idx))
 
@@ -989,10 +997,31 @@ class SceneCollection:
                     tar.add(name=temp.name, arcname=str(idx))
 
     @classmethod
-    def load(cls, filename: str, directory: str = None):
+    def load_from_directory(cls, directory: str):
+        """Load a dataset that already was extracted from directory."""
+        return cls(
+            scenes=[
+                Scene.load(f).assign(image=f + ".png")
+                for f in tqdm.tqdm(
+                    sorted(
+                        [
+                            f
+                            for f in glob.glob(os.path.join(directory, "*"))
+                            if not os.path.splitext(f)[1]
+                        ],
+                        key=int,
+                    )
+                )
+            ]
+        )
+
+    @classmethod
+    def load(cls, filename: str, directory: str = None, force=False):
         """Load scene collection from a tarball. If a directory
         is provided, images will be saved into that directory
         rather than retained in memory."""
+        if directory and os.path.isdir(directory) and not force:
+            return cls.load_from_directory(directory)
         if directory:
             os.makedirs(directory, exist_ok=True)
         scenes = []
@@ -1006,13 +1035,12 @@ class SceneCollection:
                 else:
                     label_filepath = os.path.join(directory, str(idx))
                     image_filepath = label_filepath + ".png"
-                    if os.path.isfile(label_filepath) and os.path.isfile(
-                        image_filepath
+                    if (
+                        os.path.isfile(label_filepath)
+                        and os.path.isfile(image_filepath)
+                        and not force
                     ):
-                        with open(label_filepath, "rb") as f:
-                            scene = Scene.fromString(f.read()).assign(
-                                image=image_filepath
-                            )
+                        scene = Scene.load(label_filepath).assign(image=image_filepath)
                     else:
                         scene = Scene.fromString(data.read())
                         cv2.imwrite(

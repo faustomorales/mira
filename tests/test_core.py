@@ -146,7 +146,7 @@ def test_split():
             abs(size - len(split) / len(items)) < 0.05
             for split, size in zip(splits, sizes)
         ]
-    )
+    ), f"Sizes were {splits}"
 
     # Roughly achieve stratification
     assert all(
