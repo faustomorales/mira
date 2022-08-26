@@ -10,6 +10,7 @@ import typing
 import logging
 import tarfile
 import tempfile
+import concurrent.futures
 
 import tqdm
 import validators
@@ -999,21 +1000,29 @@ class SceneCollection:
     @classmethod
     def load_from_directory(cls, directory: str):
         """Load a dataset that already was extracted from directory."""
-        return cls(
-            scenes=[
-                Scene.load(f).assign(image=f + ".png")
-                for f in tqdm.tqdm(
-                    sorted(
-                        [
-                            f
-                            for f in glob.glob(os.path.join(directory, "*"))
-                            if not os.path.splitext(f)[1]
-                        ],
-                        key=int,
-                    )
+        files = [
+            os.path.basename(f)
+            for f in glob.glob(os.path.join(directory, "*"))
+            if not os.path.splitext(f)[1]
+        ]
+        loader = lambda f: (
+            f,
+            Scene.load(os.path.join(directory, f)).assign(
+                image=os.path.join(directory, f + ".png")
+            ),
+        )
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            scenes = [
+                future.result()
+                for future in tqdm.tqdm(
+                    concurrent.futures.as_completed(
+                        [executor.submit(loader, f) for f in files]
+                    ),
+                    total=len(files),
                 )
             ]
-        )
+        scenes = [scene for _, scene in sorted(scenes, key=lambda p: int(p[0]))]
+        return cls(scenes=scenes)
 
     @classmethod
     def load(cls, filename: str, directory: str = None, force=False):
