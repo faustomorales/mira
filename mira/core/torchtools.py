@@ -427,7 +427,7 @@ class BaseModel:
         into (images, scales) tuples."""
         single = False
         images: typing.Sequence[
-            typing.Union[np.ndarray, typing.Callable[[], np.ndarray]]
+            typing.Union[np.ndarray, str, typing.Callable[[], np.ndarray]]
         ]
         if isinstance(items, scene.SceneCollection):
             images = items.deferred_images()
@@ -439,7 +439,9 @@ class BaseModel:
                 isinstance(items, np.ndarray)
                 and len(typing.cast(np.ndarray, items).shape) == 3
             )
-            images = typing.cast(typing.List[np.ndarray], [items] if single else items)
+            images = typing.cast(
+                typing.List[typing.Union[np.ndarray, str]], [items] if single else items
+            )
         self.model.eval()
 
         iterator = range(0, len(images), batch_size)
@@ -453,7 +455,13 @@ class BaseModel:
                         BatchInferenceInput(
                             *self.resize_to_model_size(
                                 [
-                                    image if isinstance(image, np.ndarray) else image()
+                                    image
+                                    if isinstance(image, np.ndarray)
+                                    else (
+                                        utils.read(typing.cast(str, image))
+                                        if isinstance(image, str)
+                                        else image()
+                                    )
                                     for image in images[start : start + batch_size]
                                 ]
                             )
