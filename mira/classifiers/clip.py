@@ -66,38 +66,9 @@ class CLIP(Classifier):
             .detach()
             .cpu()
         )
-        scores = logits.softmax(dim=-1).numpy()
-        return [
-            mira.core.torchtools.InvertedTarget(
-                labels=[
-                    mira.core.Label(
-                        category=self.categories[classIdx],
-                        score=score,
-                        metadata={
-                            "logit": logit,
-                            "raw": {
-                                category.name: {"score": score, "logit": logit}
-                                for category, score, logit in zip(
-                                    self.categories,
-                                    catscores.tolist(),
-                                    catlogits.tolist(),
-                                )
-                            },
-                        },
-                    )
-                ]
-                if score >= threshold
-                else [],
-                annotations=[],
-            )
-            for score, classIdx, logit, catscores, catlogits in zip(
-                scores.max(axis=1).tolist(),
-                scores.argmax(axis=1).tolist(),
-                logits.numpy().max(axis=1).tolist(),
-                scores,
-                logits.numpy(),
-            )
-        ]
+        return mira.core.torchtools.logits2labels(
+            logits=logits, categories=self.categories, threshold=threshold
+        )
 
     def compute_targets(self, targets, width, height):
         raise NotImplementedError("CLIP traning is not supported.")

@@ -84,38 +84,9 @@ class TorchVisionClassifier(Classifier):
 
     def invert_targets(self, y, threshold=0.0):
         logits = torch.stack([o["logits"].detach().cpu() for o in y["output"]], axis=0)  # type: ignore
-        scores = logits.softmax(dim=-1).numpy()
-        return [
-            core.torchtools.InvertedTarget(
-                labels=[
-                    core.Label(
-                        category=self.categories[classIdx],
-                        score=score,
-                        metadata={
-                            "logit": logit,
-                            "raw": {
-                                category.name: {"score": score, "logit": logit}
-                                for category, score, logit in zip(
-                                    self.categories,
-                                    catscores.tolist(),
-                                    catlogits.tolist(),
-                                )
-                            },
-                        },
-                    )
-                ]
-                if score >= threshold
-                else [],
-                annotations=[],
-            )
-            for score, classIdx, logit, catscores, catlogits in zip(
-                scores.max(axis=1).tolist(),
-                scores.argmax(axis=1).tolist(),
-                logits.numpy().max(axis=1).tolist(),
-                scores,
-                logits.numpy(),
-            )
-        ]
+        return core.torchtools.logits2labels(
+            logits=logits, categories=self.categories, threshold=threshold
+        )
 
     def compute_targets(self, targets, width, height):
         return torch.tensor(

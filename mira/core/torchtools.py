@@ -694,3 +694,41 @@ def get_linear_lr_scales(model, frozen=0, min_scale=None):
         }
         for idx, p in enumerate(parameters)
     ]
+
+
+def logits2labels(
+    logits: "torch.Tensor", categories: annotation.Categories, threshold: float
+):
+    """Convert a batch of logits to category labels."""
+    scores = logits.softmax(dim=-1).numpy()
+    return [
+        InvertedTarget(
+            labels=[
+                annotation.Label(
+                    category=categories[classIdx],
+                    score=score,
+                    metadata={
+                        "logit": logit,
+                        "raw": {
+                            category.name: {"score": score, "logit": logit}
+                            for category, score, logit in zip(
+                                categories,
+                                catscores.tolist(),
+                                catlogits.tolist(),
+                            )
+                        },
+                    },
+                )
+            ]
+            if score >= threshold
+            else [],
+            annotations=[],
+        )
+        for score, classIdx, logit, catscores, catlogits in zip(
+            scores.max(axis=1).tolist(),
+            scores.argmax(axis=1).tolist(),
+            logits.numpy().max(axis=1).tolist(),
+            scores,
+            logits.numpy(),
+        )
+    ]
