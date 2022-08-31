@@ -254,22 +254,25 @@ class FasterRCNN(detector.Detector):
 
     def invert_targets(self, y, threshold=0.5):
         return [
-            [
-                mc.Annotation(
-                    category=self.categories[int(labelIdx) - 1],
-                    x1=x1,
-                    y1=y1,
-                    x2=x2,
-                    y2=y2,
-                    score=score,
-                )
-                for (x1, y1, x2, y2), labelIdx, score in zip(
-                    labels["boxes"].detach().cpu().numpy(),
-                    labels["labels"].detach().cpu().numpy(),
-                    labels["scores"].detach().cpu().numpy(),
-                )
-                if score > threshold
-            ]
+            mc.torchtools.InvertedTarget(
+                annotations=[
+                    mc.Annotation(
+                        category=self.categories[int(labelIdx) - 1],
+                        x1=x1,
+                        y1=y1,
+                        x2=x2,
+                        y2=y2,
+                        score=score,
+                    )
+                    for (x1, y1, x2, y2), labelIdx, score in zip(
+                        labels["boxes"].detach().cpu().numpy(),
+                        labels["labels"].detach().cpu().numpy(),
+                        labels["scores"].detach().cpu().numpy(),
+                    )
+                    if score > threshold
+                ],
+                labels=[],
+            )
             for labels in y["output"]
         ]
 
