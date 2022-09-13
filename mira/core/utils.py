@@ -369,7 +369,7 @@ def split(
         ]
         sizes = [offset / sum(offsets) for offset in offsets]
     assert (
-        sum(sizes) == 1.0
+        0.99 < sum(sizes) < 1.01
     ), f"The sizes must add up to 1.0 (they added up to {sum(sizes)})."
     assert len(group) == len(items), "group must be the same length as the collection."
     assert len(stratify) == len(
