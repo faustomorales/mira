@@ -52,7 +52,6 @@ InputType = typing.TypeVar("InputType")
 TrainItem = typing.NamedTuple(
     "TrainItem",
     [
-        ("split", tx.Literal["train", "val"]),
         ("index", int),
         ("transform", np.ndarray),
         ("scene", scene.Scene),
@@ -98,7 +97,9 @@ class CallbackProtocol(tx.Protocol):
 
 def train(
     model: "torch.nn.Module",
-    loss: typing.Callable[[typing.List[InputType]], "torch.Tensor"],
+    loss: typing.Callable[
+        [tx.Literal["training", "validation"], typing.List[InputType]], "torch.Tensor"
+    ],
     training: typing.List[InputType],
     skip_partial_batches=False,
     validation: typing.List[InputType] = None,
@@ -167,7 +168,7 @@ def train(
                     if augment:
                         batch = augment(batch)
                     optimizer.zero_grad()
-                    batch_loss = loss(batch)
+                    batch_loss = loss("training", batch)
                     batch_loss.backward()
                     if clip_grad_norm_params is not None:
                         torch.nn.utils.clip_grad_norm_(
@@ -183,13 +184,14 @@ def train(
                     summaries[-1]["val_loss"] = np.sum(
                         [
                             loss(
+                                "validation",
                                 [
                                     validation[idx]
                                     for idx in range(
                                         vstart,
                                         min(vstart + batch_size, len(validation)),
                                     )
-                                ]
+                                ],
                             )
                             .detach()
                             .cpu()
@@ -596,10 +598,10 @@ class BaseModel:
             "directory": tempfile.TemporaryDirectory(prefix=data_dir_prefix),
         }
 
-        def loss(items: typing.List[TrainItem]) -> torch.Tensor:
+        def loss(split: str, items: typing.List[TrainItem]) -> torch.Tensor:
             return self.loss(
                 training.assign(scenes=[i.scene for i in items]),
-                data_dir=os.path.join(state["directory"].name, items[0].split),
+                data_dir=os.path.join(state["directory"].name, split),
                 transforms=np.stack([i.transform for i in items]),
                 indices=[i.index for i in items],
                 save_images=save_images,
@@ -610,7 +612,6 @@ class BaseModel:
                 return items
             return [
                 TrainItem(
-                    split=base.split,
                     index=base.index,
                     scene=scene,
                     transform=np.matmul(transform, base.transform),
@@ -648,11 +649,11 @@ class BaseModel:
         return train(
             model=self.model,
             training=[
-                TrainItem(split="train", index=index, transform=np.eye(3), scene=scene)
+                TrainItem(index=index, transform=np.eye(3), scene=scene)
                 for index, scene in enumerate(training)
             ],
             validation=[
-                TrainItem(split="val", index=index, transform=transform, scene=scene)
+                TrainItem(index=index, transform=transform, scene=scene)
                 for index, (scene, transform) in enumerate(
                     zip(
                         validation or [],
