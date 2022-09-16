@@ -312,7 +312,7 @@ def data_dir_to_collections(
                     glob.glob(os.path.join(data_dir, split, "*.png"))
                     + glob.glob(os.path.join(data_dir, split, "*", "*.png")),
                 )
-                for split in ["train", "val"]
+                for split in ["training", "validation"]
             ]
         ]
         if len(images) > 0
@@ -627,14 +627,15 @@ class BaseModel:
 
         def on_epoch_end(summaries: typing.List[dict]):
             summary: typing.Dict[str, typing.Any] = summaries[-1]
+            collections = data_dir_to_collections(
+                data_dir=state["directory"].name, threshold=0.01, model=self
+            )
             if callbacks:
                 for callback in callbacks:
                     for k, v in callback(
                         model=self,
                         summaries=summaries,
-                        collections=data_dir_to_collections(
-                            data_dir=state["directory"].name, threshold=0.01, model=self
-                        ),
+                        collections=collections,
                     ).items():
                         summary[k] = v
             state["directory"] = tempfile.TemporaryDirectory(prefix=data_dir_prefix)
