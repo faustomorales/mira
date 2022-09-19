@@ -13,12 +13,6 @@ import numpy as np
 import pkg_resources
 import typing_extensions as tx
 
-try:
-    import model_archiver.model_packaging as marmp
-    import model_archiver.model_packaging_utils as marmpu
-except ImportError:
-    marmp, marmpu = None, None
-
 from .. import metrics as mm
 from .. import core as mc
 
@@ -123,6 +117,7 @@ class Detector(mc.torchtools.BaseModel):
             iou_threshold=iou_threshold,
         )
 
+    # pylint: disable=import-outside-toplevel
     def to_torchserve(
         self,
         model_name: str,
@@ -133,9 +128,13 @@ class Detector(mc.torchtools.BaseModel):
         api_mode: tx.Literal["mira", "torchserve"] = "mira",
     ):
         """Build a TorchServe-compatible MAR file for this model."""
-        assert (
-            marmpu is not None
-        ), "You must `pip install torch-model-archiver` to use this function."
+        try:
+            import model_archiver.model_packaging as marmp
+            import model_archiver.model_packaging_utils as marmpu
+        except ImportError as e:
+            raise ValueError(
+                "You must `pip install torch-model-archiver` to use this function."
+            ) from e
         os.makedirs(directory, exist_ok=True)
         with tempfile.TemporaryDirectory() as tdir:
             serialized_file = os.path.join(tdir, "weights.pth")
