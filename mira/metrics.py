@@ -4,7 +4,9 @@ import typing
 
 import numpy as np
 
-from .core import SceneCollection, Annotation, utils
+from .core.scene import SceneCollection
+from .core.annotation import Annotation
+from .core.utils import compute_iou
 
 
 # pylint: disable=unsubscriptable-object
@@ -82,7 +84,7 @@ def precision_recall_curve(
 
             # (n, m): status for ith prediction for jth true box
             det = (
-                utils.compute_iou(
+                compute_iou(
                     pred_bboxes_cur[:, :4],
                     true_bboxes_cur[:, :4],
                 )
@@ -198,7 +200,7 @@ def crop_error_examples(
         )
         boxes_true = true_scene.bboxes()[:, :4]
         boxes_pred = pred_scene.bboxes()[:, :4]
-        iou = utils.compute_iou(boxes_pred, boxes_true)
+        iou = compute_iou(boxes_pred, boxes_true)
         examples.append(
             {
                 "tps": [
