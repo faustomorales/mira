@@ -134,7 +134,7 @@ def train(
     assert torch is not None, "torch is required for this function."
     optimizer_params = optimizer_params or DEFAULT_OPTIMIZER_PARAMS
     if "model_or_params" not in optimizer_params:
-        optimizer_params["model_or_params"] = model
+        optimizer_params = {**optimizer_params, "model_or_params": model}
     optimizer = timm.optim.create_optimizer_v2(**optimizer_params)
     scheduler_params = scheduler_params or DEFAULT_SCHEDULER_PARAMS
     scheduler, _ = timm.scheduler.create_scheduler(
