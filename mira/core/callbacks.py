@@ -77,6 +77,24 @@ def mAP(iou_threshold=0.5) -> torchtools.CallbackProtocol:
     return callback
 
 
+def mIOU(**kwargs) -> torchtools.CallbackProtocol:
+    """Build a callback that computes mIOU."""
+
+    # pylint: disable=unused-argument
+    def callback(model, summaries, collections):
+        return {
+            f"{split}_mIOU": round(
+                np.nanmean(
+                    list(metrics.mIOU(**split_data["collections"], **kwargs).values())
+                ),
+                2,
+            )
+            for split, split_data in collections.items()
+        }
+
+    return callback
+
+
 def error_examples(
     examples_dir: str,
     threshold=0.5,

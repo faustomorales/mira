@@ -130,6 +130,33 @@ def precision_recall_curve(
     return dict(zip([c.name for c in categories], prs))  # type: ignore
 
 
+def mIOU(
+    true_collection: SceneCollection, pred_collection: SceneCollection, threshold=0.5
+) -> typing.Dict[str, float]:
+    """Compute mIOU for two scene collections"""
+    categories = true_collection.categories
+    intersection = np.zeros(len(categories), dtype="int32")
+    union = np.zeros(len(categories), dtype="int32")
+    for true, pred in zip(true_collection, pred_collection):
+        dimensions = true.dimensions
+        true_segmap = np.zeros(
+            (len(categories), dimensions.height, dimensions.width), dtype="int32"
+        )
+        pred_segmap = np.zeros_like(true_segmap)
+        for segmap, scene in zip([true_segmap, pred_segmap], [true, pred]):
+            for annotation in scene.annotations:
+                if (annotation.score or 1) >= threshold:
+                    annotation.draw(
+                        segmap[categories.index(annotation.category)],
+                        color=1,
+                        opaque=True,
+                    )
+        pred_segmap, true_segmap = [m.astype(bool) for m in [pred_segmap, true_segmap]]
+        intersection += (pred_segmap & true_segmap).sum(axis=(1, 2))
+        union += (pred_segmap | true_segmap).sum(axis=(1, 2))
+    return dict(zip([c.name for c in categories], intersection / union))
+
+
 def mAP(
     true_collection: SceneCollection,
     pred_collection: SceneCollection,
