@@ -152,7 +152,7 @@ class Annotation(
         self,
         image: np.ndarray,
         color: typing.Union[
-            typing.Tuple[int, int, int], typing.Tuple[int, int, int, int]
+            typing.Tuple[int, int, int], typing.Tuple[int, int, int, int], int
         ],
         opaque: bool = False,
         thickness: int = 5,

@@ -86,6 +86,21 @@ class Scene:
             masks=[],
         )
 
+    def segmentation_map(self, binary: bool, threshold: float = 0.5) -> np.ndarray:
+        """Creates a segmentation map using the annotation scores."""
+        dimensions = self.dimensions
+        segmap = np.zeros(
+            (len(self.categories), dimensions.height, dimensions.width), dtype="uint8"
+        )
+        for ann in self.annotations:
+            if (ann.score or 1) >= threshold:
+                ann.draw(
+                    segmap[self.categories.index(ann.category)],
+                    color=int((1 if binary or ann.score is None else ann.score) * 100),
+                    opaque=True,
+                )
+        return segmap / 100.0
+
     def filepath(self, directory: str = None):
         """Gets a filepath for this image. If it is not currently a file,
         a file will be created in a temporary directory."""
