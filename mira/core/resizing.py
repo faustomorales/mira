@@ -13,6 +13,8 @@ try:
 except ImportError:
     tvtf = None  # type: ignore
 
+
+SideOptions = tx.Literal["longest", "shortest"]
 FixedSizeConfig = tx.TypedDict(
     "FixedSizeConfig",
     {"method": tx.Literal["fit", "pad", "force"], "width": int, "height": int},
@@ -21,12 +23,44 @@ VariableSizeConfig = tx.TypedDict(
     "VariableSizeConfig",
     {"method": tx.Literal["pad_to_multiple"], "base": int, "max": typing.Optional[int]},
 )
-ResizeConfig = typing.Union[
-    FixedSizeConfig,
-    VariableSizeConfig,
-]
+AspectPreservingConfig = tx.TypedDict(
+    "AspectPreservingConfig",
+    {
+        "method": tx.Literal["fit_side"],
+        "target": int,
+        "side": SideOptions,
+        "upsample": bool,
+    },
+)
+ResizeConfig = typing.Union[FixedSizeConfig, VariableSizeConfig, AspectPreservingConfig]
 
 ArrayType = typing.TypeVar("ArrayType", torch.Tensor, np.ndarray)
+
+
+def fit_side(
+    image: ArrayType, target_length: int, side: SideOptions, upsample: bool
+) -> typing.Tuple[ArrayType, typing.Tuple[float, float], typing.Tuple[int, int]]:
+    """Fit an image such that the longest or shortest side matches some specific target length. Not
+    supported for batch resizing operations."""
+    use_torch_ops = isinstance(image, torch.Tensor)
+    input_height, input_width = image.shape[1:] if use_torch_ops else image.shape[:2]
+    func_lookup = {"longest": max, "shortest": min}
+    reference_length = func_lookup[side](input_height, input_width)
+    scale = target_length / reference_length
+    if not upsample:
+        scale = min(scale, 1.0)
+    if scale == 1.0:
+        return image, (1.0, 1.0), (input_height, input_width)
+    target_width, target_height = [
+        target_length if reference_length == isize else int(round(scale * isize))
+        for isize in [input_width, input_height]
+    ]
+    resized = (
+        tvtf.resize(image, size=[target_height, target_width])
+        if use_torch_ops
+        else cv2.resize(image, (target_width, target_height))
+    )
+    return resized, (scale, scale), (target_height, target_width)
 
 
 def fit(
