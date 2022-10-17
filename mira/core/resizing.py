@@ -38,7 +38,11 @@ ArrayType = typing.TypeVar("ArrayType", torch.Tensor, np.ndarray)
 
 
 def fit_side(
-    image: ArrayType, target_length: int, side: SideOptions, upsample: bool
+    image: ArrayType,
+    target_length: int,
+    side: SideOptions,
+    upsample: bool,
+    interpolation: typing.Any = None,
 ) -> typing.Tuple[ArrayType, typing.Tuple[float, float], typing.Tuple[int, int]]:
     """Fit an image such that the longest or shortest side matches some specific target length. Not
     supported for batch resizing operations."""
@@ -56,9 +60,17 @@ def fit_side(
         for isize in [input_width, input_height]
     ]
     resized = (
-        tvtf.resize(image, size=[target_height, target_width])
+        tvtf.resize(
+            image,
+            size=[target_height, target_width],
+            interpolation=interpolation or tvtf.InterpolationMode.BILINEAR,
+        )
         if use_torch_ops
-        else cv2.resize(image, (target_width, target_height))
+        else cv2.resize(
+            image,
+            (target_width, target_height),
+            interpolation=interpolation or cv2.INTER_LINEAR,
+        )
     )
     return resized, (scale, scale), (target_height, target_width)
 
