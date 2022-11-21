@@ -34,7 +34,8 @@ def verify_results(values, xlim, ylim, tensor_mode):
 @pytest.mark.parametrize("examples,tensor_mode", typed_examples)
 def test_resize_pad(examples, tensor_mode):
     resized, scales, sizes = resize(
-        x=examples, resize_config={"method": "pad", "height": 256, "width": 256}
+        x=examples,
+        resize_config={"method": "pad", "height": 256, "width": 256, "cval": 0},
     )
     assert (resized.shape[2:] if tensor_mode else resized.shape[1:3]) == (256, 256)
     assert (scales == 1).all()
@@ -46,7 +47,12 @@ def test_resize_pad(examples, tensor_mode):
 def test_resize_pad_to_multiple(examples, tensor_mode):
     resized, scales, sizes = resize(
         x=examples,
-        resize_config={"method": "pad_to_multiple", "base": 512, "max": None},
+        resize_config={
+            "method": "pad_to_multiple",
+            "base": 512,
+            "max": None,
+            "cval": 0,
+        },
     )
     assert (resized.shape[2:] if tensor_mode else resized.shape[1:3]) == (512, 512)
     assert (scales == 1).all()
@@ -57,7 +63,8 @@ def test_resize_pad_to_multiple(examples, tensor_mode):
 @pytest.mark.parametrize("examples,tensor_mode", typed_examples)
 def test_resize_fit(examples, tensor_mode):
     resized, scales, sizes = resize(
-        x=examples, resize_config={"method": "fit", "height": 128, "width": 128}
+        x=examples,
+        resize_config={"method": "fit", "height": 128, "width": 128, "cval": 0},
     )
     assert (resized.shape[2:] if tensor_mode else resized.shape[1:3]) == (128, 128)
     np.testing.assert_allclose(scales[:, 0], np.array([128 / 256, 128 / 256, 128 / 56]))

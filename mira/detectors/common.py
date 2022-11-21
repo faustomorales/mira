@@ -204,6 +204,7 @@ def initialize_basic(
         "method": "pad_to_multiple",
         "base": 128,
         "max": None,
+        "cval": 0,
     }
     # In mira, backbone has meaning because we use it to skip
     # training these weights. But the FPN includes feature extraction

@@ -77,6 +77,7 @@ class SMP(mdd.Detector):
             "method": "pad_to_multiple",
             "base": 64,
             "max": None,
+            "cval": 0,
         }
         self.categories = mc.Categories.from_categories(categories)
         self.model = SMPWrapper(

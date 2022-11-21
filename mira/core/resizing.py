@@ -17,11 +17,21 @@ except ImportError:
 SideOptions = tx.Literal["longest", "shortest"]
 FixedSizeConfig = tx.TypedDict(
     "FixedSizeConfig",
-    {"method": tx.Literal["fit", "pad", "force"], "width": int, "height": int},
+    {
+        "method": tx.Literal["fit", "pad", "force"],
+        "width": int,
+        "height": int,
+        "cval": int,
+    },
 )
 VariableSizeConfig = tx.TypedDict(
     "VariableSizeConfig",
-    {"method": tx.Literal["pad_to_multiple"], "base": int, "max": typing.Optional[int]},
+    {
+        "method": tx.Literal["pad_to_multiple"],
+        "base": int,
+        "max": typing.Optional[int],
+        "cval": int,
+    },
 )
 AspectPreservingConfig = tx.TypedDict(
     "AspectPreservingConfig",
@@ -76,7 +86,7 @@ def fit_side(
 
 
 def fit(
-    image: ArrayType, height: int, width: int, force: bool
+    image: ArrayType, height: int, width: int, force: bool, cval=0
 ) -> typing.Tuple[ArrayType, typing.Tuple[float, float], typing.Tuple[int, int]]:
     """Fit an image to a specific size, padding where necessary to maintain
     aspect ratio.
@@ -108,9 +118,17 @@ def fit(
     )
     if pad_y > 0 or pad_x > 0:
         padded = (
-            torch.nn.functional.pad(resized, (0, pad_x, 0, pad_y))
+            torch.nn.functional.pad(
+                resized, (0, pad_x, 0, pad_y), mode="constant", value=cval
+            )
             if use_torch_ops
-            else np.pad(resized, ((0, pad_y), (0, pad_x), (0, 0)))
+            else np.pad(
+                resized,
+                ((0, pad_y), (0, pad_x))
+                + (((0, 0),) if len(resized.shape) == 3 else tuple()),
+                mode="constant",
+                constant_values=cval,
+            )
         )
     else:
         padded = resized
@@ -258,10 +276,11 @@ def resize(
     if resize_config["method"] == "none":
         # pylint: disable=unexpected-keyword-arg
         pad_dimensions = sizes_arr.max(axis=0, keepdims=True) - sizes_arr
+    cval = resize_config.get("cval", 0)
     padded = (
         torch.cat(
             [
-                torch.nn.functional.pad(i, (0, pad_x, 0, pad_y)).unsqueeze(0)  # type: ignore
+                torch.nn.functional.pad(i, (0, pad_x, 0, pad_y), mode="constant", value=cval).unsqueeze(0)  # type: ignore
                 if pad_y >= 0 and pad_x >= 0
                 else fit(
                     typing.cast(torch.Tensor, i),
@@ -277,7 +296,13 @@ def resize(
         if use_torch_ops
         else np.concatenate(
             [
-                np.pad(i, ((0, pad_y), (0, pad_x), (0, 0)))[np.newaxis]
+                np.pad(
+                    i,
+                    ((0, pad_y), (0, pad_x))
+                    + (((0, 0),) if len(i.shape) == 3 else tuple()),
+                    mode="constant",
+                    constant_values=cval,
+                )[np.newaxis]
                 if pad_y >= 0 and pad_x >= 0
                 else fit(
                     i, height=raw_height + pad_y, width=raw_width + pad_x, force=False

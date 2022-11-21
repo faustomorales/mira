@@ -71,6 +71,7 @@ class TorchVisionClassifier(Classifier):
             "method": "fit",
             "width": 224,
             "height": 224,
+            "cval": 0,
         }
         self.categories = core.Categories.from_categories(categories)
         self.model = TVW(

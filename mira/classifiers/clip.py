@@ -40,6 +40,7 @@ class CLIP(Classifier):
             "method": "fit",
             "width": self.model.model.visual.input_resolution,
             "height": self.model.model.visual.input_resolution,
+            "cval": 0,
         }
         self.preprocess = torchvision.transforms.Compose(
             [
