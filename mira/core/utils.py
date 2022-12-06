@@ -22,6 +22,8 @@ MaskRegion = typing_extensions.TypedDict(
 ContourList = typing.List[np.ndarray]
 DeduplicationMethod = typing_extensions.Literal["iou", "coverage"]
 
+DEFAULT_MAX_CONTOUR_MASK_SIZE = 100
+
 
 def box2pts(x1: int, y1: int, x2: int, y2: int) -> np.ndarray:
     """Convert bounding box coordinates to a contour array."""
@@ -164,13 +166,15 @@ def compute_iou(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
 
 
 def compute_contour_binary_masks(
-    contour1: np.ndarray, contour2: np.ndarray
+    contour1: np.ndarray,
+    contour2: np.ndarray,
+    max_size: int = DEFAULT_MAX_CONTOUR_MASK_SIZE,
 ) -> typing.Tuple[np.ndarray, np.ndarray]:
     """Given two contours, build binary images showing the coverage of eash, scaling them to a maximum size of 100px."""
     points = np.concatenate([contour1, contour2], axis=0)
     offset = points.min(axis=0)
     points, contour1, contour2 = [v - offset for v in [points, contour1, contour2]]
-    scale = min(100 / points.max(axis=0).min(), 1)
+    scale = min(max_size / points.max(axis=0).min(), 1)
     if scale < 1:
         points, contour1, contour2 = [v * scale for v in [points, contour1, contour2]]
     w, h = points.max(axis=0).astype("int32")
@@ -188,9 +192,13 @@ def compute_contour_binary_masks(
     return im1, im2
 
 
-def compute_coverage_for_contour_pair(contour1: np.ndarray, contour2: np.ndarray):
+def compute_coverage_for_contour_pair(
+    contour1: np.ndarray,
+    contour2: np.ndarray,
+    max_size: int = DEFAULT_MAX_CONTOUR_MASK_SIZE,
+):
     """Compute how much of contour1 is contained within contour2."""
-    im1, im2 = compute_contour_binary_masks(contour1, contour2)
+    im1, im2 = compute_contour_binary_masks(contour1, contour2, max_size=max_size)
     return (im1 & im2).sum() / im1.sum()
 
 
@@ -223,12 +231,32 @@ def compute_contour_iou(contoursA: ContourList, contoursB: ContourList):
     )
 
 
-def compute_contour_coverage(contoursA: ContourList, contoursB: ContourList):
+def compute_contour_coverage(
+    contoursA: ContourList,
+    contoursB: ContourList,
+    max_size: int = DEFAULT_MAX_CONTOUR_MASK_SIZE,
+):
     """Compute pairwise overlap of two sets of contours."""
     arr = np.zeros((len(contoursA), len(contoursB)), dtype="float32")
+    box_coverage = compute_coverage(
+        *[
+            np.array(
+                [
+                    np.concatenate([contour.min(axis=0), contour.max(axis=0)])
+                    for contour in contours
+                ]
+            )
+            for contours in [contoursA, contoursB]
+        ]
+    )
     for idx1, contour1 in enumerate(contoursA):
         for idx2, contour2 in enumerate(contoursB):
-            arr[idx1, idx2] = compute_coverage_for_contour_pair(contour1, contour2)
+            if box_coverage[idx1, idx2] == 0:
+                arr[idx1, idx2] = 0
+                continue
+            arr[idx1, idx2] = compute_coverage_for_contour_pair(
+                contour1, contour2, max_size=max_size
+            )
     return arr
 
 
@@ -426,7 +454,7 @@ def find_largest_unique_contours(contours, threshold=1, method="iou"):
         [
             bidx
             for bidx, (cidx, coverages) in zip(
-                indexes, enumerate(func(sorted_contours, sorted_contours))
+                indexes, enumerate(func(sorted_contours, sorted_contours))  # type: ignore
             )
             if (cidx == len(contours) - 1 or coverages[cidx + 1 :].max() < threshold)
         ]
