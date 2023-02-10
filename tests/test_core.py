@@ -254,3 +254,18 @@ def test_safe_crop():
             assert variety == 1
         # Make sure it works on empty images.
         scene.assign(annotations=[]).augment(augmenter)
+
+
+def test_split_apply_combine():
+    def process(arr):
+        print("Length", len(arr))
+        verify = [i % 2 == 0 for i in arr]
+        assert all(verify) or not any(verify)
+        if verify[0]:
+            return arr
+        return [i - 1 for i in arr]
+
+    processed = mc.utils.split_apply_combine(
+        list(range(10)), key=lambda x: str(x % 2 == 0), func=process
+    )
+    assert all(e == a for e, a in zip([0, 0, 2, 2, 4, 4, 6, 6, 8, 8], processed))

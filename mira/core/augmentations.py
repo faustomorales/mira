@@ -61,7 +61,9 @@ class AugmenterProtocol(tx.Protocol):
         bboxes: typing.List[typing.Tuple[int, int, int, int]],
         keypoints: typing.List[typing.Tuple[int, int]],
         bbox_indices: typing.List[int],
-        keypoint_indices: typing.List[typing.Tuple[int, int]],
+        keypoint_indices: typing.List[
+            typing.Union[typing.Tuple[int, int], typing.Tuple[None, None]]
+        ],
     ) -> AugmentedResult:
         pass
 
@@ -317,7 +319,7 @@ class CoarseDropout(A.CoarseDropout):
     bounding boxes and keypoints.
     """
 
-    def apply(
+    def apply(  # type: ignore[override]
         self,
         image: np.ndarray,
         fill_value: typing.Union[int, float],
@@ -326,13 +328,13 @@ class CoarseDropout(A.CoarseDropout):
     ) -> np.ndarray:
         holes_cnt = params["holes_cnt"]
         image = image.copy()
-        image = A.functional.cutout(image, holes, fill_value)
+        image = A.functional.cutout(image, holes, fill_value)  # type: ignore[attr-defined]
         cv2.drawContours(
             image, holes_cnt, contourIdx=-1, color=fill_value, thickness=-1
         )
         return image
 
-    def apply_to_mask(
+    def apply_to_mask(  # type: ignore[override]
         self,
         mask: np.ndarray,
         mask_fill_value: typing.Union[int, float],
@@ -343,7 +345,7 @@ class CoarseDropout(A.CoarseDropout):
             return mask
         holes_cnt = params["holes_cnt"]
         mask = mask.copy()
-        mask = A.functional.cutout(mask, holes, mask_fill_value)
+        mask = A.functional.cutout(mask, holes, mask_fill_value)  # type: ignore[attr-defined]
         cv2.drawContours(
             mask, holes_cnt, contourIdx=-1, color=mask_fill_value, thickness=-1
         )

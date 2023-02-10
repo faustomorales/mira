@@ -4,6 +4,8 @@ import os
 import json
 import typing
 import logging
+import operator
+import itertools
 import collections
 
 import requests
@@ -426,10 +428,13 @@ def split(
     return splits
 
 
-def flatten(t):
+FlattenItem = typing.TypeVar("FlattenItem")
+
+
+def flatten(t: typing.Iterable[typing.List[FlattenItem]]) -> typing.List[FlattenItem]:
     """Standard utility function for flattening a nested list taken from
     https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-a-list-of-lists."""
-    return [item for sublist in t for item in sublist]
+    return list(itertools.chain.from_iterable(t))
 
 
 def find_largest_unique_contours(contours, threshold=1, method="iou"):
@@ -576,3 +581,76 @@ def load_json(filepath: str):
     """Load JSON from file"""
     with open(filepath, "r", encoding="utf8") as f:
         return json.loads(f.read())
+
+
+SplitApplyRecombineItem = typing.TypeVar("SplitApplyRecombineItem")
+SplitApplyRecombineOutput = typing.TypeVar("SplitApplyRecombineOutput")
+SplitApplyRecombineIndexKey = typing.NamedTuple(
+    "SplitApplyRecombineIndexKey", [("key", str), ("index", int)]
+)
+
+
+def split_apply_combine(
+    items: typing.List[SplitApplyRecombineItem],
+    key: typing.Callable[
+        [SplitApplyRecombineItem],
+        str,
+    ],
+    func: typing.Callable[
+        [typing.List[SplitApplyRecombineItem]],
+        typing.List[SplitApplyRecombineOutput],
+    ],
+):
+    """This is an implementation of the split-apply-combine pattern in data processing. It
+    takes a list of items, items, and processes them in the following way:
+        Split: The items are sorted and grouped based on a key function, key, that maps each item
+            to a key.The function takes an item as input and returns a key value.
+        Apply: For each group of items with the same key, the function func is applied to
+            the key and the list of items in that group. func takes a key and a list of
+            items as inputs and returns a list of outputs.
+        Combine: The outputs from the func are recombined and the resulting list is returned with
+            the outputs in corresponding order to the original inputs.
+
+    In the implementation, the enumerate function is used to add an index to each item in the input
+    list items. The sorted function is used to sort the items based on their keys, as returned by the key function.
+    The itertools.groupby function is then used to group the items based on their keys.
+    The map function is used to apply the func to each group of items and produce a list of outputs.
+    Finally, the outputs are sorted based on their indices and the final result is returned as a list."""
+
+    def compute_group_result(
+        groupi: typing.Tuple[str, typing.Iterator[SplitApplyRecombineIndexKey]]
+    ):
+        groupl = list(groupi[1])
+        return list(
+            zip(
+                [x.index for x in groupl],
+                func([items[x.index] for x in groupl]),
+            )
+        )
+
+    return list(
+        map(
+            operator.itemgetter(1),
+            sorted(
+                # Combine.
+                flatten(
+                    # Apply.
+                    map(
+                        compute_group_result,
+                        # Split.
+                        itertools.groupby(
+                            sorted(
+                                map(
+                                    lambda indexItem: SplitApplyRecombineIndexKey(
+                                        key(indexItem[1]), indexItem[0]
+                                    ),
+                                    enumerate(items),
+                                )
+                            ),
+                            key=lambda entry: entry.key,
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
