@@ -612,7 +612,7 @@ class Scene:
                     pd.DataFrame(transformed["keypoints"][4:], columns=["x", "y"]),
                 ],
                 axis=1,
-            ).groupby(["annIdx"])
+            ).groupby("annIdx")
         ]
         recropped = [
             ann.crop(width=image.shape[1], height=image.shape[0]) for ann in annotations
