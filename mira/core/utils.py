@@ -47,7 +47,7 @@ def read(
         image = np.asarray(bytearray(filepath_or_buffer.read()), dtype=np.uint8)  # type: ignore
         image = cv2.imdecode(image, cv2.IMREAD_COLOR)
     elif isinstance(filepath_or_buffer, str) and validators.url(filepath_or_buffer):
-        return read(io.BytesIO(requests.get(filepath_or_buffer).content))
+        return read(io.BytesIO(requests.get(filepath_or_buffer, timeout=10).content))
     else:
         assert os.path.isfile(
             filepath_or_buffer  # type: ignore

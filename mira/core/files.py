@@ -158,7 +158,7 @@ def get_file(
         file_hash is not None and compute_sha256(fpath) != file_hash
     ):
         try:
-            with requests.get(origin, stream=True) as response:
+            with requests.get(origin, stream=True, timeout=10) as response:
                 response.raise_for_status()
                 with tqdm(
                     total=int(response.headers.get("content-length", 0)),

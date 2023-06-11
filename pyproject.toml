@@ -100,7 +100,8 @@ disable = [
     "protected-access",
     "wrong-import-position",
     "unnecessary-lambda-assignment",
-    "too-few-public-methods"
+    "too-few-public-methods",
+    "use-dict-literal"
 ]
 
 [tool.pylint.typecheck]
