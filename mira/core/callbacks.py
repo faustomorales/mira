@@ -21,6 +21,7 @@ def best_weights(
             maximizes it).
         key: What name to use for the saved flag.
     """
+
     # pylint: disable=unused-argument
     def callback(model, summaries, collections):
         saved = False
@@ -45,6 +46,7 @@ def csv_logger(filepath) -> torchtools.CallbackProtocol:
     Args:
         filepath: The filepath where the logs will be saved.
     """
+
     # pylint: disable=unused-argument
     def callback(model, summaries, collections):
         pd.json_normalize(summaries).to_csv(filepath, index=False)
@@ -188,6 +190,7 @@ def error_examples(
 
 def classification_metrics(**kwargs) -> torchtools.CallbackProtocol:
     """Returns classification metrics (precision, recall, f1). All arguments passed to metrics.classification_metrics"""
+
     # pylint: disable=unused-argument
     def callback(model, summaries, collections):
         return dict(

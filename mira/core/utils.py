@@ -433,7 +433,8 @@ FlattenItem = typing.TypeVar("FlattenItem")
 
 def flatten(t: typing.Iterable[typing.List[FlattenItem]]) -> typing.List[FlattenItem]:
     """Standard utility function for flattening a nested list taken from
-    https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-a-list-of-lists."""
+    https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-a-list-of-lists.
+    """
     return list(itertools.chain.from_iterable(t))
 
 
@@ -615,7 +616,8 @@ def split_apply_combine(
     list items. The sorted function is used to sort the items based on their keys, as returned by the key function.
     The itertools.groupby function is then used to group the items based on their keys.
     The map function is used to apply the func to each group of items and produce a list of outputs.
-    Finally, the outputs are sorted based on their indices and the final result is returned as a list."""
+    Finally, the outputs are sorted based on their indices and the final result is returned as a list.
+    """
 
     def compute_group_result(
         groupi: typing.Tuple[str, typing.Iterator[SplitApplyRecombineIndexKey]]

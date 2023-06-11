@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 Dimensions = typing.NamedTuple("Dimensions", [("width", int), ("height", int)])
 
+
 # pylint: disable=too-many-public-methods
 class Scene:
     """A single annotated image.

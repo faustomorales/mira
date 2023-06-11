@@ -82,6 +82,7 @@ SplitCollection = tx.TypedDict(
     },
 )
 
+
 # pylint: disable=too-few-public-methods
 class CallbackProtocol(tx.Protocol):
     """A protocol defining how we expect callbacks to behave."""

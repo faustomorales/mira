@@ -126,7 +126,7 @@ def load_coco_text(
 
     images = data["imgs"]
     scenes = []
-    for (imageId, imageData) in tqdm(
+    for imageId, imageData in tqdm(
         images.items(), total=len(images), desc="Creating scenes"
     ):
         anns = [data["anns"][str(annId)] for annId in data["imgToAnns"][imageId]]
