@@ -44,7 +44,7 @@ AspectPreservingConfig = tx.TypedDict(
 )
 ResizeConfig = typing.Union[FixedSizeConfig, VariableSizeConfig, AspectPreservingConfig]
 
-ArrayType = typing.TypeVar("ArrayType", torch.Tensor, np.ndarray)
+ArrayType = typing.TypeVar("ArrayType", "torch.Tensor", np.ndarray)
 
 
 def fit_side(
@@ -56,7 +56,7 @@ def fit_side(
 ) -> typing.Tuple[ArrayType, typing.Tuple[float, float], typing.Tuple[int, int]]:
     """Fit an image such that the longest or shortest side matches some specific target length. Not
     supported for batch resizing operations."""
-    use_torch_ops = isinstance(image, torch.Tensor)
+    use_torch_ops = torch and isinstance(image, torch.Tensor)
     input_height, input_width = image.shape[1:] if use_torch_ops else image.shape[:2]
     func_lookup = {"longest": max, "shortest": min}
     reference_length = func_lookup[side](input_height, input_width)
@@ -94,7 +94,7 @@ def fit(
     Args:
         image: A tensor with shape (C, H, W) or a numpy array with shape (H, W, C)
     """
-    use_torch_ops = isinstance(image, torch.Tensor)
+    use_torch_ops = torch and isinstance(image, torch.Tensor)
     input_height, input_width = image.shape[1:] if use_torch_ops else image.shape[:2]
     if width == input_width and height == input_height:
         return image, (1.0, 1.0), (height, width)
@@ -211,8 +211,9 @@ def resize(
         not isinstance(x, list) or len(x) > 0
     ), "When providing a list, it must not be empty."
     check_resize_method(resize_config["method"])
-    use_torch_ops = isinstance(x, torch.Tensor) or (
-        isinstance(x, list) and isinstance(x[0], torch.Tensor)
+    use_torch_ops = torch and (
+        isinstance(x, torch.Tensor)
+        or (isinstance(x, list) and isinstance(x[0], torch.Tensor))
     )
     width, height, base = typing.cast(
         typing.List[typing.Optional[int]],

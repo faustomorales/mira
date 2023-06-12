@@ -323,8 +323,8 @@ def data_dir_to_collections(
 class BaseModel:
     """Abstract base class for classifiers and detectors."""
 
-    model: torch.nn.Module
-    backbone: torch.nn.Module
+    model: "torch.nn.Module"
+    backbone: "torch.nn.Module"
     categories: annotation.Categories
     device: typing.Any
     resize_config: resizing.ResizeConfig
@@ -366,7 +366,7 @@ class BaseModel:
         self.device = torch.device(device)
         self.model.to(self.device)
 
-    def compute_inputs(self, images: np.ndarray) -> torch.Tensor:
+    def compute_inputs(self, images: np.ndarray) -> "torch.Tensor":
         """Compute the model inputs given a numpy array of images."""
         images = images.astype("float32") / 255.0
         return (
@@ -481,7 +481,7 @@ class BaseModel:
         transforms: np.ndarray = None,
         indices: typing.List[int] = None,
         save_images=False,
-    ) -> torch.Tensor:
+    ) -> "torch.Tensor":
         """Compute the loss for a batch of scenes."""
         assert self.model.training, "Model not in training mode."
         images, scales = self.resize_to_model_size(batch.images())
@@ -599,7 +599,7 @@ class BaseModel:
             "directory": tempfile.TemporaryDirectory(prefix=data_dir_prefix),
         }
 
-        def loss(split: str, items: typing.List[TrainItem]) -> torch.Tensor:
+        def loss(split: str, items: typing.List[TrainItem]) -> "torch.Tensor":
             return self.loss(
                 training.assign(scenes=[i.scene for i in items]),
                 data_dir=os.path.join(state["directory"].name, split),
