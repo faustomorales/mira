@@ -31,7 +31,7 @@ patch-thirdparty: ## Patch thirdparty module import structure.
 
 init:  patch-thirdparty ## Initialize the development environment.
 	pip install poetry-dynamic-versioning poetry
-	poetry install -E detectors -E classifiers --remove-untracked
+	poetry install --all-extras --sync
 
 format-check: ## Make black check source formatting
 	@$(EXEC) black --diff --check $(PKG_NAME) tests

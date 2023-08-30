@@ -181,7 +181,7 @@ def compute_contour_binary_masks(
         points, contour1, contour2 = [v * scale for v in [points, contour1, contour2]]
     w, h = points.max(axis=0).astype("int32")
     im1, im2 = [
-        cv2.drawContours(
+        cv2.drawContours(  # type: ignore
             np.zeros((h, w), dtype="uint8"),
             contours=(box[np.newaxis]).round().astype("int32"),
             color=255,

@@ -10,8 +10,4 @@ torch
 torchvision
 albumentations
 mistune<2
-regex
-ftfy
 timm
-pretrainedmodels
-efficientnet_pytorch

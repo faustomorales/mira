@@ -132,7 +132,7 @@ def fit(
         )
     else:
         padded = resized
-    return padded, (scale, scale), (target_height, target_width)
+    return typing.cast(ArrayType, padded), (scale, scale), (target_height, target_width)
 
 
 def check_resize_method(method: str):
@@ -297,7 +297,7 @@ def resize(
         if use_torch_ops
         else np.concatenate(
             [
-                np.pad(
+                np.pad(  # type: ignore
                     i,
                     ((0, pad_y), (0, pad_x))
                     + (((0, 0),) if len(i.shape) == 3 else tuple()),

@@ -707,7 +707,7 @@ class Scene:
                     captured.extend(ann_inc)
                     subcrops.append(
                         self.assign(
-                            image=image[y1:y2, x1:x2],  # type: ignore[misc]
+                            image=image[y1:y2, x1:x2],  # type: ignore
                             annotations=[
                                 a.assign(
                                     x1=a.x1 - x1,  # type: ignore[operator]

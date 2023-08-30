@@ -126,7 +126,7 @@ class Annotation(
             self.x1, self.y1 = self.points.min(axis=0).tolist()
             self.x2, self.y2 = self.points.max(axis=0).tolist()
 
-    def area(self) -> int:
+    def area(self) -> float:
         """Compute the area of the selection."""
         if self.is_rect:
             return (self.y2 - self.y1) * (self.x2 - self.x1)
