@@ -1,12 +1,15 @@
 [build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
 
-[tool.coverage.run]
-omit = ["mira/thirdparty/*"]
-
-[tool.poetry]
-authors = ["Fausto Morales <faustomorales@gmail.com>"]
+[project]
+name = "mira"
+description = "A package for simplifying object detection"
+authors = [{ name = "Fausto Morales", email = "faustomorales@gmail.com" }]
+requires-python = ">=3.8,<3.12"
+dynamic = ["version"]
+readme = "README.md"
+license = "MIT"
 classifiers = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: Unix",
@@ -15,59 +18,65 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
 ]
-description = "A package for simplifying object detection"
-homepage = "https://github.com/faustomorales/mira"
-license = "MIT"
-name = "mira"
-readme = "README.md"
-repository = "https://github.com/faustomorales/mira"
-# Placeholder for poetry-dynamic-versioning
-version = "0.0.0"
+dependencies = [
+    "pandas",
+    "protobuf",
+    "numpy",
+    "tqdm",
+    "matplotlib",
+    "validators",
+]
 
-# See https://python-poetry.org/docs/versions/ for allowed version specification formats
-[tool.poetry.dependencies]
-python = ">=3.8,<3.12"
-pandas = "*"
-protobuf = "*"
-numpy = "*"
-tqdm = "*"
-matplotlib = "*"
-validators = "*"
-scikit-image = {version = "*", optional = true}
-timm = {version = "^0.9.2", optional = true}
-pretrainedmodels = {version = "0.7.4", optional = true}
-efficientnet_pytorch = {version = "0.7.1", optional = true}
-ftfy = {version = "*", optional = true}
-regex = {version = "*", optional = true}
+[project.optional-dependencies]
+detectors = [
+    "timm>=0.9.2,<0.10",
+    "scikit-image",
+    "pretrainedmodels==0.7.4",
+]
+segmentation = [
+    "pretrainedmodels==0.7.4",
+    "efficientnet_pytorch==0.7.1",
+]
+clip = [
+    "ftfy",
+    "regex",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = "*"
-coverage = {version = "*", extras = ["toml"]}
-mypy = "*"
-pytest = "*"
-pylint = "*"
-pytest-cov = "*"
-torch = "*"
-torchserve = "*"
-jupyterlab = "*"
-torch-model-archiver = "*"
-qsl = "*"
-opencv-python-headless = "*"
-scipy = "*"
-types-six = "*"
-types-requests = "*"
-types-setuptools = "*"
-types-pkg-resources = "*"
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[project.urls]
+Homepage = "https://github.com/faustomorales/mira"
+Repository = "https://github.com/faustomorales/mira"
+
+[dependency-groups]
+dev = [
+    "black",
+    "coverage[toml]",
+    "mypy",
+    "pytest",
+    "pylint",
+    "pytest-cov",
+    "torch",
+    "torchserve",
+    "jupyterlab",
+    "torch-model-archiver",
+    "qsl",
+    "opencv-python-headless",
+    "scipy",
+    "types-six",
+    "types-requests",
+    "types-setuptools",
+    "types-pkg-resources",
+]
+
+[tool.coverage.run]
+omit = ["mira/thirdparty/*"]
 
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
 style = "semver"
-
-[tool.poetry.extras]
-detectors = ["timm", "scikit-image", "pretrainedmodels"]
-segmentation = ["pretrainedmodels", "efficientnet_pytorch"]
-clip = ["ftfy", "regex"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=mira --cov-report=term-missing"
@@ -83,7 +92,6 @@ extension-pkg-allow-list = [
     "cv2"
 ]
 init-hook="import mira.pylint; mira.pylint.patch(['mira/thirdparty'])"
-
 
 [tool.pylint.similarities]
 min-similarity-lines=10

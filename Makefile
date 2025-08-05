@@ -7,7 +7,7 @@ PKG_NAME:=mira
 TEST_SCOPE?=tests/
 
 # Prefix for running commands on the host vs in Docker (e.g., dev vs CI)
-EXEC:=poetry run
+EXEC:=uv run
 SPHINX_AUTO_EXTRA:=
 
 
@@ -30,8 +30,7 @@ patch-thirdparty: ## Patch thirdparty module import structure.
 	find mira/thirdparty -name '*.py.bak' -exec rm {} +
 
 init:  patch-thirdparty ## Initialize the development environment.
-	pip install poetry-dynamic-versioning poetry
-	poetry install --all-extras --sync
+	uv sync
 
 format-check: ## Make black check source formatting
 	@$(EXEC) black --diff --check $(PKG_NAME) tests
