@@ -16,16 +16,29 @@ from .voc import load_voc
 log = logging.getLogger(__name__)
 
 COCOCategories = core.Categories(
-    resources.files("mira").joinpath("datasets/assets/coco_classes.txt").read_text().split("\n")
+    resources.files("mira")
+    .joinpath("datasets/assets/coco_classes.txt")
+    .read_text()
+    .split("\n")
 )
 VOCCategories = core.Categories(
-   resources.files("mira").joinpath("datasets/assets/voc_classes.txt").read_text().split("\n")
+    resources.files("mira")
+    .joinpath("datasets/assets/voc_classes.txt")
+    .read_text()
+    .split("\n")
 )
 COCOCategories90 = core.Categories(
-    resources.files("mira").joinpath("datasets/assets/coco_classes_90.txt").read_text().split("\n")
+    resources.files("mira")
+    .joinpath("datasets/assets/coco_classes_90.txt")
+    .read_text()
+    .split("\n")
 )
 ImageNet1KCategories = core.Categories(
-    resources.files("mira").joinpath("datasets/assets/imagenet1k_classes.txt").read_text().lower().split("\n")
+    resources.files("mira")
+    .joinpath("datasets/assets/imagenet1k_classes.txt")
+    .read_text()
+    .lower()
+    .split("\n")
 )
 
 ShapeAnnotationConfig = core.Categories(

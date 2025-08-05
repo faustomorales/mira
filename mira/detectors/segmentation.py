@@ -167,7 +167,9 @@ class SMP(mdd.Detector):
 
     def serve_module_string(self):
         return (
-            resources.files("mira").joinpath( "detectors/assets/serve/smp.py").read_text()
+            resources.files("mira")
+            .joinpath("detectors/assets/serve/smp.py")
+            .read_text()
             .replace("NUM_CLASSES", str(len(self.categories)))
             .replace("BACKBONE_KWARGS", str(self.backbone_kwargs))
             .replace("RESIZE_CONFIG", str(self.resize_config))
