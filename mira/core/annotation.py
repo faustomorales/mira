@@ -324,8 +324,8 @@ class Categories:
     """
 
     def __init__(self, names: typing.List[str]):
-        names = [s.lower() for s in names]
-        if len(names) != len(set(names)):
+        lower = [s.lower() for s in names]
+        if len(lower) != len(set(lower)):
             raise ValueError("All class names must be unique (case-insensitive).")
         self._types = [Category(name=name) for name in names]
 
@@ -356,7 +356,6 @@ class Categories:
                 )
             return self.types[key]
         if isinstance(key, str):
-            key = key.lower()
             val = next((e for e in self._types if e.name == key), None)
             if val is None:
                 raise ValueError(f"Did not find {key} in configuration")
