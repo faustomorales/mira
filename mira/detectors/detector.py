@@ -161,7 +161,7 @@ class Detector(mc.torchtools.BaseModel):
                 f.write(
                     resources.files("mira")
                     .joinpath("detectors/assets/serve/object_detector.py")
-                    .read_text()
+                    .read_text("utf8")
                     .replace("SCORE_THRESHOLD", str(score_threshold))  # type: ignore
                     .replace("API_MODE", f"'{api_mode}'")
                 )

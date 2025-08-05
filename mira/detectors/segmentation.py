@@ -169,7 +169,7 @@ class SMP(mdd.Detector):
         return (
             resources.files("mira")
             .joinpath("detectors/assets/serve/smp.py")
-            .read_text()
+            .read_text("utf8")
             .replace("NUM_CLASSES", str(len(self.categories)))
             .replace("BACKBONE_KWARGS", str(self.backbone_kwargs))
             .replace("RESIZE_CONFIG", str(self.resize_config))

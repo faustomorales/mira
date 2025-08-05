@@ -219,7 +219,7 @@ class RetinaNet(detector.Detector):
         return (
             resources.files("mira")
             .joinpath("detectors/assets/serve/retinanet.py")
-            .read_text()
+            .read_text("utf8")
             .replace("NUM_CLASSES", str(len(self.categories) + 1))
             .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
             .replace("RESIZE_CONFIG", str(self.resize_config))
