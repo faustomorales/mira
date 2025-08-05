@@ -73,11 +73,6 @@ dev = [
 [tool.coverage.run]
 omit = ["mira/thirdparty/*"]
 
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs = "git"
-style = "semver"
-
 [tool.pytest.ini_options]
 addopts = "--cov=mira --cov-report=term-missing"
 filterwarnings = [

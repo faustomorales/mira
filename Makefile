@@ -40,8 +40,7 @@ format: ## Make black unabashedly format source code
 
 package: patch-thirdparty ## Make a local build of the Python package, source dist and wheel
 	@rm -rf dist
-	@mkdir -p dist
-	@$(EXEC) poetry build
+	uv build
 
 test: ## Make pytest run tests
 	@$(EXEC) pytest -vxrs $(TEST_SCOPE)
@@ -54,9 +53,6 @@ lint-check: ## Make pylint lint the package
 
 lab: ## Start a jupyter lab instance
 	@$(EXEC) jupyter lab
-
-shell:  ## Jump into poetry shell.
-	poetry shell
 
 check: format-check type-check lint-check test ## Run all CI/CD checks
 
