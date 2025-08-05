@@ -10,7 +10,8 @@ import tempfile
 import tqdm
 import torch
 import numpy as np
-import pkg_resources
+
+import importlib.resources as resources
 import typing_extensions as tx
 
 from .. import metrics as mm
@@ -158,10 +159,7 @@ class Detector(mc.torchtools.BaseModel):
                 f.write(self.serve_module_string())
             with open(handler_file, "w", encoding="utf8") as f:
                 f.write(
-                    pkg_resources.resource_string(
-                        "mira", "detectors/assets/serve/object_detector.py"
-                    )
-                    .decode("utf-8")
+                    resources.read_text("mira", "detectors/assets/serve/object_detector.py")
                     .replace("SCORE_THRESHOLD", str(score_threshold))  # type: ignore
                     .replace("API_MODE", f"'{api_mode}'")
                 )

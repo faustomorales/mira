@@ -5,7 +5,8 @@ import collections
 
 import torch
 import torchvision
-import pkg_resources
+
+import importlib.resources as resources
 import typing_extensions as tx
 
 from .. import datasets as mds
@@ -216,8 +217,7 @@ class RetinaNet(detector.Detector):
 
     def serve_module_string(self):
         return (
-            pkg_resources.resource_string("mira", "detectors/assets/serve/retinanet.py")
-            .decode("utf-8")
+            resources.read_text("mira", "detectors/assets/serve/retinanet.py")
             .replace("NUM_CLASSES", str(len(self.categories) + 1))
             .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
             .replace("RESIZE_CONFIG", str(self.resize_config))

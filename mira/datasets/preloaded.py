@@ -6,9 +6,10 @@ from os import path
 from itertools import product
 
 from glob import glob
+
 import numpy as np
 import cv2
-from pkg_resources import resource_string
+import importlib.resources as resources
 
 from .. import core
 from .voc import load_voc
@@ -16,17 +17,16 @@ from .voc import load_voc
 log = logging.getLogger(__name__)
 
 COCOCategories = core.Categories(
-    resource_string(__name__, "assets/coco_classes.txt").decode("utf-8").split("\n")
+    resources.read_text(__package__, "assets/coco_classes.txt").split("\n")
 )
 VOCCategories = core.Categories(
-    resource_string(__name__, "assets/voc_classes.txt").decode("utf-8").split("\n")
+    resources.read_text(__package__, "assets/voc_classes.txt").split("\n")
 )
 COCOCategories90 = core.Categories(
-    resource_string(__name__, "assets/coco_classes_90.txt").decode("utf-8").split("\n")
+    resources.read_text(__package__, "assets/coco_classes_90.txt").split("\n")
 )
 ImageNet1KCategories = core.Categories(
-    resource_string(__name__, "assets/imagenet1k_classes.txt")
-    .decode("utf-8")
+    resources.read_text(__package__, "assets/imagenet1k_classes.txt")
     .lower()
     .split("\n")
 )

@@ -4,7 +4,8 @@ import typing
 import torch
 import torchvision
 import typing_extensions as tx
-import pkg_resources
+
+import importlib.resources as resources
 
 from .. import datasets as mds
 from .. import core as mc
@@ -240,10 +241,7 @@ class FasterRCNN(detector.Detector):
 
     def serve_module_string(self):
         return (
-            pkg_resources.resource_string(
-                "mira", "detectors/assets/serve/fasterrcnn.py"
-            )
-            .decode("utf-8")
+            resources.read_text("mira", "detectors/assets/serve/fasterrcnn.py")
             .replace("NUM_CLASSES", str(len(self.categories) + 1))
             .replace("BACKBONE_NAME", f"'{self.backbone_name}'")
             .replace("RESIZE_CONFIG", str(self.resize_config))

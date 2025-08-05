@@ -1,7 +1,8 @@
 import torch
 import cv2
 import numpy as np
-import pkg_resources
+
+import importlib.resources as resources
 from ..thirdparty.smp import segmentation_models_pytorch as smp
 from . import detector as mdd
 from .. import core as mc
@@ -165,8 +166,7 @@ class SMP(mdd.Detector):
 
     def serve_module_string(self):
         return (
-            pkg_resources.resource_string("mira", "detectors/assets/serve/smp.py")
-            .decode("utf-8")
+            resources.read_text("mira", "detectors/assets/serve/smp.py")
             .replace("NUM_CLASSES", str(len(self.categories)))
             .replace("BACKBONE_KWARGS", str(self.backbone_kwargs))
             .replace("RESIZE_CONFIG", str(self.resize_config))
