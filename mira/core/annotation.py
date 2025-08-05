@@ -1,5 +1,6 @@
 import logging
 import typing
+import warnings
 
 import cv2
 import numpy as np
@@ -358,6 +359,12 @@ class Categories:
         if isinstance(key, str):
             val = next((e for e in self._types if e.name == key), None)
             if val is None:
+                val = next((e for e in self._types if e.name.lower() == key.lower()), None)
+                if val is not None:
+                    warnings.warn(
+                        f"Category {key} not found, using {val.name} instead."
+                    )
+                    return val
                 raise ValueError(f"Did not find {key} in configuration")
             return val
         raise ValueError(f"Key must be int or str, not {key} of type {str(type(key))}")
