@@ -324,7 +324,7 @@ class CoarseDropout(A.CoarseDropout):
         image: np.ndarray,
         fill_value: typing.Union[int, float],
         holes: typing.Iterable[typing.Tuple[int, int, int, int]],
-        **params
+        **params,
     ) -> np.ndarray:
         holes_cnt = params["holes_cnt"]
         image = image.copy()
@@ -339,7 +339,7 @@ class CoarseDropout(A.CoarseDropout):
         mask: np.ndarray,
         mask_fill_value: typing.Union[int, float],
         holes: typing.Iterable[typing.Tuple[int, int, int, int]],
-        **params
+        **params,
     ) -> np.ndarray:
         if mask_fill_value is None:
             return mask
@@ -393,7 +393,7 @@ class CoarseDropout(A.CoarseDropout):
         keypoints: typing.List[
             typing.Tuple[float, float, float, float, typing.Tuple[int, int]]
         ],
-        **params
+        **params,
     ):
         holes_ids = params["holes_ids"]
         return [keypoint for keypoint in keypoints if keypoint[4][0] not in holes_ids]
