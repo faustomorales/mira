@@ -6,12 +6,12 @@ import types
 import typing
 import logging
 import tempfile
+from importlib import resources
 
 import tqdm
 import torch
 import numpy as np
 
-import importlib.resources as resources
 import typing_extensions as tx
 
 from .. import metrics as mm

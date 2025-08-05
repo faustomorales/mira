@@ -4,12 +4,11 @@
 import logging
 from os import path
 from itertools import product
-
 from glob import glob
+from importlib import resources
 
 import numpy as np
 import cv2
-import importlib.resources as resources
 
 from .. import core
 from .voc import load_voc

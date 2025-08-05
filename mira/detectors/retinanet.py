@@ -2,11 +2,11 @@
 import typing
 import logging
 import collections
+from importlib import resources
 
 import torch
 import torchvision
 
-import importlib.resources as resources
 import typing_extensions as tx
 
 from .. import datasets as mds

@@ -24,13 +24,15 @@ protos: ## Build protobufs.
 	protoc --python_out=mira/core protos/scene.proto
 
 patch-thirdparty: ## Patch thirdparty module import structure.
+	git submodule update
+	git submodule init
 	find mira/thirdparty/albumentations -name '*.py' -exec sed -i'.bak' -e 's/from albumentations/from mira.thirdparty.albumentations.albumentations/g' {} +
 	find mira/thirdparty/albumentations -name '*.py' -exec sed -i'.bak' -e 's/from .domain_adaptation import \*//g' {} +
 	find mira/thirdparty/smp -name '*.py' -exec sed -i'.bak' -e 's/from segmentation_models_pytorch/from mira.thirdparty.smp.segmentation_models_pytorch/g' {} +
 	find mira/thirdparty -name '*.py.bak' -exec rm {} +
 
 init:  patch-thirdparty ## Initialize the development environment.
-	uv sync
+	uv sync --extra clip --extra segmentation --extra detectors
 
 format-check: ## Make black check source formatting
 	@$(EXEC) black --diff --check $(PKG_NAME) tests

@@ -1,8 +1,9 @@
+from importlib import resources
+
 import torch
 import cv2
 import numpy as np
 
-import importlib.resources as resources
 from ..thirdparty.smp import segmentation_models_pytorch as smp
 from . import detector as mdd
 from .. import core as mc

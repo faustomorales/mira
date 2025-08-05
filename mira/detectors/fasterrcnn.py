@@ -1,11 +1,10 @@
 # pylint: disable=too-many-instance-attributes
 import typing
+from importlib import resources
 
 import torch
 import torchvision
 import typing_extensions as tx
-
-import importlib.resources as resources
 
 from .. import datasets as mds
 from .. import core as mc
