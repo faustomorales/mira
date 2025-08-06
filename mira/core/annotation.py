@@ -28,6 +28,9 @@ class Category:
     def __str__(self):
         return self._name
 
+    def __hash__(self):
+        return hash(self._name)
+
     @property
     def name(self):
         """The name of the category."""
@@ -253,9 +256,11 @@ class Annotation(
                             "x2",
                             "y2",
                         ],
-                        [scale[0], scale[1], scale[0], scale[1]]
-                        if isinstance(scale, np.ndarray)
-                        else [scale, scale, scale, scale],
+                        (
+                            [scale[0], scale[1], scale[0], scale[1]]
+                            if isinstance(scale, np.ndarray)
+                            else [scale, scale, scale, scale]
+                        ),
                     )
                 }
             )
@@ -301,14 +306,16 @@ class Annotation(
     def __repr__(self):
         return repr(
             {
-                "selection": {
-                    "x1": self.x1,
-                    "y1": self.y1,
-                    "x2": self.x2,
-                    "y2": self.y2,
-                }
-                if self.is_rect
-                else [{"x": x, "y": y} for x, y in self.points],
+                "selection": (
+                    {
+                        "x1": self.x1,
+                        "y1": self.y1,
+                        "x2": self.x2,
+                        "y2": self.y2,
+                    }
+                    if self.is_rect
+                    else [{"x": x, "y": y} for x, y in self.points]
+                ),
                 "category": self.category.name,
                 "score": self.score,
                 "metadata": self.metadata,

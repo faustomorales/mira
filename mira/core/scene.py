@@ -387,13 +387,35 @@ class Scene:
             # We need to change all the categories for annotations
             # to match the new annotation configuration.
             categories = kwargs["categories"]
+            if not isinstance(categories, annotation.Categories):
+                raise TypeError(
+                    f"Categories must be an instance of annotation.Categories, not {type(categories)}"
+                )
+            new_annotations = typing.cast(
+                typing.List[annotation.Annotation],
+                kwargs.get("annotations", self.annotations),
+            )
+            new_labels = typing.cast(
+                typing.List[annotation.Label], kwargs.get("labels", self.labels)
+            )
+            filtered_annotations = [
+                ann for ann in new_annotations if ann.category in categories
+            ]
+            filtered_labels = [ann for ann in new_labels if ann.category in categories]
+            if len(filtered_annotations) != len(new_annotations):
+                log.warning(
+                    "Some annotations had categories not found in the new categories and they will be dropped: %s",
+                    set(ann.category for ann in new_annotations).difference(categories),
+                )
+            if len(filtered_labels) != len(new_labels):
+                log.warning(
+                    "Some labels had categories not found in the new categories and they will be dropped: %s",
+                    set(ann.category for ann in new_labels).difference(categories),
+                )
             kwargs["annotations"] = [
-                ann.convert(categories)
-                for ann in kwargs.get("annotations", self.annotations)
+                ann.convert(categories) for ann in filtered_annotations
             ]
-            kwargs["labels"] = [
-                ann.convert(categories) for ann in kwargs.get("labels", self.labels)
-            ]
+            kwargs["labels"] = [ann.convert(categories) for ann in filtered_labels]
         # We use the _image instead of image to avoid triggering an
         # unnecessary read of the actual image.
         defaults = {
@@ -958,8 +980,23 @@ class SceneCollection:
         """
         if "categories" in kwargs:
             categories = kwargs["categories"]
+            dropped = set(self.categories).difference(categories)
+            if dropped:
+                log.warning(
+                    "Some categories were dropped from the scene collection: %s",
+                    ", ".join(str(c) for c in dropped),
+                )
             scenes = kwargs.get("scenes", self.scenes)
-            kwargs["scenes"] = [s.assign(categories=categories) for s in scenes]
+            kwargs["scenes"] = [
+                s.assign(
+                    categories=categories,
+                    annotations=[
+                        ann for ann in s.annotations if ann.category in categories
+                    ],
+                    labels=[ann for ann in s.labels if ann.category in categories],
+                )
+                for s in scenes
+            ]
         defaults = {"scenes": self.scenes, "categories": self.categories}
         kwargs = {**defaults, **kwargs}
         return SceneCollection(**kwargs)
