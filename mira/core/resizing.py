@@ -47,6 +47,29 @@ ResizeConfig = typing.Union[FixedSizeConfig, VariableSizeConfig, AspectPreservin
 ArrayType = typing.TypeVar("ArrayType", "torch.Tensor", np.ndarray)
 
 
+def call_resize(
+    image: typing.Any,
+    target_height: int,
+    target_width: int,
+    interpolation: typing.Any = None,
+):
+    """Underlying resize call which uses cv2 or torch depending on argument."""
+    use_torch_ops = torch and isinstance(image, torch.Tensor)
+    return (
+        tvtf.resize(
+            image,
+            size=[target_height, target_width],
+            interpolation=interpolation or tvtf.InterpolationMode.BILINEAR,
+        )
+        if use_torch_ops
+        else cv2.resize(
+            image,
+            (target_width, target_height),
+            interpolation=interpolation or cv2.INTER_LINEAR,
+        )
+    )
+
+
 def fit_side(
     image: ArrayType,
     target_length: int,
@@ -69,24 +92,22 @@ def fit_side(
         target_length if reference_length == isize else int(round(scale * isize))
         for isize in [input_width, input_height]
     ]
-    resized = (
-        tvtf.resize(
-            image,
-            size=[target_height, target_width],
-            interpolation=interpolation or tvtf.InterpolationMode.BILINEAR,
-        )
-        if use_torch_ops
-        else cv2.resize(
-            image,
-            (target_width, target_height),
-            interpolation=interpolation or cv2.INTER_LINEAR,
-        )
+    resized = call_resize(
+        image=image,
+        target_height=target_height,
+        target_width=target_width,
+        interpolation=interpolation,
     )
     return resized, (scale, scale), (target_height, target_width)
 
 
 def fit(
-    image: ArrayType, height: int, width: int, force: bool, cval=0
+    image: ArrayType,
+    height: int,
+    width: int,
+    force: bool,
+    cval=0,
+    interpolation: typing.Any = None,
 ) -> typing.Tuple[ArrayType, typing.Tuple[float, float], typing.Tuple[int, int]]:
     """Fit an image to a specific size, padding where necessary to maintain
     aspect ratio.
@@ -100,9 +121,12 @@ def fit(
         return image, (1.0, 1.0), (height, width)
     if force:
         return (
-            tvtf.resize(image, size=[height, width])
-            if use_torch_ops
-            else cv2.resize(image, dsize=(width, height)),
+            call_resize(
+                image=image,
+                target_height=height,
+                target_width=width,
+                interpolation=interpolation,
+            ),
             (height / input_height, width / input_width),
             (height, width),
         )
@@ -111,10 +135,11 @@ def fit(
     target_width = int(scale * input_width)
     pad_y = height - target_height
     pad_x = width - target_width
-    resized = (
-        tvtf.resize(image, size=[target_height, target_width])
-        if use_torch_ops
-        else cv2.resize(image, (target_width, target_height))
+    resized = call_resize(
+        image=image,
+        target_height=target_height,
+        target_width=target_width,
+        interpolation=interpolation,
     )
     if pad_y > 0 or pad_x > 0:
         padded = (
@@ -281,14 +306,16 @@ def resize(
     padded = (
         torch.cat(
             [
-                torch.nn.functional.pad(i, (0, pad_x, 0, pad_y), mode="constant", value=cval).unsqueeze(0)  # type: ignore
-                if pad_y >= 0 and pad_x >= 0
-                else fit(
-                    typing.cast(torch.Tensor, i),
-                    height=raw_height + pad_y,
-                    width=raw_width + pad_x,
-                    force=False,
-                )[0].unsqueeze(0)
+                (
+                    torch.nn.functional.pad(i, (0, pad_x, 0, pad_y), mode="constant", value=cval).unsqueeze(0)  # type: ignore
+                    if pad_y >= 0 and pad_x >= 0
+                    else fit(
+                        typing.cast(torch.Tensor, i),
+                        height=raw_height + pad_y,
+                        width=raw_width + pad_x,
+                        force=False,
+                    )[0].unsqueeze(0)
+                )
                 for i, (pad_y, pad_x), (raw_height, raw_width) in zip(
                     x, pad_dimensions, raw_shapes
                 )
@@ -297,17 +324,22 @@ def resize(
         if use_torch_ops
         else np.concatenate(
             [
-                np.pad(  # type: ignore
-                    i,
-                    ((0, pad_y), (0, pad_x))
-                    + (((0, 0),) if len(i.shape) == 3 else tuple()),
-                    mode="constant",
-                    constant_values=cval,
-                )[np.newaxis]
-                if pad_y >= 0 and pad_x >= 0
-                else fit(
-                    i, height=raw_height + pad_y, width=raw_width + pad_x, force=False
-                )[0][np.newaxis]
+                (
+                    np.pad(  # type: ignore
+                        i,
+                        ((0, pad_y), (0, pad_x))
+                        + (((0, 0),) if len(i.shape) == 3 else tuple()),
+                        mode="constant",
+                        constant_values=cval,
+                    )[np.newaxis]
+                    if pad_y >= 0 and pad_x >= 0
+                    else fit(
+                        i,
+                        height=raw_height + pad_y,
+                        width=raw_width + pad_x,
+                        force=False,
+                    )[0][np.newaxis]
+                )
                 for i, (pad_y, pad_x), (raw_height, raw_width) in zip(
                     x, pad_dimensions, raw_shapes
                 )
