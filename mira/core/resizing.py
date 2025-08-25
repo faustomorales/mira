@@ -168,6 +168,7 @@ def check_resize_method(method: str):
         "force",
         "none",
         "pad_to_multiple",
+        "fit_side",
     ], f"Unknown resize method {method}."
 
 
@@ -240,6 +241,27 @@ def resize(
         isinstance(x, torch.Tensor)
         or (isinstance(x, list) and isinstance(x[0], torch.Tensor))
     )
+    if resize_config["method"] == "fit_side":
+        assert len(x) == 1, "fit_side does not support batches."
+        resized, scale, size = fit_side(
+            image=x[0],
+            target_length=resize_config["target"],
+            side=resize_config["side"],
+            upsample=resize_config["upsample"],
+        )
+        return (
+            (  # type: ignore
+                typing.cast(torch.Tensor, resized).unsqueeze(0),
+                torch.tensor([scale]),
+                torch.tensor([size]),
+            )
+            if use_torch_ops
+            else (
+                resized[np.newaxis],
+                np.array([scale]),
+                np.array([size]),
+            )
+        )
     width, height, base = typing.cast(
         typing.List[typing.Optional[int]],
         [resize_config.get(k) for k in ["width", "height", "base"]],

@@ -23,12 +23,10 @@ import cv2
 
 from .protos import scene_pb2 as mps
 from . import utils, augmentations, imagemeta, resizing, annotation
+from .utils import Dimensions
 from ..thirdparty.albumentations import albumentations as A
 
 log = logging.getLogger(__name__)
-
-Dimensions = typing.NamedTuple("Dimensions", [("width", int), ("height", int)])
-
 
 # pylint: disable=too-many-public-methods
 class Scene:
@@ -732,10 +730,23 @@ class Scene:
                             image=image[y1:y2, x1:x2],  # type: ignore
                             annotations=[
                                 a.assign(
-                                    x1=a.x1 - x1,  # type: ignore[operator]
-                                    y1=a.y1 - y1,  # type: ignore[operator]
-                                    x2=a.x2 - x1,  # type: ignore[operator]
-                                    y2=a.y2 - y1,  # type: ignore[operator]
+                                    **(
+                                        dict(
+                                            x1=a.x1 - x1,  # type: ignore[operator]
+                                            y1=a.y1 - y1,  # type: ignore[operator]
+                                            x2=a.x2 - x1,  # type: ignore[operator]
+                                            y2=a.y2 - y1,  # type: ignore[operator]
+                                            points=None,
+                                        )
+                                        if a.is_rect
+                                        else dict(
+                                            x1=None,
+                                            y1=None,
+                                            x2=None,
+                                            y2=None,
+                                            points=a.points - [[x1, y1]],
+                                        )
+                                    )
                                 )
                                 for a in ann_inc
                             ],

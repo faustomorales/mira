@@ -22,6 +22,7 @@ MaskRegion = typing_extensions.TypedDict(
     "MaskRegion", {"visible": bool, "contour": np.ndarray, "name": str}
 )
 ContourList = typing.List[np.ndarray]
+Dimensions = typing.NamedTuple("Dimensions", [("width", int), ("height", int)])
 DeduplicationMethod = typing_extensions.Literal["iou", "coverage"]
 
 DEFAULT_MAX_CONTOUR_MASK_SIZE = 100
@@ -33,7 +34,7 @@ def box2pts(x1: int, y1: int, x2: int, y2: int) -> np.ndarray:
 
 
 def read(
-    filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO, np.ndarray]
+    filepath_or_buffer: typing.Union[str, io.BytesIO, typing.BinaryIO, np.ndarray],
 ):
     """Read a file into an image object
 
@@ -620,7 +621,7 @@ def split_apply_combine(
     """
 
     def compute_group_result(
-        groupi: typing.Tuple[str, typing.Iterator[SplitApplyRecombineIndexKey]]
+        groupi: typing.Tuple[str, typing.Iterator[SplitApplyRecombineIndexKey]],
     ):
         groupl = list(groupi[1])
         return list(

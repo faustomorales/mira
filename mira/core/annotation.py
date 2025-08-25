@@ -192,7 +192,29 @@ class Annotation(
         ]
         return image[max(y1, 0) : max(y2, 0), max(x1, 0) : max(0, x2)]
 
-    def crop(self, width, height):
+    def expand(self, pad: int, dimensions: utils.Dimensions):
+        """Expand an annotation by some target amount."""
+        if not self.is_rect:
+            warnings.warn(
+                "Expanding a non-bounding box results in conversion to bounding box."
+            )
+        return self.assign(
+            **{
+                key: min(max(0, initial + delta), limit)
+                for (delta, key, limit), initial in zip(
+                    [
+                        (-pad, "x1", dimensions.width),
+                        (-pad, "y1", dimensions.height),
+                        (pad, "x2", dimensions.width),
+                        (pad, "y2", dimensions.height),
+                    ],
+                    self.x1y1x2y2(),
+                )
+            },
+            points=None,
+        )
+
+    def crop(self, width, height, xoffset=0, yoffset=0):
         """Crop a selection to a given image width
         and height.
 
@@ -203,20 +225,24 @@ class Annotation(
         if self.is_rect:
             crop = self.assign(
                 **{
-                    k: max(0, min(getattr(self, k), d))
-                    for d, k in [
-                        (width, "x1"),
-                        (height, "y1"),
-                        (width, "x2"),
-                        (height, "y2"),
-                    ]
+                    key: max(0, min(initial - offset, limit))
+                    for (limit, offset, key), initial in zip(
+                        [
+                            (width, xoffset, "x1"),
+                            (height, yoffset, "y1"),
+                            (width, xoffset, "x2"),
+                            (height, yoffset, "y2"),
+                        ],
+                        self.x1y1x2y2(),
+                    )
                 }
             )
             if crop.area() > 0:
                 return [crop]
             return []
-        baseline = self.points.min(axis=0)
-        offseted = (self.points - baseline).round().astype("int32")
+        points = self.points - [[xoffset, yoffset]]
+        baseline = points.min(axis=0)
+        offseted = (points - baseline).round().astype("int32")
         redrawn = cv2.drawContours(
             np.zeros(offseted.max(axis=0)[::-1], dtype="uint8"),
             contours=offseted[np.newaxis],
@@ -297,7 +323,8 @@ class Annotation(
 
     def __eq__(self, other):
         return (
-            (self.points == other.points).all()
+            (self.points.shape[0] == other.points.shape[0])
+            and (self.points == other.points).all()
             and self.is_rect == other.is_rect
             and self.category == other.category
             and self.metadata == other.metadata
