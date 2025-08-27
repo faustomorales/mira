@@ -7,9 +7,12 @@ import io
 import glob
 import json
 import typing
+import pathlib
 import logging
 import tarfile
 import tempfile
+import itertools
+import contextlib
 import concurrent.futures
 
 import tqdm
@@ -27,6 +30,22 @@ from .utils import Dimensions
 from ..thirdparty.albumentations import albumentations as A
 
 log = logging.getLogger(__name__)
+
+IMAGE_PLACEHOLDER = np.ones((1, 1, 3), dtype="uint8")
+
+
+def decode_bytes(data: bytes):
+    """Decode raw bytes using OpenCV"""
+    return cv2.cvtColor(
+        cv2.imdecode(np.frombuffer(data, dtype="uint8"), cv2.IMREAD_COLOR),
+        cv2.COLOR_RGB2BGR,
+    )
+
+
+def encode_bytes(data: np.ndarray):
+    """Encode raw bytes using OpenCV"""
+    return cv2.imencode(".png", cv2.cvtColor(data, cv2.COLOR_RGB2BGR))[1].tobytes()
+
 
 # pylint: disable=too-many-public-methods
 class Scene:
@@ -69,7 +88,7 @@ class Scene:
         self._image = image
         self._dimensions = None
         self._tfile = None
-        self.metadata = metadata
+        self.metadata = metadata or {}
         self.annotations = annotations or []
         self.categories = annotation.Categories.from_categories(categories)
         self.labels = labels or []
@@ -84,6 +103,13 @@ class Scene:
             annotations=[ann.resize(scales[0][::-1]) for ann in self.annotations],
             masks=[],
         )
+
+    def to_placeholder(self, colormap: typing.Dict[str, typing.Tuple[int, int, int]]):
+        """Convert a scene to a placeholder."""
+        image = np.zeros_like(self.image) + 255
+        for ann in self.annotations:
+            ann.draw(image, color=colormap[ann.category.name], opaque=True)
+        return self.assign(image=image)
 
     def segmentation_map(self, binary: bool, threshold: float = 0.5) -> np.ndarray:
         """Creates a segmentation map using the annotation scores."""
@@ -144,8 +170,8 @@ class Scene:
         return lambda: self.image
 
     @property
-    def image(self) -> np.ndarray:
-        """The image that is being annotated"""
+    def unmasked_image(self) -> np.ndarray:
+        """The image that is being annotated without masks."""
         # Check to see if we have an actual image
         # or just a string
         protect_image = False
@@ -167,23 +193,21 @@ class Scene:
             pass
         else:
             raise ValueError(f"Unsupported cache parameter: {self.cache}.")
-        if self.masks:
-            if protect_image:
-                # We should not modify this image. Work on a copy.
-                image = image.copy()
-            utils.apply_mask(image, masks=self.masks)
+        if protect_image:
+            return image.copy()
+        return image
+
+    @property
+    def image(self) -> np.ndarray:
+        """The image that is being annotated"""
+        image = self.unmasked_image
+        utils.apply_mask(image, masks=self.masks)
         return image
 
     @property
     def image_bytes(self) -> bytes:
         """Get the image as a PNG encoded to bytes."""
         return utils.image2bytes(self.image)
-
-    @classmethod
-    def load(cls, filepath: str):
-        """Load a scence from a filepath."""
-        with open(filepath, "rb") as f:
-            return cls.fromString(f.read())
 
     @classmethod
     def from_qsl(
@@ -205,30 +229,32 @@ class Scene:
         import qsl
 
         target = item["target"]
+        filepath = target if base_dir is None else os.path.join(base_dir, target)
         labels = item["labels"]
-        dimensions = labels["dimensions"]
+        meta = imagemeta.get_image_metadata(filepath)
+
         annotations = []
-        for box in labels["boxes"]:
+        for box in labels.get("boxes", []):
             if not box["labels"].get(label_key):
                 log.warning("A box in %s is missing %s. Skipping.", target, label_key)
                 continue
             annotations.append(
                 annotation.Annotation(
                     category=categories[box["labels"][label_key][0]],
-                    x1=box["pt1"]["x"] * dimensions["width"],
-                    y1=box["pt1"]["y"] * dimensions["height"],
-                    x2=box["pt2"]["x"] * dimensions["width"],
-                    y2=box["pt2"]["y"] * dimensions["height"],
+                    x1=box["pt1"]["x"] * meta.width,
+                    y1=box["pt1"]["y"] * meta.height,
+                    x2=box["pt2"]["x"] * meta.width,
+                    y2=box["pt2"]["y"] * meta.height,
                 )
             )
-        for mask in labels["masks"]:
+        for mask in labels.get("masks", []):
             if not mask["labels"].get(label_key):
                 log.warning("A mask in %s is missing %s. Skipping.", target, label_key)
                 continue
             bitmap = qsl.counts2bitmap(**mask["map"])
             scaley, scalex = (
-                dimensions["height"] / bitmap.shape[0],
-                dimensions["width"] / bitmap.shape[1],
+                meta.height / bitmap.shape[0],
+                meta.width / bitmap.shape[1],
             )
             contours = cv2.findContours(
                 bitmap, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE
@@ -242,7 +268,7 @@ class Scene:
                     for contour in contours
                 ]
             )
-        for polygon in labels["polygons"]:
+        for polygon in labels.get("polygons", []):
             if not polygon["labels"].get(label_key):
                 log.warning(
                     "A polygon in %s is missing %s. Skipping.", target, label_key
@@ -252,24 +278,33 @@ class Scene:
                 annotation.Annotation(
                     category=categories[polygon["labels"][label_key][0]],
                     points=np.array([[p["x"], p["y"]] for p in polygon["points"]])
-                    * [dimensions["width"], dimensions["height"]],
+                    * [meta.width, meta.height],
                 )
             )
         return cls(
-            image=target if base_dir is None else os.path.join(base_dir, target),
+            image=filepath,
             annotations=annotations,
             categories=categories,
             metadata=item.get("metadata", {}),
         )
 
     @classmethod
-    def fromString(cls, string):
+    def load(
+        cls, filepath: str, image: typing.Optional[typing.Union[bytes, str]] = None
+    ):
+        """Load a scence from a filepath."""
+        with open(filepath, "rb") as f:
+            return cls.fromString(f.read(), image=image)
+
+    @classmethod
+    def fromString(
+        cls,
+        string,
+        image: typing.Optional[typing.Union[str, bytes]] = None,
+    ):
         """Deserialize scene from string."""
         deserialized = mps.Scene.FromString(string)
         categories = annotation.Categories(deserialized.categories.categories)
-        image = cv2.imdecode(
-            np.frombuffer(deserialized.image, dtype="uint8"), cv2.IMREAD_COLOR
-        )
         annotations = []
         for ann in deserialized.annotations:
             common = {
@@ -295,7 +330,15 @@ class Scene:
                     )
                 )
         return cls(
-            image=image,
+            image=(
+                image
+                if isinstance(image, str)
+                else decode_bytes(
+                    typing.cast(
+                        bytes, image if image is not None else deserialized.image
+                    )
+                )
+            ),
             metadata=json.loads(deserialized.metadata),
             labels=[
                 annotation.Label(
@@ -340,43 +383,47 @@ class Scene:
             self._dimensions = dimensions
         return self._dimensions
 
-    def toString(self, extension=".png"):
+    def toString(self):
         """Serialize scene to string."""
-        return mps.Scene(
-            image=cv2.imencode(extension, self.image)[1].tobytes(),
-            categories=mps.Categories(categories=[c.name for c in self.categories]),
-            metadata=json.dumps(self.metadata or {}),
-            masks=[
-                mps.Mask(
-                    visible=m["visible"],
-                    name=m["name"],
-                    contour=[mps.Point(x=x, y=y) for x, y in m["contour"]],
-                )
-                for m in (self.masks or [])
-            ],
-            labels=[
-                mps.Label(
-                    category=self.categories.index(ann.category),
-                    score=ann.score,
-                    metadata=json.dumps(ann.metadata or {}),
-                )
-                for ann in self.labels
-            ],
-            annotations=[
-                mps.Annotation(
-                    category=self.categories.index(ann.category),
-                    x1=ann.x1,
-                    y1=ann.y1,
-                    x2=ann.x2,
-                    y2=ann.y2,
-                    score=ann.score,
-                    points=[mps.Point(x=x, y=y) for x, y in ann.points],
-                    metadata=json.dumps(ann.metadata or {}),
-                    is_rect=ann.is_rect,
-                )
-                for ann in self.annotations
-            ],
-        ).SerializeToString()
+        image_bytes = encode_bytes(self.unmasked_image)
+        return (
+            mps.Scene(
+                image=encode_bytes(IMAGE_PLACEHOLDER),
+                categories=mps.Categories(categories=[c.name for c in self.categories]),
+                metadata=json.dumps(self.metadata or {}),
+                masks=[
+                    mps.Mask(
+                        visible=m["visible"],
+                        name=m["name"],
+                        contour=[mps.Point(x=x, y=y) for x, y in m["contour"]],
+                    )
+                    for m in (self.masks or [])
+                ],
+                labels=[
+                    mps.Label(
+                        category=self.categories.index(ann.category),
+                        score=ann.score,
+                        metadata=json.dumps(ann.metadata or {}),
+                    )
+                    for ann in self.labels
+                ],
+                annotations=[
+                    mps.Annotation(
+                        category=self.categories.index(ann.category),
+                        x1=ann.x1,
+                        y1=ann.y1,
+                        x2=ann.x2,
+                        y2=ann.y2,
+                        score=ann.score,
+                        points=[mps.Point(x=x, y=y) for x, y in ann.points],
+                        metadata=json.dumps(ann.metadata or {}),
+                        is_rect=ann.is_rect,
+                    )
+                    for ann in self.annotations
+                ],
+            ).SerializeToString(),
+            image_bytes,
+        )
 
     def assign(self, **kwargs) -> "Scene":
         """Get a new scene with only the supplied
@@ -715,7 +762,9 @@ class Scene:
                 xc, yc = map(
                     lambda v: max(v, r1), [(xmax + xmin) / 2, (ymax + ymin) / 2]
                 )
-                xc, yc = min(xc, iw - r2), min(yc, ih - r2)
+                xc, yc = typing.cast(int, min(xc, iw - r2)), typing.cast(
+                    int, min(yc, ih - r2)
+                )
                 x1, y1, x2, y2 = map(round, [xc - r1, yc - r1, xc + r2, yc + r2])
                 coverages = utils.compute_coverage(
                     np.concatenate([box_inc, box_exc], axis=0),
@@ -729,23 +778,21 @@ class Scene:
                         self.assign(
                             image=image[y1:y2, x1:x2],  # type: ignore
                             annotations=[
-                                a.assign(
-                                    **(
-                                        dict(
-                                            x1=a.x1 - x1,  # type: ignore[operator]
-                                            y1=a.y1 - y1,  # type: ignore[operator]
-                                            x2=a.x2 - x1,  # type: ignore[operator]
-                                            y2=a.y2 - y1,  # type: ignore[operator]
-                                            points=None,
-                                        )
-                                        if a.is_rect
-                                        else dict(
-                                            x1=None,
-                                            y1=None,
-                                            x2=None,
-                                            y2=None,
-                                            points=a.points - [[x1, y1]],
-                                        )
+                                (
+                                    a.assign(
+                                        x1=a.x1 - typing.cast(int, x1),
+                                        y1=a.y1 - typing.cast(int, y1),
+                                        x2=a.x2 - typing.cast(int, x1),
+                                        y2=a.y2 - typing.cast(int, y1),
+                                        points=None,
+                                    )
+                                    if a.is_rect
+                                    else a.assign(
+                                        x1=None,
+                                        y1=None,
+                                        x2=None,
+                                        y2=None,
+                                        points=a.points - [[x1, y1]],
                                     )
                                 )
                                 for a in ann_inc
@@ -782,6 +829,26 @@ class Scene:
                     else utils.compute_iou_for_contour_pair(ann1.points, ann2.points)
                 ) * (1 if ann1.category.name == ann2.category.name else -1)
         return iou
+
+
+@contextlib.contextmanager
+def scene_writer(filename: str):
+    """A context manager for writing scenes to a tarball."""
+    with tarfile.open(filename, mode="w") as tar:
+        count = itertools.count()
+
+        def add_scene(scene: Scene):
+            idx = next(count)
+            with tempfile.NamedTemporaryFile() as temp_scene, tempfile.NamedTemporaryFile() as temp_image:
+                scene_string, image_bytes = scene.toString()
+                temp_image.write(image_bytes)
+                temp_scene.write(scene_string)
+                temp_image.flush()
+                temp_scene.flush()
+                tar.add(name=temp_image.name, arcname=f"{idx}.png")
+                tar.add(name=temp_scene.name, arcname=str(idx))
+
+        yield add_scene
 
 
 # pylint: disable=too-many-public-methods
@@ -1017,14 +1084,14 @@ class SceneCollection:
         selected = np.random.choice(len(self.scenes), n, replace=replace)
         return self.assign(scenes=[self.scenes[i] for i in selected])
 
-    def save(self, filename: str, **kwargs):
+    def save(
+        self,
+        filename: str,
+    ):
         """Save scene collection a tarball."""
-        with tarfile.open(filename, mode="w") as tar:
-            for idx, scene in enumerate(tqdm.tqdm(self.scenes)):
-                with tempfile.NamedTemporaryFile() as temp:
-                    temp.write(scene.toString(**kwargs))
-                    temp.flush()
-                    tar.add(name=temp.name, arcname=str(idx))
+        with scene_writer(filename) as write:
+            for scene in tqdm.tqdm(self.scenes):
+                write(scene)
 
     def save_placeholder(
         self, filename: str, colormap: typing.Dict[str, typing.Tuple[int, int, int]]
@@ -1040,19 +1107,12 @@ class SceneCollection:
             colormap: A mapping of annotation categories to colors, used
                 for drawing the annotations onto a canvas.
         """
-        with tarfile.open(filename, mode="w") as tar:
-            for idx, scene in enumerate(tqdm.tqdm(self.scenes)):
-                with tempfile.NamedTemporaryFile() as temp:
-                    image = np.zeros_like(scene.image) + 255
-                    for ann in typing.cast(Scene, scene).annotations:
-                        ann.draw(image, color=colormap[ann.category.name], opaque=True)
-                    temp.write(
-                        scene.assign(
-                            image=image, annotations=scene.annotations
-                        ).toString()
-                    )
-                    temp.flush()
-                    tar.add(name=temp.name, arcname=str(idx))
+        self.assign(
+            scenes=[
+                scene.to_placeholder(colormap=colormap)
+                for scene in tqdm.tqdm(self.scenes)
+            ]
+        ).save(filename)
 
     @classmethod
     def load_from_directory(cls, directory: str):
@@ -1086,39 +1146,46 @@ class SceneCollection:
         """Load scene collection from a tarball. If a directory
         is provided, images will be saved into that directory
         rather than retained in memory."""
-        if directory and os.path.isdir(directory) and not force:
+        dirp = pathlib.Path(directory) if directory else None
+        if dirp and directory and dirp.is_dir() and not force:
             return cls.load_from_directory(directory)
-        if directory:
-            os.makedirs(directory, exist_ok=True)
+        if dirp:
+            dirp.mkdir(parents=True, exist_ok=True)
         scenes = []
         with tarfile.open(filename, mode="r") as tar:
-            for idx, member in enumerate(tqdm.tqdm(tar.getmembers())):
-                data = tar.extractfile(member)
-                if data is None:
-                    raise ValueError("Failed to load data from a file in the tarball.")
-                if not directory:
-                    scene = Scene.fromString(data.read())
-                else:
-                    label_filepath = os.path.join(directory, str(idx))
-                    image_filepath = label_filepath + ".png"
-                    if (
-                        os.path.isfile(label_filepath)
-                        and os.path.isfile(image_filepath)
-                        and not force
-                    ):
-                        scene = Scene.load(label_filepath).assign(image=image_filepath)
-                    else:
-                        scene = Scene.fromString(data.read())
-                        cv2.imwrite(
-                            image_filepath, cv2.cvtColor(scene.image, cv2.COLOR_RGB2BGR)
+            for member in tqdm.tqdm(tar.getmembers()):
+                if member.name.endswith(".png"):
+                    continue
+                if (
+                    (
+                        image_member := next(
+                            (
+                                m
+                                for m in tar.getmembers()
+                                if m.name == member.name + ".png"
+                            ),
+                            None,
                         )
-                        with open(label_filepath, "wb") as f:
-                            f.write(
-                                scene.assign(
-                                    image=np.ones((1, 1, 3), dtype="uint8")
-                                ).toString()
-                            )
-                    scene = scene.assign(image=image_filepath)
+                    )
+                    and (extracted_image_member := tar.extractfile(image_member))
+                    and extracted_image_member is not None
+                ):
+                    image_bytes = extracted_image_member.read()
+                else:
+                    image_bytes = None
+                if extracted_scene_member := tar.extractfile(member):
+                    scene = Scene.fromString(
+                        extracted_scene_member.read(), image=image_bytes
+                    )
+                else:
+                    raise ValueError("Failed to load scene protobuf.")
+                if dirp:
+                    label_filepath = dirp / member.name
+                    image_filepath = label_filepath.with_suffix(".png")
+                    label_bytes, image_bytes = scene.toString()
+                    image_filepath.write_bytes(image_bytes)
+                    label_filepath.write_bytes(label_bytes)
+                    scene = scene.assign(image=image_filepath.as_posix())
                 scenes.append(scene)
         if len(scenes) == 0:
             raise ValueError("No scenes found.")

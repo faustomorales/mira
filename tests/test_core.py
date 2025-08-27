@@ -1,6 +1,7 @@
 """
 Test core functions.
 """
+
 import typing
 import itertools
 import collections
@@ -188,6 +189,14 @@ def test_find_consensus_crops():
         assert include_coverage.max(axis=1).sum() == len(include)
 
 
+def check_scene_equality(scene1, scene2):
+    """Check whether two scenes are equivalent with respect to image, annotations and metadata."""
+    np.testing.assert_equal(scene1.image, scene2.image)
+    np.testing.assert_equal(scene1.annotated(), scene2.annotated())
+    assert scene1.metadata == scene2.metadata
+    assert scene1.annotations == scene2.annotations
+
+
 def test_serialization():
     scene_i = mds.load_shapes(n_scenes=1)[0]
     scene_i.metadata = {"foo": "bar"}
@@ -199,11 +208,21 @@ def test_serialization():
             "contour": np.array([[0, 0], [20, 0], [20, 20], [0, 20]]),
         }
     ]
-    scene_o = mc.Scene.fromString(scene_i.toString())
-    np.testing.assert_equal(scene_o.image, scene_i.image)
-    np.testing.assert_equal(scene_o.annotated(), scene_i.annotated())
-    assert scene_o.metadata == scene_i.metadata
-    assert scene_o.annotations == scene_i.annotations
+    scene_o = mc.Scene.fromString(*scene_i.toString())
+    check_scene_equality(scene_i, scene_o)
+
+
+def test_collection_serialization():
+    collection_i = mds.load_shapes(n_scenes=10)
+    with tempfile.TemporaryDirectory() as tdir:
+        tarball = os.path.join(tdir, "serialized.tar.gz")
+        collection_i.save(tarball)
+        for collection_o in [
+            mc.SceneCollection.load(tarball, directory=os.path.join(tdir, "extracted")),
+            mc.SceneCollection.load(tarball),
+        ]:
+            for scene_i, scene_o in zip(collection_i, collection_o):
+                check_scene_equality(scene_i, scene_o)
 
 
 def test_safe_crop():
