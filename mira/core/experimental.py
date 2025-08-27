@@ -23,7 +23,7 @@ def collapse_boxes(boxes: np.ndarray, threshold=0.5, mode="smallest"):
                     (subgroup[:, 2:].min(axis=0) - subgroup[:, :2].max(axis=0)) > 0
                 ).all()
                 else subgroup[
-                    np.product(subgroup[:, 2:] - subgroup[:, :2], axis=1).argmin()
+                    np.prod(subgroup[:, 2:] - subgroup[:, :2], axis=1).argmin()
                 ]
             )
             if mode == "smallest"

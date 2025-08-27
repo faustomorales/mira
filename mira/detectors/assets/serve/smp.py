@@ -37,18 +37,21 @@ class SMPObjectDetector(torch.nn.Module):
                         dict(
                             polygon=(contour[:, 0] / scale).tolist(),
                             label=classIdx + 1,
-                            score=catmap[
-                                contour[:, 0, 1]
-                                .min(axis=0) : contour[:, 0, 1]
-                                .max(axis=0)
-                                + 1,
-                                contour[:, 0, 0].min() : contour[:, 0, 0].max() + 1,
-                            ].max()
-                            if np.product(
-                                contour[:, 0].max(axis=0) - contour[:, 0].min(axis=0)
-                            )
-                            > 0
-                            else BASE_THRESHOLD,
+                            score=(
+                                catmap[
+                                    contour[:, 0, 1]
+                                    .min(axis=0) : contour[:, 0, 1]
+                                    .max(axis=0)
+                                    + 1,
+                                    contour[:, 0, 0].min() : contour[:, 0, 0].max() + 1,
+                                ].max()
+                                if np.prod(
+                                    contour[:, 0].max(axis=0)
+                                    - contour[:, 0].min(axis=0)
+                                )
+                                > 0
+                                else BASE_THRESHOLD
+                            ),
                         )
                         for contour in sorted(
                             cv2.findContours(

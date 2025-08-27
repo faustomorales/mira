@@ -134,7 +134,7 @@ class SMP(mdd.Detector):
                                         contour[:, 0, 0].min() : contour[:, 0, 0].max()
                                         + 1,
                                     ].max()
-                                    if np.product(
+                                    if np.prod(
                                         contour[:, 0].max(axis=0)
                                         - contour[:, 0].min(axis=0)
                                     )

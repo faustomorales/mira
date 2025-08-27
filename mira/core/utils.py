@@ -490,7 +490,7 @@ def find_largest_unique_boxes(bboxes, threshold=1, method: DeduplicationMethod =
 
     # Sort by area because we're going to identify duplicates
     # in order of size.
-    indexes = np.argsort(np.product(bboxes[:, 2:] - bboxes[:, :2], axis=1))
+    indexes = np.argsort(np.prod(bboxes[:, 2:] - bboxes[:, :2], axis=1))
 
     # Keep only annotations that are not duplicative with a larger (i.e.,
     # later in our sorted list) annotation. The largest annotation is, of course,
