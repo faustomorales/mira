@@ -25,9 +25,8 @@ import typing_extensions as tx
 import cv2
 
 from .protos import scene_pb2 as mps
-from . import utils, augmentations, imagemeta, resizing, annotation
+from . import utils, imagemeta, resizing, annotation
 from .utils import Dimensions
-from ..thirdparty.albumentations import albumentations as A
 
 log = logging.getLogger(__name__)
 
@@ -609,7 +608,7 @@ class Scene:
         return img
 
     def augment(
-        self, augmenter: augmentations.AugmenterProtocol = None, min_visibility=None
+        self, augmenter: utils.AugmenterProtocol = None, min_visibility=0.0
     ) -> typing.Tuple["Scene", np.ndarray]:
         """Obtain an augmented version of the scene using the given augmenter.
 
@@ -685,12 +684,6 @@ class Scene:
         recropped = [
             ann.crop(width=image.shape[1], height=image.shape[0]) for ann in annotations
         ]
-        if min_visibility is None:
-            min_visibility = (
-                augmenter.processors["bboxes"].params.min_visibility
-                if isinstance(augmenter, A.Compose)
-                else 0.0
-            )
         annotations = utils.flatten(
             [
                 anns
@@ -762,8 +755,9 @@ class Scene:
                 xc, yc = map(
                     lambda v: max(v, r1), [(xmax + xmin) / 2, (ymax + ymin) / 2]
                 )
-                xc, yc = typing.cast(int, min(xc, iw - r2)), typing.cast(
-                    int, min(yc, ih - r2)
+                xc, yc = (
+                    typing.cast(int, min(xc, iw - r2)),
+                    typing.cast(int, min(yc, ih - r2)),
                 )
                 x1, y1, x2, y2 = map(round, [xc - r1, yc - r1, xc + r2, yc + r2])
                 coverages = utils.compute_coverage(
@@ -871,7 +865,7 @@ class SceneCollection:
         for i, s in enumerate(scenes):
             if s.categories != categories:
                 raise ValueError(
-                    f"Scene {i+1} of {len(scenes)} has inconsistent configuration."
+                    f"Scene {i + 1} of {len(scenes)} has inconsistent configuration."
                 )
         self._categories = annotation.Categories.from_categories(categories)
         self._scenes = scenes
@@ -980,7 +974,7 @@ class SceneCollection:
         """Returns a series of callables that, when called, will load the image."""
         return [s.deferred_image() for s in self.scenes]
 
-    def augment(self, augmenter: augmentations.AugmenterProtocol, **kwargs):
+    def augment(self, augmenter: utils.AugmenterProtocol, **kwargs):
         """Obtained an augmented version of the given collection.
         All arguments passed to `Scene.augment`"""
         scenes, transforms = zip(

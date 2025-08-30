@@ -23,17 +23,6 @@ CoarseDropoutExpansion = tx.TypedDict(
     },
 )
 
-AugmentedResult = tx.TypedDict(
-    "AugmentedResult",
-    {
-        "image": np.ndarray,
-        "bboxes": typing.List[typing.Tuple[int, int, int, int]],
-        "keypoints": typing.List[typing.Tuple[int, int]],
-        "bbox_indices": typing.List[int],
-        "keypoint_indices": typing.List[typing.Tuple[int, int]],
-    },
-)
-
 
 def compose(transforms: typing.List[A.BasicTransform]):
     """Build a list of augmenters into an augmentation pipeline."""
@@ -48,25 +37,6 @@ def compose(transforms: typing.List[A.BasicTransform]):
             format="xy", label_fields=["keypoint_indices"], remove_invisible=False
         ),
     )
-
-
-# pylint: disable=too-few-public-methods
-class AugmenterProtocol(tx.Protocol):
-    """A protocol defining how we expect augmentation
-    pipelines to behave. bboxes is expected to be in
-    pascal_voc (or x1, y1, x2, y2) format."""
-
-    def __call__(
-        self,
-        image: np.ndarray,
-        bboxes: typing.List[typing.Tuple[int, int, int, int]],
-        keypoints: typing.List[typing.Tuple[int, int]],
-        bbox_indices: typing.List[int],
-        keypoint_indices: typing.List[
-            typing.Union[typing.Tuple[int, int], typing.Tuple[None, None]]
-        ],
-    ) -> AugmentedResult:
-        pass
 
 
 def wiggle_crop(crop, include, exclude, img_w, img_h, width, height):

@@ -461,7 +461,8 @@ def find_largest_unique_contours(contours, threshold=1, method="iou"):
         [
             bidx
             for bidx, (cidx, coverages) in zip(
-                indexes, enumerate(func(sorted_contours, sorted_contours))  # type: ignore
+                indexes,
+                enumerate(func(sorted_contours, sorted_contours)),  # type: ignore
             )
             if (cidx == len(contours) - 1 or coverages[cidx + 1 :].max() < threshold)
         ]
@@ -657,3 +658,34 @@ def split_apply_combine(
             ),
         )
     )
+
+
+AugmentedResult = typing_extensions.TypedDict(
+    "AugmentedResult",
+    {
+        "image": np.ndarray,
+        "bboxes": typing.List[typing.Tuple[int, int, int, int]],
+        "keypoints": typing.List[typing.Tuple[int, int]],
+        "bbox_indices": typing.List[int],
+        "keypoint_indices": typing.List[typing.Tuple[int, int]],
+    },
+)
+
+
+# pylint: disable=too-few-public-methods
+class AugmenterProtocol(typing_extensions.Protocol):
+    """A protocol defining how we expect augmentation
+    pipelines to behave. bboxes is expected to be in
+    pascal_voc (or x1, y1, x2, y2) format."""
+
+    def __call__(
+        self,
+        image: np.ndarray,
+        bboxes: typing.List[typing.Tuple[int, int, int, int]],
+        keypoints: typing.List[typing.Tuple[int, int]],
+        bbox_indices: typing.List[int],
+        keypoint_indices: typing.List[
+            typing.Union[typing.Tuple[int, int], typing.Tuple[None, None]]
+        ],
+    ) -> AugmentedResult:
+        pass

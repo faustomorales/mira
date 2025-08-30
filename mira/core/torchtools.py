@@ -26,7 +26,7 @@ import tqdm
 import numpy as np
 import pandas as pd
 import typing_extensions as tx
-from . import annotation, resizing, scene, augmentations, utils
+from . import annotation, resizing, scene, utils
 
 warnings.filterwarnings(
     "ignore",
@@ -572,7 +572,7 @@ class BaseModel:
         self,
         training: scene.SceneCollection,
         validation: scene.SceneCollection = None,
-        augmenter: augmentations.AugmenterProtocol = None,
+        augmenter: utils.AugmenterProtocol = None,
         train_backbone: bool = True,
         train_backbone_bn: bool = True,
         callbacks: typing.List[CallbackProtocol] = None,
