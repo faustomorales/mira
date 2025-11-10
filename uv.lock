@@ -1619,6 +1619,7 @@ dependencies = [
     { name = "pandas" },
     { name = "protobuf" },
     { name = "tqdm" },
+    { name = "twine" },
     { name = "validators" },
 ]
 
@@ -1673,6 +1674,7 @@ requires-dist = [
     { name = "scikit-image", marker = "extra == 'detectors'" },
     { name = "timm", marker = "extra == 'detectors'", specifier = ">=0.9.2,<0.10" },
     { name = "tqdm" },
+    { name = "twine", specifier = ">=6.1.0" },
     { name = "validators" },
 ]
 provides-extras = ["clip", "detectors", "segmentation"]
