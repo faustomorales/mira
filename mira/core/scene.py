@@ -79,9 +79,9 @@ class Scene:
         masks: typing.List[utils.MaskRegion] = None,
         labels: typing.List[annotation.Label] = None,
     ):
-        assert isinstance(
-            image, (np.ndarray, str)
-        ), "Image must be string or ndarray, not " + str(type(image))
+        assert isinstance(image, (np.ndarray, str)), (
+            "Image must be string or ndarray, not " + str(type(image))
+        )
         if masks is None:
             masks = []
         self._image = image
@@ -156,10 +156,8 @@ class Scene:
                 os.makedirs(directory, exist_ok=True)
             if self._tfile:
                 self._tfile.close()
-            self._tfile = (
-                tempfile.NamedTemporaryFile(  # pylint: disable=consider-using-with
-                    suffix=".png", prefix=hashstr, dir=directory
-                )
+            self._tfile = tempfile.NamedTemporaryFile(  # pylint: disable=consider-using-with
+                suffix=".png", prefix=hashstr, dir=directory
             )
             cv2.imwrite(self._tfile.name, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
         return self._tfile.name
@@ -244,6 +242,7 @@ class Scene:
                     y1=box["pt1"]["y"] * meta.height,
                     x2=box["pt2"]["x"] * meta.width,
                     y2=box["pt2"]["y"] * meta.height,
+                    metadata=box.get("metadata", {}),
                 )
             )
         for mask in labels.get("masks", []):
@@ -263,6 +262,7 @@ class Scene:
                     annotation.Annotation(
                         category=categories[mask["labels"][label_key][0]],
                         points=contour[:, 0, :] * [scalex, scaley],
+                        metadata=mask.get("metadata", {}),
                     )
                     for contour in contours
                 ]
@@ -278,6 +278,7 @@ class Scene:
                     category=categories[polygon["labels"][label_key][0]],
                     points=np.array([[p["x"], p["y"]] for p in polygon["points"]])
                     * [meta.width, meta.height],
+                    metadata=polygon.get("metadata", {}),
                 )
             )
         return cls(
@@ -716,9 +717,9 @@ class Scene:
         annotations = self.annotations
         if not annotations:
             raise NotImplementedError("This function does not support empty scenes.")
-        assert all(
-            max(a.x2 - a.x1, a.y2 - a.y1) < max_size for a in annotations
-        ), "At least one annotation is too big."
+        assert all(max(a.x2 - a.x1, a.y2 - a.y1) < max_size for a in annotations), (
+            "At least one annotation is too big."
+        )
         image = self.image
         ih, iw = image.shape[:2]
         subcrops = []
