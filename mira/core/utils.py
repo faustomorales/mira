@@ -6,12 +6,14 @@ import typing
 import logging
 import operator
 import itertools
+import functools
 import collections
 
 import requests
 import typing_extensions
 import matplotlib.pyplot as plt
-import matplotlib as mpl
+import matplotlib.image as mpli
+import matplotlib.axes as mpla
 import numpy as np
 import validators
 import cv2
@@ -106,7 +108,7 @@ def save(
             f.write(data)
 
 
-def imshow(image, ax: mpl.axes.Axes = None) -> mpl.axes.Axes:
+def imshow(image, ax: typing.Optional[mpla.Axes] = None) -> mpli.AxesImage:
     """Show an image
 
     Args:
@@ -115,14 +117,12 @@ def imshow(image, ax: mpl.axes.Axes = None) -> mpl.axes.Axes:
     Returns:
         An axes object
     """
-    if ax is None:
-        ax = plt
     if len(image.shape) == 3 and image.shape[2] >= 3:
-        return ax.imshow(image)
+        return (ax or plt).imshow(image)
     if len(image.shape) == 3 and image.shape[2] == 1:
-        return ax.imshow(image[:, :, 0])
+        return (ax or plt).imshow(image[:, :, 0])
     if len(image.shape) == 2:
-        return ax.imshow(image)
+        return (ax or plt).imshow(image)
     raise ValueError("Incorrect dimensions for image data.")
 
 
@@ -166,6 +166,43 @@ def compute_iou(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
     )
     iou = interArea / (boxAArea + boxBArea - interArea)
     return iou
+
+
+def has_overlap(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
+    """Check for non-zero overlap between pairs of bounding boxes.
+
+    Args:
+        boxesA: The first set of boxes, provided as x1, y1, x2, y2
+            coordinates as an array with shape (NA, 4).
+        boxesB: The second set of boxes provided in same form as boxesA.
+
+    Returns:
+        A boolean array of shape (NA, NB) where True indicates that
+        the corresponding pair of boxes has non-zero overlap.
+
+    Example:
+        >>> has_overlap(
+        ...     boxesA=np.array([[0, 0, 2, 2], [5, 5, 7, 7]]),
+        ...     boxesB=np.array([[1, 1, 3, 3], [10, 10, 12, 12]])
+        ... )
+        array([[ True, False],
+               [False, False]])
+    """
+    # A joint matrix for all box pairs so we can vectorize. It has shape
+    # (NA, NB, 2, 4).
+    boxes = np.zeros((boxesA.shape[0], boxesB.shape[0], 2, 4))
+    boxes[:, :, 0] = boxesA[:, np.newaxis, :]
+    boxes[:, :, 1] = boxesB[np.newaxis, :, :]
+
+    # Check if boxes overlap by testing if they do NOT fail to overlap
+    # Boxes don't overlap if one is entirely to the left, right, above, or below the other
+    xA = boxes[..., 0].max(axis=-1)
+    yA = boxes[..., 1].max(axis=-1)
+    xB = boxes[..., 2].min(axis=-1)
+    yB = boxes[..., 3].min(axis=-1)
+
+    # Return True if there's overlap in both x and y dimensions
+    return (xB > xA) & (yB > yA)
 
 
 def compute_contour_binary_masks(
@@ -216,7 +253,48 @@ def compute_iou_for_contour_pair(contour1: np.ndarray, contour2: np.ndarray):
     return (im1 & im2).sum() / (im1 | im2).sum()
 
 
-def compute_contour_iou(contoursA: ContourList, contoursB: ContourList):
+def contour_to_box(contour: np.ndarray):
+    """Convert a contourt to a box."""
+    return np.concatenate([contour.min(axis=0), contour.max(axis=0)])
+
+
+def contours_to_boxes(contours: ContourList) -> np.ndarray:
+    """Convert a list of contours to a bbox array."""
+    return np.array([contour_to_box(contour) for contour in contours])
+
+
+def compute_filtered_pairwise_contour_operation(
+    contoursA: ContourList,
+    contoursB: ContourList,
+    callback: typing.Callable[[np.ndarray, np.ndarray], float],
+):
+    """Run a pairwise computation on contours but only if they have non-zero overlap."""
+    arr = np.zeros((len(contoursA), len(contoursB)), dtype="float32")
+    relevant = has_overlap(contours_to_boxes(contoursA), contours_to_boxes(contoursB))
+    arr[relevant] = [
+        callback(contoursA[idx1], contoursB[idx2])
+        for idx1, idx2 in zip(*relevant.nonzero())
+    ]
+    return arr
+
+
+def compute_contour_coverage(
+    contoursA: ContourList,
+    contoursB: ContourList,
+    max_size: int = DEFAULT_MAX_CONTOUR_MASK_SIZE,
+):
+    """Compute pairwise overlap of two sets of contours."""
+    return compute_filtered_pairwise_contour_operation(
+        contoursA,
+        contoursB,
+        functools.partial(compute_coverage_for_contour_pair, max_size=max_size),
+    )
+
+
+def compute_contour_iou(
+    contoursA: ContourList,
+    contoursB: ContourList,
+):
     """Compute pairwise IoU for two sets of contours.
 
     Args:
@@ -226,41 +304,11 @@ def compute_contour_iou(contoursA: ContourList, contoursB: ContourList):
         An IoU matrix of shape (NA, NB) where 0 means no overlap and
         1 means complete overlap.
     """
-    return np.array(
-        [
-            [compute_iou_for_contour_pair(contour1, contour2) for contour2 in contoursB]
-            for contour1 in contoursA
-        ]
+    return compute_filtered_pairwise_contour_operation(
+        contoursA,
+        contoursB,
+        compute_iou_for_contour_pair,
     )
-
-
-def compute_contour_coverage(
-    contoursA: ContourList,
-    contoursB: ContourList,
-    max_size: int = DEFAULT_MAX_CONTOUR_MASK_SIZE,
-):
-    """Compute pairwise overlap of two sets of contours."""
-    arr = np.zeros((len(contoursA), len(contoursB)), dtype="float32")
-    box_coverage = compute_coverage(
-        *[
-            np.array(
-                [
-                    np.concatenate([contour.min(axis=0), contour.max(axis=0)])
-                    for contour in contours
-                ]
-            )
-            for contours in [contoursA, contoursB]
-        ]
-    )
-    for idx1, contour1 in enumerate(contoursA):
-        for idx2, contour2 in enumerate(contoursB):
-            if box_coverage[idx1, idx2] == 0:
-                arr[idx1, idx2] = 0
-                continue
-            arr[idx1, idx2] = compute_coverage_for_contour_pair(
-                contour1, contour2, max_size=max_size
-            )
-    return arr
 
 
 def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
@@ -270,7 +318,7 @@ def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
 
     .. code-block:: python
 
-        compute_overlap(
+        compute_coverage(
             boxesA=np.array([[0, 0, 1, 1]]),
             boxesB=np.array([[0, 0, 0.5, 0.5], [1, 1, 2, 2]])
         )
@@ -292,22 +340,16 @@ def compute_coverage(boxesA: np.ndarray, boxesB: np.ndarray) -> np.ndarray:
         An IoU matrix of shape (NA, NB, 2) where 0 means no overlap and
         1 means complete overlap.
     """
-    # A joint matrix for all box pairs so we can vectorize. It has shape
-    # (NA, NB, 2, 4).
-    boxes = np.zeros((boxesA.shape[0], boxesB.shape[0], 2, 4))
-    boxes[:, :, 0] = boxesA[:, np.newaxis, :]
-    boxes[:, :, 1] = boxesB[np.newaxis, :, :]
-    xA = boxes[..., 0].max(axis=-1)
-    yA = boxes[..., 1].max(axis=-1)
-    xB = boxes[..., 2].min(axis=-1)
-    yB = boxes[..., 3].min(axis=-1)
-    interArea = (xB - xA).clip(0) * (yB - yA).clip(0)
+    # Calculate intersection
+    max_xy = np.minimum(boxesA[:, None, 2:], boxesB[None, :, 2:])
+    min_xy = np.maximum(boxesA[:, None, :2], boxesB[None, :, :2])
+    inter = np.prod(np.clip(max_xy - min_xy, a_min=0, a_max=None), axis=2)
 
-    boxAArea = (boxes[..., 0, 2] - boxes[..., 0, 0]) * (
-        boxes[..., 0, 3] - boxes[..., 0, 1]
-    )
-    coverageA = interArea / boxAArea
-    return coverageA
+    # Calculate areas of boxesA
+    area_A = np.prod(boxesA[:, 2:] - boxesA[:, :2], axis=1)
+
+    # Return intersection over boxesA area
+    return inter / area_A[:, None]
 
 
 def groupby_unsorted(seq, key=lambda x: x):
@@ -323,9 +365,9 @@ def split(
     items: typing.List[typing.Any],
     sizes: typing.List[float],
     random_state: int = 42,
-    stratify: typing.Sequence[typing.Hashable] = None,
-    group: typing.Sequence[typing.Hashable] = None,
-    preserve: typing.Sequence[typing.Optional[int]] = None,
+    stratify: typing.Optional[typing.Sequence[typing.Hashable]] = None,
+    group: typing.Optional[typing.Sequence[typing.Hashable]] = None,
+    preserve: typing.Optional[typing.Sequence[typing.Optional[int]]] = None,
 ) -> typing.Sequence[typing.Any]:
     """Split a list of items into groups of specific proportions.
 
@@ -374,9 +416,9 @@ def split(
     if stratify is None:
         stratify = [0] * len(items)
     if preserve is not None:
-        assert len(items) == len(
-            preserve
-        ), "When preserve is provided, it must be the same length as items."
+        assert len(items) == len(preserve), (
+            "When preserve is provided, it must be the same length as items."
+        )
         for item, preserveIdx in zip(items, preserve):
             if preserveIdx is not None:
                 splits[preserveIdx].append(item)
@@ -399,13 +441,13 @@ def split(
             max(target - len(split), 0) for split, target in zip(splits, ideal_counts)
         ]
         sizes = [offset / sum(offsets) for offset in offsets]
-    assert (
-        0.99 < sum(sizes) < 1.01
-    ), f"The sizes must add up to 1.0 (they added up to {sum(sizes)})."
+    assert 0.99 < sum(sizes) < 1.01, (
+        f"The sizes must add up to 1.0 (they added up to {sum(sizes)})."
+    )
     assert len(group) == len(items), "group must be the same length as the collection."
-    assert len(stratify) == len(
-        items
-    ), "stratify must be the same length as the collection."
+    assert len(stratify) == len(items), (
+        "stratify must be the same length as the collection."
+    )
     rng = np.random.default_rng(seed=random_state)
     grouped = [
         {**dict(zip(["idxs", "stratifiers"], zip(*grouper))), "group": g}
@@ -561,9 +603,9 @@ def transform_bboxes(
         else cv2.perspectiveTransform(vertices.astype("float32"), m=M)
     )
     if clip:
-        assert (
-            width is not None and height is not None
-        ), "If clipping, width and height must be provided."
+        assert width is not None and height is not None, (
+            "If clipping, width and height must be provided."
+        )
         transformed_vertices = transformed_vertices.clip(0, [width, height])
     transformed_bboxes = np.concatenate(
         [
