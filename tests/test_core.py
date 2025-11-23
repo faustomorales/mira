@@ -12,8 +12,8 @@ import io
 import cv2
 import numpy as np
 
-from mira.thirdparty.albumentations import albumentations as A
 import mira.core as mc
+import mira.core.augmentations as mca
 import mira.core.experimental as mce
 import mira.datasets as mds
 
@@ -249,9 +249,9 @@ def test_safe_crop():
         )
     scene = mc.Scene(categories=config, image=canvas, annotations=annotations)
     for wiggle in [True, False]:
-        augmenter = mc.augmentations.compose(
+        augmenter = mca.compose(
             [
-                mc.augmentations.RandomCropBBoxSafe(
+                mca.RandomCropBBoxSafe(
                     width=size * 4, height=size * 4, prob_box=1.0, wiggle=wiggle
                 )
             ]
@@ -288,3 +288,130 @@ def test_split_apply_combine():
         list(range(10)), key=lambda x: str(x % 2 == 0), func=process
     )
     assert all(e == a for e, a in zip([0, 0, 2, 2, 4, 4, 6, 6, 8, 8], processed))
+
+
+def test_compute_contour_coverage():
+    """Test compute_contour_coverage function."""
+    # Create test contours (as rectangles)
+    # Contour A1: small box at (0, 0) to (10, 10)
+    contourA1 = np.array([[0, 0], [10, 0], [10, 10], [0, 10]])
+    # Contour A2: box at (50, 50) to (60, 60)
+    contourA2 = np.array([[50, 50], [60, 50], [60, 60], [50, 60]])
+
+    # Contour B1: large box containing A1 at (0, 0) to (20, 20)
+    contourB1 = np.array([[0, 0], [20, 0], [20, 20], [0, 20]])
+    # Contour B2: partially overlapping with A2 at (55, 55) to (65, 65)
+    contourB2 = np.array([[55, 55], [65, 55], [65, 65], [55, 65]])
+    # Contour B3: no overlap with any A contour at (100, 100) to (110, 110)
+    contourB3 = np.array([[100, 100], [110, 100], [110, 110], [100, 110]])
+
+    contoursA = [contourA1, contourA2]
+    contoursB = [contourB1, contourB2, contourB3]
+
+    coverage = mc.utils.compute_contour_coverage(contoursA, contoursB)
+
+    # Check shape
+    assert coverage.shape == (2, 3)
+
+    # A1 should be fully covered by B1 (coverage ~1.0)
+    assert coverage[0, 0] > 0.99
+
+    # A1 should have no overlap with B2 or B3
+    assert coverage[0, 1] == 0
+    assert coverage[0, 2] == 0
+
+    # A2 should have no overlap with B1
+    assert coverage[1, 0] == 0
+
+    # A2 should have partial overlap with B2 (less than full coverage)
+    assert 0 < coverage[1, 1] < 1.0
+
+    # A2 should have no overlap with B3
+    assert coverage[1, 2] == 0
+
+
+def test_compute_contour_iou():
+    """Test compute_contour_iou function."""
+    # Create test contours (as rectangles)
+    # Contour A1: box at (0, 0) to (10, 10)
+    contourA1 = np.array([[0, 0], [10, 0], [10, 10], [0, 10]])
+    # Contour A2: box at (50, 50) to (60, 60)
+    contourA2 = np.array([[50, 50], [60, 50], [60, 60], [50, 60]])
+
+    # Contour B1: identical to A1
+    contourB1 = np.array([[0, 0], [10, 0], [10, 10], [0, 10]])
+    # Contour B2: partially overlapping with A1 at (5, 5) to (15, 15)
+    contourB2 = np.array([[5, 5], [15, 5], [15, 15], [5, 15]])
+    # Contour B3: no overlap with any A contour at (100, 100) to (110, 110)
+    contourB3 = np.array([[100, 100], [110, 100], [110, 110], [100, 110]])
+
+    contoursA = [contourA1, contourA2]
+    contoursB = [contourB1, contourB2, contourB3]
+
+    iou = mc.utils.compute_contour_iou(contoursA, contoursB)
+
+    # Check shape
+    assert iou.shape == (2, 3)
+
+    # A1 and B1 are identical, so IoU should be ~1.0
+    assert iou[0, 0] > 0.99
+
+    # A1 and B2 partially overlap, so IoU should be between 0 and 1
+    assert 0 < iou[0, 1] < 1.0
+
+    # A1 should have no overlap with B3
+    assert iou[0, 2] == 0
+
+    # A2 should have no overlap with B1 or B2
+    assert iou[1, 0] == 0
+    assert iou[1, 1] == 0
+
+    # A2 should have no overlap with B3
+    assert iou[1, 2] == 0
+
+
+def test_has_overlap():
+    """Test has_overlap function."""
+    # Create test boxes in x1y1x2y2 format
+    boxesA = np.array([
+        [0, 0, 10, 10],      # Box A1
+        [50, 50, 60, 60],    # Box A2
+        [100, 100, 110, 110] # Box A3
+    ])
+
+    boxesB = np.array([
+        [5, 5, 15, 15],      # Box B1: overlaps with A1
+        [50, 50, 60, 60],    # Box B2: identical to A2
+        [200, 200, 210, 210] # Box B3: no overlap with any A box
+    ])
+
+    overlap = mc.utils.has_overlap(boxesA, boxesB)
+
+    # Check shape
+    assert overlap.shape == (3, 3)
+
+    # Check data type is boolean
+    assert overlap.dtype == bool
+
+    # A1 overlaps with B1
+    assert overlap[0, 0]
+
+    # A1 does not overlap with B2
+    assert not overlap[0, 1]
+
+    # A1 does not overlap with B3
+    assert not overlap[0, 2]
+
+    # A2 does not overlap with B1
+    assert not overlap[1, 0]
+
+    # A2 overlaps with B2 (identical boxes)
+    assert overlap[1, 1]
+
+    # A2 does not overlap with B3
+    assert not overlap[1, 2]
+
+    # A3 does not overlap with any B box
+    assert not overlap[2, 0]
+    assert not overlap[2, 1]
+    assert not overlap[2, 2]

@@ -73,11 +73,11 @@ class Scene:
         self,
         categories: typing.Union[typing.List[str], annotation.Categories],
         image: typing.Union[np.ndarray, str],
-        annotations: typing.List[annotation.Annotation] = None,
-        metadata: dict = None,
+        annotations: typing.Optional[typing.List[annotation.Annotation]] = None,
+        metadata: typing.Optional[dict] = None,
         cache: bool = False,
-        masks: typing.List[utils.MaskRegion] = None,
-        labels: typing.List[annotation.Label] = None,
+        masks: typing.Optional[typing.List[utils.MaskRegion]] = None,
+        labels: typing.Optional[typing.List[annotation.Label]] = None,
     ):
         assert isinstance(image, (np.ndarray, str)), (
             "Image must be string or ndarray, not " + str(type(image))
@@ -125,7 +125,7 @@ class Scene:
                 )
         return segmap / 100.0
 
-    def filepath(self, directory: str = None):
+    def filepath(self, directory: typing.Optional[str] = None):
         """Gets a filepath for this image. If it is not currently a file,
         a file will be created in a temporary directory."""
         if (
@@ -212,7 +212,7 @@ class Scene:
         item: typing.Dict,
         label_key: str,
         categories: annotation.Categories,
-        base_dir: str = None,
+        base_dir: typing.Optional[str] = None,
     ):
         """Create a scene from a set of QSL labels.
 
