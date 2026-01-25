@@ -79,9 +79,9 @@ class Scene:
         masks: typing.Optional[typing.List[utils.MaskRegion]] = None,
         labels: typing.Optional[typing.List[annotation.Label]] = None,
     ):
-        assert isinstance(image, (np.ndarray, str)), (
-            "Image must be string or ndarray, not " + str(type(image))
-        )
+        assert isinstance(
+            image, (np.ndarray, str)
+        ), "Image must be string or ndarray, not " + str(type(image))
         if masks is None:
             masks = []
         self._image = image
@@ -156,8 +156,10 @@ class Scene:
                 os.makedirs(directory, exist_ok=True)
             if self._tfile:
                 self._tfile.close()
-            self._tfile = tempfile.NamedTemporaryFile(  # pylint: disable=consider-using-with
-                suffix=".png", prefix=hashstr, dir=directory
+            self._tfile = (
+                tempfile.NamedTemporaryFile(  # pylint: disable=consider-using-with
+                    suffix=".png", prefix=hashstr, dir=directory
+                )
             )
             cv2.imwrite(self._tfile.name, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
         return self._tfile.name
@@ -211,7 +213,7 @@ class Scene:
         cls,
         item: typing.Dict,
         label_key: str,
-        categories: annotation.Categories,
+        categories: typing.Optional[annotation.Categories] = None,
         base_dir: typing.Optional[str] = None,
     ):
         """Create a scene from a set of QSL labels.
@@ -229,6 +231,22 @@ class Scene:
         filepath = target if base_dir is None else os.path.join(base_dir, target)
         labels = item["labels"]
         meta = imagemeta.get_image_metadata(filepath)
+        if not categories:
+            categories = annotation.Categories(
+                sorted(
+                    list(
+                        set(
+                            [
+                                element["labels"][label_key][0]
+                                for element in labels.get("boxes", [])
+                                + labels.get("masks", [])
+                                + labels.get("polygons", [])
+                                if element.get("labels", {}).get(label_key)
+                            ]
+                        )
+                    )
+                )
+            )
 
         annotations = []
         for box in labels.get("boxes", []):
@@ -717,9 +735,9 @@ class Scene:
         annotations = self.annotations
         if not annotations:
             raise NotImplementedError("This function does not support empty scenes.")
-        assert all(max(a.x2 - a.x1, a.y2 - a.y1) < max_size for a in annotations), (
-            "At least one annotation is too big."
-        )
+        assert all(
+            max(a.x2 - a.x1, a.y2 - a.y1) < max_size for a in annotations
+        ), "At least one annotation is too big."
         image = self.image
         ih, iw = image.shape[:2]
         subcrops = []
