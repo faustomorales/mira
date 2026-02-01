@@ -237,20 +237,50 @@ def compute_coverage_for_contour_pair(
     contour2: np.ndarray,
     max_size: int = DEFAULT_MAX_CONTOUR_MASK_SIZE,
 ):
-    """Compute how much of contour1 is contained within contour2."""
-    im1, im2 = compute_contour_binary_masks(contour1, contour2, max_size=max_size)
-    return (im1 & im2).sum() / im1.sum()
+    """Compute how much of contour1 is contained within contour2 using Shapely.
+
+    Args:
+        contour1: The first contour.
+        contour2: The second contour.
+        max_size: Unused parameter kept for backward compatibility.
+    """
+    from shapely.geometry import Polygon
+
+    poly1 = Polygon(contour1)
+    poly2 = Polygon(contour2)
+
+    if not poly1.is_valid:
+        poly1 = poly1.buffer(0)
+    if not poly2.is_valid:
+        poly2 = poly2.buffer(0)
+
+    intersection = poly1.intersection(poly2).area
+    area1 = poly1.area
+
+    return intersection / area1 if area1 > 0 else 0.0
 
 
 def compute_iou_for_contour_pair(contour1: np.ndarray, contour2: np.ndarray):
-    """Compute IoU for a pair of contours.
+    """Compute IoU for a pair of contours using Shapely.
 
     Args:
         contour1: The first contour.
         contour2: The second contour.
     """
-    im1, im2 = compute_contour_binary_masks(contour1, contour2)
-    return (im1 & im2).sum() / (im1 | im2).sum()
+    from shapely.geometry import Polygon
+
+    poly1 = Polygon(contour1)
+    poly2 = Polygon(contour2)
+
+    if not poly1.is_valid:
+        poly1 = poly1.buffer(0)
+    if not poly2.is_valid:
+        poly2 = poly2.buffer(0)
+
+    intersection = poly1.intersection(poly2).area
+    union = poly1.union(poly2).area
+
+    return intersection / union if union > 0 else 0.0
 
 
 def contour_to_box(contour: np.ndarray):
@@ -790,8 +820,7 @@ def crop_polygon(points: np.ndarray, x1, y1, x2, y2) -> list[np.ndarray]:
             )  # Remove duplicate last point
             polygons.append(coords)
 
-        # Offset polygons to crop coordinate space (relative to x1, y1)
-        return [p - np.array([x1, y1]) for p in polygons]
+        return polygons
 
     except Exception:
         log.warning("An error occurred in polygon cropping.", exc_info=True)

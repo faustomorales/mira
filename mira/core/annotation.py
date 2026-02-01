@@ -240,8 +240,9 @@ class Annotation(
             if crop.area() > 0:
                 return [crop]
             return []
+            # Offset polygons to crop coordinate space (relative to x1, y1)
         return [
-            self.assign(points=polygon)
+            self.assign(points=polygon - np.array([xoffset, yoffset]))
             for polygon in utils.crop_polygon(
                 self.points,
                 x1=xoffset,
