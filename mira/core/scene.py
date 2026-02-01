@@ -110,6 +110,28 @@ class Scene:
             ann.draw(image, color=colormap[ann.category.name], opaque=True)
         return self.assign(image=image)
 
+    def to_qsl(self, filename: str, category_name: str = "category"):
+        dimensions = self.dimensions
+        return {
+            "target": pathlib.Path(filename).name,
+            "metadata": self.metadata,
+            "labels": {
+                "polygons": [
+                    {
+                        "points": [
+                            {"x": x / dimensions.width, "y": y / dimensions.height}
+                            for x, y in ann.points
+                        ],
+                        "metadata": ann.metadata,
+                        "labels": {
+                            category_name: [ann.category.name],
+                        },
+                    }
+                    for ann in self.annotations
+                ]
+            },
+        }
+
     def segmentation_map(self, binary: bool, threshold: float = 0.5) -> np.ndarray:
         """Creates a segmentation map using the annotation scores."""
         dimensions = self.dimensions
