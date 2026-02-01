@@ -240,31 +240,15 @@ class Annotation(
             if crop.area() > 0:
                 return [crop]
             return []
-        points = self.points - [[xoffset, yoffset]]
-        baseline = points.min(axis=0)
-        offseted = (points - baseline).round().astype("int32")
-        redrawn = cv2.drawContours(
-            np.zeros(offseted.max(axis=0)[::-1], dtype="uint8"),
-            contours=offseted[np.newaxis],
-            contourIdx=-1,
-            color=255,
-            thickness=-1,
-        )
-        redrawn = redrawn[-min(baseline[1], 0) :, -min(baseline[0], 0) :]
-        redrawn = redrawn[
-            : (height - baseline[1].clip(0)).clip(0),
-            : (width - baseline[0].clip(0)).clip(0),
-        ]
-        if redrawn.shape[0] == 0 or redrawn.shape[1] == 0 or (redrawn == 0).all():
-            return []
         return [
-            self.assign(
-                points=c[:, 0, :] + baseline.clip(0),
+            self.assign(points=polygon)
+            for polygon in utils.crop_polygon(
+                self.points,
+                x1=xoffset,
+                y1=yoffset,
+                x2=xoffset + width,
+                y2=yoffset + height,
             )
-            for c in cv2.findContours(
-                redrawn, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_NONE
-            )[-2]
-            if len(c) > 1
         ]
 
     def resize(self, scale: typing.Union[float, np.ndarray]) -> "Annotation":

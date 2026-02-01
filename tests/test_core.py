@@ -415,3 +415,87 @@ def test_has_overlap():
     assert not overlap[2, 0]
     assert not overlap[2, 1]
     assert not overlap[2, 2]
+
+
+def test_annotation_crop():
+    """Test crop functionality for both rectangle and polygon annotations."""
+    categories = mc.Categories(["test"])
+    
+    # Test 1: Rectangle annotation fully within crop region
+    rect_ann = mc.Annotation(
+        x1=10, y1=10, x2=50, y2=50,
+        category=categories["test"]
+    )
+    cropped = rect_ann.crop(width=100, height=100, xoffset=0, yoffset=0)
+    assert len(cropped) == 1
+    assert cropped[0].x1 == 10 and cropped[0].y1 == 10
+    assert cropped[0].x2 == 50 and cropped[0].y2 == 50
+    
+    # Test 2: Rectangle annotation partially outside crop region
+    rect_ann = mc.Annotation(
+        x1=50, y1=50, x2=150, y2=150,
+        category=categories["test"]
+    )
+    cropped = rect_ann.crop(width=100, height=100, xoffset=0, yoffset=0)
+    assert len(cropped) == 1
+    assert cropped[0].x1 == 50 and cropped[0].y1 == 50
+    assert cropped[0].x2 == 100 and cropped[0].y2 == 100
+    
+    # Test 3: Rectangle annotation completely outside crop region
+    rect_ann = mc.Annotation(
+        x1=150, y1=150, x2=200, y2=200,
+        category=categories["test"]
+    )
+    cropped = rect_ann.crop(width=100, height=100, xoffset=0, yoffset=0)
+    assert len(cropped) == 0
+    
+    # Test 4: Polygon annotation fully within crop region
+    # Polygon at (10, 10) to (40, 40), crop region (0, 0) to (100, 100)
+    polygon_ann = mc.Annotation(
+        points=np.array([[10, 10], [40, 10], [40, 40], [10, 40]], dtype=np.float64),
+        category=categories["test"]
+    )
+    cropped = polygon_ann.crop(width=100, height=100, xoffset=0, yoffset=0)
+    assert len(cropped) == 1
+    assert cropped[0].points.shape[0] >= 4
+    # All vertices should be within crop region [0, 0] to [100, 100]
+    assert np.all(cropped[0].points >= 0)
+    assert np.all(cropped[0].points[:, 0] <= 100)
+    assert np.all(cropped[0].points[:, 1] <= 100)
+    
+    # Test 5: Polygon annotation partially outside crop region
+    # Polygon at (50, 50) to (150, 150), crop region (0, 0) to (100, 100)
+    # Should be clipped to (50, 50) to (100, 100)
+    polygon_ann = mc.Annotation(
+        points=np.array([[50, 50], [150, 50], [150, 150], [50, 150]], dtype=np.float64),
+        category=categories["test"]
+    )
+    cropped = polygon_ann.crop(width=100, height=100, xoffset=0, yoffset=0)
+    assert len(cropped) == 1
+    assert cropped[0].points.shape[0] >= 4
+    # All vertices should be within crop region [0, 0] to [100, 100]
+    assert np.all(cropped[0].points >= 0)
+    assert np.all(cropped[0].points[:, 0] <= 100)
+    assert np.all(cropped[0].points[:, 1] <= 100)
+    
+    # Test 6: Polygon annotation completely outside crop region
+    polygon_ann = mc.Annotation(
+        points=np.array([[150, 150], [200, 150], [200, 200], [150, 200]], dtype=np.float64),
+        category=categories["test"]
+    )
+    cropped = polygon_ann.crop(width=100, height=100, xoffset=0, yoffset=0)
+    assert len(cropped) == 0
+    
+    # Test 7: Crop with offset (non-zero xoffset and yoffset)
+    # Polygon at (60, 60) to (150, 150), crop region (50, 50) to (150, 150)
+    # After crop, coordinates should be relative to (50, 50)
+    polygon_ann = mc.Annotation(
+        points=np.array([[60, 60], [150, 60], [150, 150], [60, 150]], dtype=np.float64),
+        category=categories["test"]
+    )
+    cropped = polygon_ann.crop(width=100, height=100, xoffset=50, yoffset=50)
+    assert len(cropped) == 1
+    # Coordinates should be in crop region coordinate space [0, 0] to [100, 100]
+    assert np.all(cropped[0].points >= 0)
+    assert np.all(cropped[0].points[:, 0] <= 100)
+    assert np.all(cropped[0].points[:, 1] <= 100)

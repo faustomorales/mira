@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib",
     "validators",
     "twine>=6.1.0",
+    "shapely>=2.0.0",
 ]
 
 [project.optional-dependencies]

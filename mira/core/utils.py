@@ -416,9 +416,9 @@ def split(
     if stratify is None:
         stratify = [0] * len(items)
     if preserve is not None:
-        assert len(items) == len(preserve), (
-            "When preserve is provided, it must be the same length as items."
-        )
+        assert len(items) == len(
+            preserve
+        ), "When preserve is provided, it must be the same length as items."
         for item, preserveIdx in zip(items, preserve):
             if preserveIdx is not None:
                 splits[preserveIdx].append(item)
@@ -441,13 +441,13 @@ def split(
             max(target - len(split), 0) for split, target in zip(splits, ideal_counts)
         ]
         sizes = [offset / sum(offsets) for offset in offsets]
-    assert 0.99 < sum(sizes) < 1.01, (
-        f"The sizes must add up to 1.0 (they added up to {sum(sizes)})."
-    )
+    assert (
+        0.99 < sum(sizes) < 1.01
+    ), f"The sizes must add up to 1.0 (they added up to {sum(sizes)})."
     assert len(group) == len(items), "group must be the same length as the collection."
-    assert len(stratify) == len(items), (
-        "stratify must be the same length as the collection."
-    )
+    assert len(stratify) == len(
+        items
+    ), "stratify must be the same length as the collection."
     rng = np.random.default_rng(seed=random_state)
     grouped = [
         {**dict(zip(["idxs", "stratifiers"], zip(*grouper))), "group": g}
@@ -603,9 +603,9 @@ def transform_bboxes(
         else cv2.perspectiveTransform(vertices.astype("float32"), m=M)
     )
     if clip:
-        assert width is not None and height is not None, (
-            "If clipping, width and height must be provided."
-        )
+        assert (
+            width is not None and height is not None
+        ), "If clipping, width and height must be provided."
         transformed_vertices = transformed_vertices.clip(0, [width, height])
     transformed_bboxes = np.concatenate(
         [
@@ -731,3 +731,69 @@ class AugmenterProtocol(typing_extensions.Protocol):
         ],
     ) -> AugmentedResult:
         pass
+
+
+def crop_polygon(points: np.ndarray, x1, y1, x2, y2) -> list[np.ndarray]:
+    """Crop a polygon using Shapely geometric operations.
+
+    Args:
+        points: Array of polygon vertices with shape (n, 2)
+        x1, y1: Top-left corner of clipping rectangle
+        x2, y2: Bottom-right corner of clipping rectangle
+
+    Returns:
+        List of clipped polygon arrays. Each polygon is represented as an
+        array of vertices with shape (m, 2).
+    """
+    try:
+        from shapely.geometry import Polygon, box
+        from shapely.ops import unary_union
+    except ImportError:
+        raise ImportError(
+            "Shapely is required for polygon clipping. Install with: pip install shapely"
+        )
+
+    if len(points) < 3:
+        return []
+
+    try:
+        # Create polygon from points
+        polygon = Polygon(points)
+        if not polygon.is_valid:
+            # Try to fix invalid polygon
+            polygon = polygon.buffer(0)
+
+        # Create clipping rectangle
+        clip_rect = box(x1, y1, x2, y2)
+
+        # Perform intersection
+        result = polygon.intersection(clip_rect)
+
+        # Handle different result types
+        if result.is_empty:
+            return []
+
+        # Extract coordinates from result
+        polygons = []
+        if hasattr(result, "geoms"):
+            # Multi-polygon or geometry collection
+            for geom in result.geoms:
+                if geom.geom_type == "Polygon" and len(geom.exterior.coords) > 3:
+                    coords = np.array(
+                        geom.exterior.coords[:-1]
+                    )  # Remove duplicate last point
+                    polygons.append(coords)
+        elif result.geom_type == "Polygon" and len(result.exterior.coords) > 3:
+            # Single polygon
+            coords = np.array(
+                result.exterior.coords[:-1]
+            )  # Remove duplicate last point
+            polygons.append(coords)
+
+        # Offset polygons to crop coordinate space (relative to x1, y1)
+        return [p - np.array([x1, y1]) for p in polygons]
+
+    except Exception:
+        log.warning("An error occurred in polygon cropping.", exc_info=True)
+        # Fallback to empty result if anything goes wrong
+        return []
