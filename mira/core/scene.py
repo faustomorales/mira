@@ -648,6 +648,15 @@ class Scene:
         raw.close()
         return img
 
+    def crop(self, x1: int, y1: int, x2: int, y2: int):
+        return self.assign(
+            image=self.image[int(y1):int(y2), int(x1):int(x2)],
+            annotations=utils.flatten(
+                ann.crop(xoffset=x1, yoffset=y1, width=x2 - x1, height=y2 - y1)
+                for ann in self.annotations
+            ),
+        )
+
     def augment(
         self, augmenter: utils.AugmenterProtocol = None, min_visibility=0.0
     ) -> typing.Tuple["Scene", np.ndarray]:
